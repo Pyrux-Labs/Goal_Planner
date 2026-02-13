@@ -46,7 +46,7 @@ export default function CalendarCard({
 		<button
 			onClick={onClick}
 			className={cn(
-				"w-[124px] h-[131px] rounded-xl transition-all duration-200 flex flex-col p-2 gap-1",
+				"w-28 h-32 md:w-32 md:h-36 lg:w-32 lg:h-36 rounded-xl transition-all duration-200 flex flex-col p-2 gap-1",
 				"bg-modal-bg hover:scale-105 hover:shadow-xl hover:border-vibrant-orange/50 border border-input-bg",
 				isToday && "bg-input-bg border-vibrant-orange border-2 shadow-lg",
 				isSelected && "bg-input-bg border-vibrant-orange border-2 shadow-lg",
