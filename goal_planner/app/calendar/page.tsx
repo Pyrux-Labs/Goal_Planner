@@ -1,9 +1,10 @@
 "use client";
-
+import { ChevronRight } from "lucide-react";
 import { useState, useMemo } from "react";
 import CalendarUI from "@/components/Calendar/CalendarUI/CalendarUI";
 import Navbar from "@/components/Layout/Navbar/Navbar";
 import SidebarModal from "@/components/ui/SidebarModal/SidebarModal";
+import Button from "@/components/ui/Button/Button";
 
 interface CalendarEvent {
 	id: string;
@@ -134,10 +135,9 @@ export default function CalendarPage() {
 		console.log("Add Task clicked");
 	};
 
-	const handleCloseModal = () => {
-		setIsModalOpen(false);
+	const toggleModal = () => {
+		setIsModalOpen((prev) => !prev);
 	};
-
 	return (
 		<div className="min-h-screen bg-deep-bg flex">
 			<Navbar />
@@ -150,11 +150,19 @@ export default function CalendarPage() {
 					onAddTask={handleAddTask}
 				/>
 			</div>
-			{!isModalOpen && (
+			{isModalOpen && (
 				<SidebarModal
 					title="Daily Analytics"
-					onClose={handleCloseModal}
+					onClose={toggleModal}
 					children={<div>Modal Content</div>}></SidebarModal>
+			)}
+			{!isModalOpen && (
+				<Button
+					onClick={toggleModal}
+					className="h-36 w-10  flex justify-center items-center fixed [writing-mode:vertical-lr] rotate-180 right-0 top-1/2 -translate-y-1/2 text-base gap-12 rounded-r-[13px] rounded-l-none">
+					STATS
+					<ChevronRight className="w-6 h-6" />
+				</Button>
 			)}
 		</div>
 	);
