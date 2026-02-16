@@ -12,7 +12,7 @@ export default function SidebarModal({
 	onClose,
 }: SidebarModalProps) {
 	return (
-		<div className="fixed right-0 top-0 h-full w-80 z-50 border-l border-input-bg bg-deep-bg">
+		<div className="fixed right-0 top-0 h-full w-80 lg:w-64 xl:w-72 2xl:w-80 z-50 border-l border-input-bg bg-deep-bg">
 			{/* Header */}
 			<div className="flex items-center justify-between mb-8 p-6 border-b border-input-bg">
 				<div

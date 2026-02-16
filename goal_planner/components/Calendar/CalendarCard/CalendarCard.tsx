@@ -7,6 +7,7 @@ interface CalendarCardProps {
 	isCurrentMonth?: boolean;
 	events?: CalendarEvent[];
 	onClick?: () => void;
+	isModalOpen?: boolean;
 }
 
 interface CalendarEvent {
@@ -39,6 +40,7 @@ export default function CalendarCard({
 	isCurrentMonth = true,
 	events = [],
 	onClick,
+	isModalOpen = true,
 }: CalendarCardProps) {
 	const progress = calculateProgress(events);
 
@@ -46,7 +48,8 @@ export default function CalendarCard({
 		<button
 			onClick={onClick}
 			className={cn(
-				"w-28 h-32 md:w-32 md:h-36 lg:w-32 lg:h-36 rounded-xl transition-all duration-200 flex flex-col p-2 gap-1",
+				"w-28 h-32 lg:w-32 lg:h-36 rounded-xl transition-all duration-200 flex flex-col p-2 gap-1",
+				isModalOpen ? "xl:w-32 2xl:w-32" : "xl:w-40 2xl:w-44",
 				"bg-modal-bg hover:scale-105 hover:shadow-xl hover:border-vibrant-orange/50 border border-input-bg",
 				isToday && "bg-input-bg border-vibrant-orange border-2 shadow-lg",
 				isSelected && "bg-input-bg border-vibrant-orange border-2 shadow-lg",

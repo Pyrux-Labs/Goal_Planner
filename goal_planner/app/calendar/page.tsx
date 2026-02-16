@@ -141,15 +141,14 @@ export default function CalendarPage() {
 	return (
 		<div className="min-h-screen bg-deep-bg flex">
 			<Navbar />
-			<div className="flex-1 ml-20 mr-80 p-6">
-				<CalendarUI
-					events={events}
-					onDateSelect={handleDateSelect}
-					selectedDate={selectedDate}
-					onAddHabit={handleAddHabit}
-					onAddTask={handleAddTask}
-				/>
-			</div>
+			<CalendarUI
+				events={events}
+				onDateSelect={handleDateSelect}
+				selectedDate={selectedDate}
+				onAddHabit={handleAddHabit}
+				onAddTask={handleAddTask}
+				isModalOpen={isModalOpen}
+			/>
 			{isModalOpen && (
 				<SidebarModal
 					title="Daily Analytics"
