@@ -30,7 +30,7 @@ const Top = ({
 			{/* Left Section */}
 			<div className="flex items-center gap-4">
 				{title && (
-					<h2 className="text-3xl font-bold font-title text-white-pearl">
+					<h2 className="text-3xl min-w-[17rem] font-bold font-title text-white-pearl">
 						{title}
 					</h2>
 				)}

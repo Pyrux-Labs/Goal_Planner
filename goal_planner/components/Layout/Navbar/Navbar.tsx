@@ -14,7 +14,7 @@ const navItems = [
 const Navbar = () => {
 	const pathname = usePathname();
 	return (
-		<aside className="w-20 h-screen bg-deep-bg border-r border-input-bg flex-shrink-0 fixed left-0 top-0  hidden sm:block">
+		<aside className="w-20 lg:w-14 xl:w-16 2xl:w-20 h-screen bg-deep-bg border-r border-input-bg flex-shrink-0 fixed left-0 top-0  hidden sm:block">
 			<div className="flex flex-col items-center py-8 px-4 h-full">
 				{/* Logo */}
 				<div className="mb-10">

@@ -17,10 +17,10 @@ const Modal = ({
 }: ModalProps) => {
 	// Max width mappings
 	const maxWidthClasses = {
-		sm: "max-w-[400px]",
-		md: "max-w-[500px]",
-		lg: "max-w-[550px]",
-		xl: "max-w-[600px]",
+		sm: "max-w-[25rem]",
+		md: "max-w-[31.25rem]",
+		lg: "max-w-[34.375rem]",
+		xl: "max-w-[37.5rem]",
 	};
 
 	const modalClassName = `${maxWidthClasses[maxWidth]} bg-modal-bg rounded-3xl border-[3px] border-vibrant-orange shadow-lg shadow-vibrant-orange/50 px-14 pt-10 pb-8 ${className}`;
