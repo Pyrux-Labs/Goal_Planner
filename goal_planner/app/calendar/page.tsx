@@ -1,10 +1,15 @@
 "use client";
 import { ChevronRight } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import CalendarUI from "@/components/Calendar/CalendarUI/CalendarUI";
 import Navbar from "@/components/Layout/Navbar/Navbar";
 import SidebarModal from "@/components/ui/SidebarModal/SidebarModal";
 import Button from "@/components/ui/Button/Button";
+import { createClient } from "@/lib/supabase/client";
+
+const supabase = createClient();
+const { data } = await supabase.rpc("get_user_events_current_month");
+console.log(data);
 
 interface CalendarEvent {
 	id: string;
@@ -15,6 +20,24 @@ interface CalendarEvent {
 export default function CalendarPage() {
 	const [selectedDate, setSelectedDate] = useState<Date | undefined>();
 	const [isModalOpen, setIsModalOpen] = useState(false);
+	useEffect(() => {
+		const fetchEvents = async () => {
+			const supabase = createClient();
+			const { data, error } = await supabase.rpc(
+				"get_user_events_current_month",
+			);
+
+			if (error) {
+				console.error("Error fetching events:", error);
+			} else {
+				console.log(data);
+				// Aquí transformas los datos al formato que necesita el calendario
+				// setEvents(transformedData);
+			}
+		};
+
+		fetchEvents();
+	}, []);
 
 	const events = useMemo(() => {
 		const today = new Date();
