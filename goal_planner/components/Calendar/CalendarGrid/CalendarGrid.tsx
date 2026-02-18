@@ -1,4 +1,5 @@
-import CalendarCard, { type CalendarEvent } from "../CalendarCard/CalendarCard";
+import CalendarCard from "../CalendarCard/CalendarCard";
+import type { CalendarEvent, CalendarEventsMap } from "@/types/calendar";
 
 interface CalendarDay {
 	date: number;
@@ -8,7 +9,7 @@ interface CalendarDay {
 
 interface CalendarGridProps {
 	calendarDays: CalendarDay[];
-	events?: Record<string, CalendarEvent[]>;
+	events?: CalendarEventsMap;
 	onDateSelect?: (date: Date) => void;
 	selectedDate?: Date;
 	isToday: (date: Date) => boolean;
@@ -27,7 +28,7 @@ export default function CalendarGrid({
 	getDateKey,
 	isModalOpen = true,
 }: CalendarGridProps) {
-	const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+	const weekDays = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 
 	return (
 		<>

@@ -1,21 +1,17 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import CalendarGrid from "../CalendarGrid/CalendarGrid";
 import Top from "../../Layout/Top/Top";
 import { Plus } from "lucide-react";
+import type { CalendarEventsMap } from "@/types/calendar";
 
 export interface CalendarProps {
-	events?: Record<string, CalendarEvent[]>;
+	events?: CalendarEventsMap;
 	onDateSelect?: (date: Date) => void;
 	selectedDate?: Date;
 	onAddHabit?: () => void;
 	onAddTask?: () => void;
 	isModalOpen?: boolean;
-}
-
-interface CalendarEvent {
-	id: string;
-	title: string;
-	color?: string;
+	onMonthChange?: (year: number, month: number) => void;
 }
 
 export default function Calendar({
@@ -25,6 +21,7 @@ export default function Calendar({
 	onAddHabit,
 	onAddTask,
 	isModalOpen = true,
+	onMonthChange,
 }: CalendarProps) {
 	const [currentDate, setCurrentDate] = useState(new Date());
 
@@ -34,6 +31,11 @@ export default function Calendar({
 			month: currentDate.getMonth(),
 		};
 	}, [currentDate]);
+
+	// Notificar al componente padre cuando cambia el mes
+	useEffect(() => {
+		onMonthChange?.(year, month);
+	}, [year, month, onMonthChange]);
 
 	const monthName = useMemo(() => {
 		return new Date(year, month).toLocaleDateString("en-US", {

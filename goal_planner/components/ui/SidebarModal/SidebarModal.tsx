@@ -7,27 +7,29 @@ interface SidebarModalProps {
 }
 
 export default function SidebarModal({
-	title = "Daily Analytics",
+	title = "",
 	children,
 	onClose,
 }: SidebarModalProps) {
 	return (
-		<div className="fixed right-0 top-0 h-full w-80 lg:w-64 xl:w-72 2xl:w-80 z-50 border-l border-input-bg bg-deep-bg">
+		<div className="fixed right-0 top-0 h-full w-80 lg:w-64 xl:w-72 2xl:w-80 z-50 border-l border-input-bg bg-deep-bg flex flex-col">
 			{/* Header */}
-			<div className="flex items-center justify-between mb-8 p-6 border-b border-input-bg">
+			<div className="flex items-center justify-between p-6 flex-shrink-0">
 				<div
 					onClick={onClose}
 					className="group relative flex items-center justify-center w-10 h-10 rounded-lg transition-colors hover:bg-input-bg/50 cursor-pointer">
 					<ChevronLeft
-						className="w-6 h-6 text-vibrant-orange transition-colors"
+						className="w-10 h-10 text-vibrant-orange transition-colors"
 						strokeWidth={2.5}
 					/>
 				</div>
-				<h1 className="text-2xl font-bold text-white flex-1">{title}</h1>
+				<h1 className="text-3xl font-semibold text-white flex-1">{title}</h1>
 			</div>
 
 			{/* Content */}
-			<div className="h-full overflow-y-auto p-6">{children}</div>
+			<div className="flex-1 overflow-y-auto p-1 scrollbar-custom">
+				{children}
+			</div>
 		</div>
 	);
 }
