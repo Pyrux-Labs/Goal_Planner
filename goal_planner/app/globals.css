@@ -32,30 +32,30 @@
         background-color: hsl(var(--deep-bg));
     }
 
-    :root {
-        /* GoalPlanner Color Scheme */
-        --vibrant-orange: 20 95% 44%; /* #D94E06 */
-        --input-bg: 13 23% 19%; /* #3D2B26 */
-        --modal-bg: 14 42% 10%; /* #25140F */
-        --deep-bg: 14 68% 6%; /* #1A0A05 */
-        --landing-bg: 0 0% 2%; /* #050505 */
-        --lading-modal-bg: 0 0% 0%; /* #000000 */
-        --white-pearl: 46 46% 189%; /* #F0EAD6 */
-        --sea-green: 146 50% 36%; /* #2EBB57 */
-        --royal-blue: 217 76% 50%; /* #1F6AE1 */
-        --yellow: 46 94% 56%; /* #F0E23A */
-        --carmin: 6 63% 46%; /* #C0392B */
-        --progress-empty: 240 4% 16%; /* #27272A */
-        --input-text: 215 20% 65%; /* #94A3B8 */
-        --main-gradient: linear-gradient(
-            90deg,
-            #d94e06 0%,
-            #ff5500 38%,
-            #ff8548 100%
-        );
-        --title-font: "Montserrat";
-        --text-font: "Manrope";
-    }
+	:root {
+		/* GoalPlanner Color Scheme */
+		--vibrant-orange: 20 95% 44%; /* #D94E06 */
+		--input-bg: 13 23% 19%; /* #3D2B26 */
+		--modal-bg: 14 42% 10%; /* #25140F */
+		--deep-bg: 14 68% 6%; /* #1A0A05 */
+		--landing-bg: 0 0% 2%; /* #050505 */
+		--lading-modal-bg: 0 0% 0%; /* #000000 */
+		--white-pearl: 46 46% 189%; /* #F0EAD6 */
+		--sea-green: 146 50% 36%; /* #2EBB57 */
+		--royal-blue: 217 76% 50%; /* #1F6AE1 */
+		--yellow: 46 94% 56%; /* #F0E23A */
+		--carmin: 6 63% 46%; /* #C0392B */
+		--progress-empty: 240 4% 16%; /* #27272A */
+		--input-text: 215 20% 65%; /* #94A3B8 */
+		--main-gradient: linear-gradient(
+			90deg,
+			#d94e06 0%,
+			#ff5500 38%,
+			#ff8548 100%
+		);
+		--title-font: "Montserrat";
+		--text-font: "Manrope";
+	}
 
     /* Ajustes para pantallas HDR */
     @media (dynamic-range: high) {
@@ -77,19 +77,19 @@
             color: hsl(20, 75%, 42%) !important;
         }
 
-        .border-vibrant-orange {
-            border-color: hsl(20, 75%, 42%) !important;
-        }
-    }
+		.border-vibrant-orange {
+			border-color: hsl(20, 75%, 42%) !important;
+		}
+	}
 
-    input[type="date"]::-webkit-datetime-edit-text,
-    input[type="date"]::-webkit-datetime-edit-month-field,
-    input[type="date"]::-webkit-datetime-edit-day-field,
-    input[type="date"]::-webkit-datetime-edit-year-field {
-        color: hsl(var(--input-text));
-    }
+	input[type="date"]::-webkit-datetime-edit-text,
+	input[type="date"]::-webkit-datetime-edit-month-field,
+	input[type="date"]::-webkit-datetime-edit-day-field,
+	input[type="date"]::-webkit-datetime-edit-year-field {
+		color: hsl(var(--input-text));
+	}
 
-    input[type="date"] {
-        color-scheme: dark;
-    }
+	input[type="date"] {
+		color-scheme: dark;
+	}
 }

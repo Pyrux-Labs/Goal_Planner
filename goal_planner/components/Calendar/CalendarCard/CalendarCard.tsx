@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import type { CalendarEvent } from "@/types/calendar";
 
 interface CalendarCardProps {
 	date?: number;
@@ -10,15 +11,7 @@ interface CalendarCardProps {
 	isModalOpen?: boolean;
 }
 
-interface CalendarEvent {
-	id: string;
-	title: string;
-	time?: string;
-	color?: string;
-	completed?: boolean; // Nuevo campo para saber si está completada
-}
-
-export type { CalendarCardProps, CalendarEvent };
+export type { CalendarCardProps };
 
 // Función para truncar texto
 const truncateText = (text: string, maxLength: number) => {
@@ -43,6 +36,7 @@ export default function CalendarCard({
 	isModalOpen = true,
 }: CalendarCardProps) {
 	const progress = calculateProgress(events);
+	const habits = events.filter((event) => event.type === "habit");
 
 	return (
 		<button
@@ -60,7 +54,7 @@ export default function CalendarCard({
 			{date && (
 				<div
 					className={cn(
-						"text-base font-semibold transition-colors text-left",
+						"text-xl font-semibold transition-colors text-left mx-1",
 						isSelected ? "text-white-pearl" : "text-white-pearl",
 						isToday && !isSelected && "text-[#D94E06]",
 					)}>
@@ -68,12 +62,12 @@ export default function CalendarCard({
 				</div>
 			)}
 			{/* Events */}
-			<div className="flex flex-col gap-1 overflow-hidden flex-1">
+			<div className="flex flex-col gap-1.5 overflow-hidden flex-1">
 				{events.slice(0, 3).map((event) => (
 					<div
 						key={event.id}
 						className={cn(
-							"text-[10px] leading-  truncate flex items-center gap-1",
+							"text-xs leading-tight truncate flex items-center gap-1",
 							"text-white-pearl",
 							"transition-all duration-200",
 						)}>
@@ -95,22 +89,47 @@ export default function CalendarCard({
 					</div>
 				))}
 			</div>
-
 			{/* More indicator */}
 			{events.length > 3 && (
 				<div className="text-base text-white-pearl font-medium text-left flex-shrink-0">
 					...
 				</div>
 			)}
+
 			{/* Progress bar - Bottom of card */}
 			{events.length > 0 && (
-				<div className="w-full h-1 bg-progress-empty rounded-full">
+				<div
+					className={cn(
+						"h-1 rounded-full mx-1",
+						isSelected || isToday ? "bg-modal-bg" : "bg-input-bg",
+					)}>
 					<div
 						className="h-full bg-vibrant-orange transition-all duration-300 rounded-full"
 						style={{ width: `${progress}%` }}
 					/>
 				</div>
 			)}
+
+			{/* Habit progress dots - Always reserve space */}
+			<div className="flex justify-left gap-1 mt-1 flex-shrink-0 mx-1 h-1.5">
+				{habits.length > 0 &&
+					habits
+						.sort((a, b) => (b.completed ? 1 : 0) - (a.completed ? 1 : 0))
+						.map((habit) => (
+							<div
+								key={habit.id}
+								className={cn(
+									"w-1.5 h-1.5 rounded-full transition-all duration-200",
+									habit.completed
+										? "bg-vibrant-orange"
+										: isSelected || isToday
+											? "bg-modal-bg"
+											: "bg-input-bg",
+								)}
+								title={habit.title}
+							/>
+						))}
+			</div>
 
 			{/* Hover effect overlay */}
 			<div className="absolute inset-0 bg-gradient-to-br from-[#D94E06]/0 to-[#D94E06]/0 group-hover:from-[#D94E06]/5 group-hover:to-[#D94E06]/10 transition-all duration-300 rounded-xl pointer-events-none" />
