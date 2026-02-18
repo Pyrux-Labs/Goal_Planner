@@ -20,7 +20,9 @@ export default function RootLayout({
     return (
         <html lang="en" suppressHydrationWarning>
             <head></head>
-            <body suppressHydrationWarning>{children}</body>
+            <body className="bg-[hsl(var(--deep-bg))]" suppressHydrationWarning>
+                {children}
+            </body>
         </html>
     );
 }

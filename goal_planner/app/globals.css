@@ -5,31 +5,32 @@
 @tailwind utilities;
 
 @layer utilities {
-	.bg-main-gradient {
-		background: linear-gradient(0deg, #d94e06 0%, #ff5500 38%, #ff8548 100%);
-	}
-	.bg-button-gradient {
-		background: linear-gradient(
-			180deg,
-			rgba(5, 5, 5, 0) 0%,
-			rgba(5, 5, 5, 1) 92%
-		);
-	}
-
-	.scrollbar-custom {
-		scrollbar-width: thin;
-		scrollbar-color: #d94e06 #3d2b26;
-	}
+    .bg-main-gradient {
+        background: linear-gradient(
+            0deg,
+            #d94e06 0%,
+            #ff5500 38%,
+            #ff8548 100%
+        );
+    }
+    .bg-button-gradient {
+        background: linear-gradient(
+            180deg,
+            rgba(5, 5, 5, 0) 0%,
+            rgba(5, 5, 5, 1) 92%
+        );
+    }
 }
 
 @layer base {
-	html {
-		scroll-behavior: smooth;
-	}
+    html {
+        scroll-behavior: smooth;
+    }
 
-	body {
-		font-family: "Manrope", sans-serif;
-	}
+    body {
+        font-family: "Manrope", sans-serif;
+        background-color: hsl(var(--deep-bg));
+    }
 
 	:root {
 		/* GoalPlanner Color Scheme */
@@ -56,25 +57,25 @@
 		--text-font: "Manrope";
 	}
 
-	/* Ajustes para pantallas HDR */
-	@media (dynamic-range: high) {
-		:root {
-			--vibrant-orange: 20 75% 42%;
-			--main-gradient: linear-gradient(
-				90deg,
-				hsl(20, 75%, 42%) 0%,
-				hsl(20, 85%, 50%) 38%,
-				hsl(20, 80%, 55%) 100%
-			);
-		}
+    /* Ajustes para pantallas HDR */
+    @media (dynamic-range: high) {
+        :root {
+            --vibrant-orange: 20 75% 42%;
+            --main-gradient: linear-gradient(
+                90deg,
+                hsl(20, 75%, 42%) 0%,
+                hsl(20, 85%, 50%) 38%,
+                hsl(20, 80%, 55%) 100%
+            );
+        }
 
-		.bg-vibrant-orange {
-			background-color: hsl(20, 75%, 42%) !important;
-		}
+        .bg-vibrant-orange {
+            background-color: hsl(20, 75%, 42%) !important;
+        }
 
-		.text-vibrant-orange {
-			color: hsl(20, 75%, 42%) !important;
-		}
+        .text-vibrant-orange {
+            color: hsl(20, 75%, 42%) !important;
+        }
 
 		.border-vibrant-orange {
 			border-color: hsl(20, 75%, 42%) !important;
