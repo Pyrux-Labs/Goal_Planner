@@ -13,7 +13,7 @@ interface Task {
 
 interface Habit {
     title: string;
-    days: string;
+    days?: string;
     time?: string;
 }
 
@@ -55,7 +55,7 @@ export default function GoalCard({
     const [isExpanded, setIsExpanded] = useState(false);
 
     return (
-        <div className="w-[70rem] rounded-3xl border border-input-bg bg-modal-bg my-2 mx-auto">
+        <div className="max-w-[70rem] w-full rounded-3xl border border-input-bg bg-modal-bg my-2 mx-auto">
             <div
                 className="h-24 flex flex-row items-center gap-6 p-6 cursor-pointer relative"
                 onClick={() => setIsExpanded(!isExpanded)}
@@ -81,20 +81,6 @@ export default function GoalCard({
                     <p className="font-medium text-input-text text-sm">
                         {description}
                     </p>
-                </div>
-
-                {/* Badge */}
-                <div className="absolute left-80 top-1">
-                    <span
-                        className={clsx(
-                            "inline-flex px-1 py-1 rounded-md text-white-pearl font-semibold text-xs",
-                            progress === 100
-                                ? "bg-green-500"
-                                : "bg-vibrant-orange",
-                        )}
-                    >
-                        {progress === 100 ? "COMPLETED" : "ACTIVE"}
-                    </span>
                 </div>
 
                 {/* Progress Section */}
