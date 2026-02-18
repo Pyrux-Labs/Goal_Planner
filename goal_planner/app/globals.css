@@ -15,6 +15,11 @@
 			rgba(5, 5, 5, 1) 92%
 		);
 	}
+
+	.scrollbar-custom {
+		scrollbar-width: thin;
+		scrollbar-color: #d94e06 #3d2b26;
+	}
 }
 
 @layer base {
