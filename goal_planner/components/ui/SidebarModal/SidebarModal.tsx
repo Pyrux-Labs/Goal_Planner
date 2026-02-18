@@ -7,7 +7,7 @@ interface SidebarModalProps {
 }
 
 export default function SidebarModal({
-	title = "Daily Analytics",
+	title = "",
 	children,
 	onClose,
 }: SidebarModalProps) {
