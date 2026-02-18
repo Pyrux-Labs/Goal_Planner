@@ -74,11 +74,11 @@ export default function GoalCard({
                     />
                 </div>
                 {/* Title and Description */}
-                <div className="flex-1">
-                    <h3 className="text-white-pearl font-semibold text-lg mb-1">
+                <div className="flex-1 max-w-md">
+                    <h3 className="text-white-pearl font-semibold text-lg mb-1 truncate">
                         {title}
                     </h3>
-                    <p className="font-medium text-input-text text-sm">
+                    <p className="font-medium text-input-text text-sm truncate">
                         {description}
                     </p>
                 </div>

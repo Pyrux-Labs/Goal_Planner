@@ -195,6 +195,82 @@ async function calculateGoalProgress(
     return totalLogs > 0 ? Math.round((completedLogs / totalLogs) * 100) : 0;
 }
 
+async function calculateOverallYearProgress(
+    supabase: any,
+    userId: string,
+): Promise<number> {
+    const currentYear = new Date().getFullYear();
+
+    // Get all goals for the current year
+    const { data: yearGoals } = await supabase
+        .from("goals")
+        .select("id, target_date")
+        .eq("user_id", userId)
+        .is("deleted_at", null);
+
+    if (!yearGoals || yearGoals.length === 0) return 0;
+
+    // Filter goals by current year
+    const currentYearGoalIds = yearGoals
+        .filter(
+            (g: any) => new Date(g.target_date).getFullYear() === currentYear,
+        )
+        .map((g: any) => g.id);
+
+    if (currentYearGoalIds.length === 0) return 0;
+
+    let totalLogs = 0;
+    let completedLogs = 0;
+
+    // Get all tasks for current year goals
+    const { data: tasks } = await supabase
+        .from("tasks")
+        .select("id")
+        .in("goal_id", currentYearGoalIds)
+        .is("deleted_at", null);
+
+    // Get all habits for current year goals
+    const { data: habits } = await supabase
+        .from("habits")
+        .select("id")
+        .in("goal_id", currentYearGoalIds)
+        .is("deleted_at", null);
+
+    // Count task logs
+    if (tasks && tasks.length > 0) {
+        const taskIds = tasks.map((t: any) => t.id);
+        const { data: taskLogs } = await supabase
+            .from("task_logs")
+            .select("completed")
+            .in("task_id", taskIds);
+
+        if (taskLogs) {
+            totalLogs += taskLogs.length;
+            completedLogs += taskLogs.filter(
+                (log: any) => log.completed,
+            ).length;
+        }
+    }
+
+    // Count habit logs
+    if (habits && habits.length > 0) {
+        const habitIds = habits.map((h: any) => h.id);
+        const { data: habitLogs } = await supabase
+            .from("habit_logs")
+            .select("completed")
+            .in("habit_id", habitIds);
+
+        if (habitLogs) {
+            totalLogs += habitLogs.length;
+            completedLogs += habitLogs.filter(
+                (log: any) => log.completed,
+            ).length;
+        }
+    }
+
+    return totalLogs > 0 ? Math.round((completedLogs / totalLogs) * 100) : 0;
+}
+
 // ===== COMPONENT =====
 export default function AnualGoalsPage() {
     const [goals, setGoals] = useState<Goal[]>([]);
@@ -202,6 +278,7 @@ export default function AnualGoalsPage() {
     const [selectedFilter, setSelectedFilter] = useState<
         "all" | "active" | "completed"
     >("all");
+    const [overallProgress, setOverallProgress] = useState(0);
 
     useEffect(() => {
         fetchGoalsData();
@@ -262,6 +339,13 @@ export default function AnualGoalsPage() {
             );
 
             setGoals(goalsWithDetails);
+
+            // Calculate overall year progress based on logs
+            const yearProgress = await calculateOverallYearProgress(
+                supabase,
+                user.id,
+            );
+            setOverallProgress(yearProgress);
         } catch (error) {
             console.error("Error fetching goals:", error);
         } finally {
@@ -282,22 +366,6 @@ export default function AnualGoalsPage() {
 
     const activeCount = goals.filter((g) => g.status === "active").length;
     const completedCount = goals.filter((g) => g.status === "completed").length;
-
-    const calculateOverallProgress = (): number => {
-        const currentYear = new Date().getFullYear();
-        const currentYearGoals = goals.filter(
-            (g) => new Date(g.target_date).getFullYear() === currentYear,
-        );
-        const currentYearCompleted = currentYearGoals.filter(
-            (g) => g.status === "completed",
-        ).length;
-
-        return currentYearGoals.length > 0
-            ? Math.round((currentYearCompleted / currentYearGoals.length) * 100)
-            : 0;
-    };
-
-    const overallProgress = calculateOverallProgress();
 
     const handleNewGoal = () => {
         console.log("New Goal clicked");
