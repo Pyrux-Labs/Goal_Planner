@@ -8,6 +8,7 @@ interface AddHabitProps {
     onClose: () => void;
     onCancel: () => void;
     showGoalSelect?: boolean;
+    inline?: boolean;
 }
 
 interface Goal {
@@ -30,6 +31,7 @@ const AddHabit = ({
     onClose,
     onCancel,
     showGoalSelect = false,
+    inline = false,
 }: AddHabitProps) => {
     const [goals, setGoals] = useState<Goal[]>([]);
     const [selectedGoalId, setSelectedGoalId] = useState<number | null>(
@@ -46,17 +48,6 @@ const AddHabit = ({
             fetchGoals();
         }
     }, [showGoalSelect]);
-
-    useEffect(() => {
-        const handleEscape = (e: KeyboardEvent) => {
-            if (e.key === "Escape") {
-                onCancel();
-            }
-        };
-
-        window.addEventListener("keydown", handleEscape);
-        return () => window.removeEventListener("keydown", handleEscape);
-    }, [onCancel]);
 
     const fetchGoals = useCallback(async () => {
         const supabase = createClient();
@@ -152,8 +143,20 @@ const AddHabit = ({
     };
 
     return (
-        <div className="max-w-[37.5rem] bg-modal-bg rounded-3xl border-[3px] border-vibrant-orange shadow-lg shadow-vibrant-orange/50 px-10 pt-8 pb-6">
-            <h2 className="text-white-pearl font-title text-3xl font-semibold mb-6 text-center">
+        <div
+            className={
+                inline
+                    ? "bg-modal-bg rounded-3xl border-2 border-vibrant-orange/30 p-6"
+                    : "max-w-[37.5rem] bg-modal-bg rounded-3xl border-[3px] border-vibrant-orange shadow-lg shadow-vibrant-orange/50 px-10 pt-8 pb-6"
+            }
+        >
+            <h2
+                className={
+                    inline
+                        ? "text-white-pearl font-title text-2xl font-semibold mb-4"
+                        : "text-white-pearl font-title text-3xl font-semibold mb-6 text-center"
+                }
+            >
                 Add Habit
             </h2>
 
@@ -236,7 +239,7 @@ const AddHabit = ({
                 </div>
 
                 {/* Buttons */}
-                <div className="flex gap-3 pt-4">
+                <div className="flex gap-3 pt-2">
                     <button
                         onClick={onCancel}
                         className="flex-1 h-10 rounded-xl bg-input-bg text-white-pearl font-medium hover:bg-input-bg/80 transition disabled:opacity-50 disabled:cursor-not-allowed"

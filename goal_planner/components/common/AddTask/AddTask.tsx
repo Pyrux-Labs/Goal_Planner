@@ -8,6 +8,7 @@ interface AddTaskProps {
     onClose: () => void;
     onCancel: () => void;
     showGoalSelect?: boolean;
+    inline?: boolean;
 }
 
 interface Goal {
@@ -30,6 +31,7 @@ const AddTask = ({
     onClose,
     onCancel,
     showGoalSelect = false,
+    inline = false,
 }: AddTaskProps) => {
     const [goals, setGoals] = useState<Goal[]>([]);
     const [selectedGoalId, setSelectedGoalId] = useState<number | null>(
@@ -109,6 +111,11 @@ const AddTask = ({
             return;
         }
 
+        if (!isAllDay && !startTime) {
+            alert("Please select a start time");
+            return;
+        }
+
         setIsSubmitting(true);
 
         try {
@@ -130,7 +137,7 @@ const AddTask = ({
                 start_date: taskType === "repeating" ? startDate : null,
                 end_date: taskType === "repeating" ? endDate : null,
                 start_time: !isAllDay ? startTime : null,
-                end_time: !isAllDay ? endTime : null,
+                end_time: !isAllDay && endTime ? endTime : null,
             };
 
             const { data: task, error: taskError } = await supabase
@@ -177,8 +184,20 @@ const AddTask = ({
     };
 
     return (
-        <div className="max-w-[37.5rem] bg-modal-bg rounded-3xl border-[3px] border-vibrant-orange shadow-lg shadow-vibrant-orange/50 px-10 pt-8 pb-6">
-            <h2 className="text-white-pearl font-title text-3xl font-semibold mb-6 text-center">
+        <div
+            className={
+                inline
+                    ? "bg-modal-bg rounded-3xl border-2 border-vibrant-orange/30 p-6"
+                    : "max-w-[37.5rem] bg-modal-bg rounded-3xl border-[3px] border-vibrant-orange shadow-lg shadow-vibrant-orange/50 px-10 pt-8 pb-6"
+            }
+        >
+            <h2
+                className={
+                    inline
+                        ? "text-white-pearl font-title text-2xl font-semibold mb-4"
+                        : "text-white-pearl font-title text-3xl font-semibold mb-6 text-center"
+                }
+            >
                 Add Task
             </h2>
 
@@ -336,7 +355,10 @@ const AddTask = ({
                         </div>
                         <div>
                             <label className="block text-white-pearl mb-2 text-sm">
-                                End Time
+                                End Time{" "}
+                                <span className="text-input-text text-xs">
+                                    (Optional)
+                                </span>
                             </label>
                             <input
                                 type="time"
