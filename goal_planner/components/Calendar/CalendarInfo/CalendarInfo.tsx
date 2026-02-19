@@ -89,9 +89,15 @@ const CalendarInfo = ({ date, events, onRefresh }: CalendarInfoProps) => {
 					/>
 				)}
 				<div className={`flex-1 min-w-0 ${isHabit ? "text-right" : ""}`}>
-					<div className="text-sm text-white-pearl truncate">{event.title}</div>
+					<div
+						className={`text-sm truncate ${event.completed ? "line-through text-white-pearl/25" : "text-white-pearl"}`}>
+						{event.title}
+					</div>
 					{event.time && (
-						<div className="text-xs text-white-pearl">{event.time}</div>
+						<div
+							className={`text-xs ${event.completed ? "text-white-pearl/25" : "text-white-pearl"}`}>
+							{event.time}
+						</div>
 					)}
 				</div>
 				{isHabit && (
