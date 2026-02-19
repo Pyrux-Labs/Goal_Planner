@@ -125,7 +125,7 @@ export default function GoalCard({
                 className={clsx(
                     "transition-all duration-500",
                     isExpanded
-                        ? "min-h-40 max-h-96 opacity-100 overflow-y-auto"
+                        ? "min-h-40 max-h-96 opacity-100 overflow-y-auto scrollbar-custom mb-5"
                         : "max-h-0 opacity-0 overflow-hidden",
                 )}
             >
