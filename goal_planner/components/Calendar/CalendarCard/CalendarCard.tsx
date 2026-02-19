@@ -37,6 +37,7 @@ export default function CalendarCard({
 }: CalendarCardProps) {
 	const progress = calculateProgress(events);
 	const habits = events.filter((event) => event.type === "habit");
+	const tasks = events.filter((event) => event.type === "task");
 
 	return (
 		<button
@@ -63,7 +64,7 @@ export default function CalendarCard({
 			)}
 			{/* Events */}
 			<div className="flex flex-col gap-1.5 overflow-hidden flex-1">
-				{events.slice(0, 3).map((event) => (
+				{tasks.slice(0, 3).map((event) => (
 					<div
 						key={event.id}
 						className={cn(
@@ -90,7 +91,7 @@ export default function CalendarCard({
 				))}
 			</div>
 			{/* More indicator */}
-			{events.length > 3 && (
+			{tasks.length > 3 && (
 				<div className="text-base text-white-pearl font-medium text-left flex-shrink-0">
 					...
 				</div>

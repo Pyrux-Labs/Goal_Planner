@@ -3,6 +3,7 @@ import CalendarGrid from "../CalendarGrid/CalendarGrid";
 import Top from "../../Layout/Top/Top";
 import { Plus } from "lucide-react";
 import type { CalendarEventsMap } from "@/types/calendar";
+import { getDateKey } from "@/utils/dateUtils";
 
 export interface CalendarProps {
 	events?: CalendarEventsMap;
@@ -116,12 +117,6 @@ export default function Calendar({
 			date.getMonth() === selectedDate.getMonth() &&
 			date.getFullYear() === selectedDate.getFullYear()
 		);
-	};
-
-	const getDateKey = (date: Date) => {
-		return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
-			date.getDate(),
-		).padStart(2, "0")}`;
 	};
 
 	return (

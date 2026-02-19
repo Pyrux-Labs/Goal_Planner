@@ -1,11 +1,15 @@
 import type { CalendarEvent } from "@/types/calendar";
+import { createClient } from "@/lib/supabase/client";
+import { useState } from "react";
 
 interface CalendarInfoProps {
 	date: Date;
 	events: CalendarEvent[];
+	onRefresh?: () => void;
 }
 
-const CalendarInfo = ({ date, events }: CalendarInfoProps) => {
+const CalendarInfo = ({ date, events, onRefresh }: CalendarInfoProps) => {
+	const [updatingIds, setUpdatingIds] = useState<Set<number>>(new Set());
 	const dateStr = date.toLocaleDateString();
 
 	// Filter tasks and habits
@@ -26,7 +30,34 @@ const CalendarInfo = ({ date, events }: CalendarInfoProps) => {
 			return 0;
 		});
 	};
+	const handleToggle = async (event: CalendarEvent) => {
+		if (updatingIds.has(event.id)) return; // Prevent multiple clicks
+		setUpdatingIds((prev) => new Set(prev).add(event.id));
 
+		const supabase = createClient();
+		const table = event.type === "task" ? "task_logs" : "habit_logs";
+
+		const { error } = await supabase
+			.from(table)
+			.update({
+				completed: !event.completed,
+				completed_at: !event.completed ? new Date().toISOString() : null,
+			})
+			.eq("id", event.id);
+
+		if (error) {
+			console.error("Error updating:", error);
+		} else {
+			// Refrescar los datos
+			onRefresh?.();
+		}
+
+		setUpdatingIds((prev) => {
+			const next = new Set(prev);
+			next.delete(event.id);
+			return next;
+		});
+	};
 	const sortedTasks = sortByTime(tasks);
 	const sortedHabits = sortByTime(habits);
 
@@ -41,38 +72,49 @@ const CalendarInfo = ({ date, events }: CalendarInfoProps) => {
 	}: {
 		event: CalendarEvent;
 		isHabit?: boolean;
-	}) => (
-		<div className="flex items-center gap-2 p-2 bg-input-bg rounded-lg min-h-12 w-full">
-			{!isHabit && (
-				<input
-					type="checkbox"
-					checked={event.completed}
-					className="w-4 h-4 rounded border-gray-400 text-vibrant-orange"
-					readOnly
-					style={{
-						accentColor: "#d94e06",
-					}}
-				/>
-			)}
-			<div className={`flex-1 min-w-0 ${isHabit ? "text-right" : ""}`}>
-				<div className="text-sm text-white-pearl truncate">{event.title}</div>
-				{event.time && (
-					<div className="text-xs text-white-pearl">{event.time}</div>
+	}) => {
+		const isUpdating = updatingIds.has(event.id);
+		return (
+			<div className="flex items-center gap-2 p-2 bg-input-bg rounded-lg min-h-12 w-full">
+				{!isHabit && (
+					<input
+						type="checkbox"
+						checked={event.completed}
+						className="w-4 h-4 rounded border-gray-400 text-vibrant-orange"
+						onChange={() => handleToggle(event)}
+						disabled={isUpdating}
+						style={{
+							accentColor: "#d94e06",
+						}}
+					/>
+				)}
+				<div className={`flex-1 min-w-0 ${isHabit ? "text-right" : ""}`}>
+					<div
+						className={`text-sm truncate ${event.completed ? "line-through text-white-pearl/25" : "text-white-pearl"}`}>
+						{event.title}
+					</div>
+					{event.time && (
+						<div
+							className={`text-xs ${event.completed ? "text-white-pearl/25" : "text-white-pearl"}`}>
+							{event.time}
+						</div>
+					)}
+				</div>
+				{isHabit && (
+					<input
+						type="checkbox"
+						checked={event.completed}
+						className="w-4 h-4 rounded border-gray-400 text-vibrant-orange"
+						onChange={() => handleToggle(event)}
+						disabled={isUpdating}
+						style={{
+							accentColor: "#d94e06",
+						}}
+					/>
 				)}
 			</div>
-			{isHabit && (
-				<input
-					type="checkbox"
-					checked={event.completed}
-					className="w-4 h-4 rounded border-gray-400 text-vibrant-orange"
-					readOnly
-					style={{
-						accentColor: "#d94e06",
-					}}
-				/>
-			)}
-		</div>
-	);
+		);
+	};
 
 	return (
 		<div className="h-full overflow-y-auto p-4 space-y-4 scrollbar-custom">
