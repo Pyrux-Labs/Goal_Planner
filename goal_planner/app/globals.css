@@ -29,6 +29,7 @@
 
 	body {
 		font-family: "Manrope", sans-serif;
+		background-color: hsl(var(--deep-bg));
 	}
 
 	:root {
