@@ -2,6 +2,7 @@
 import CalendarInfo from "@/components/Calendar/CalendarInfo/CalendarInfo";
 import type { SidebarView } from "@/types/sidebar";
 import type { CalendarEventsMap } from "@/types/calendar";
+import { getDateKey } from "@/utils/dateUtils";
 
 interface SidebarContentProps {
 	view: SidebarView;
@@ -16,12 +17,9 @@ export default function SidebarContent({
 }: SidebarContentProps) {
 	switch (view.type) {
 		case "day-info":
-			return (
-				<CalendarInfo
-					date={view.date}
-					events={events[view.date.toISOString().split("T")[0]] || []}
-				/>
-			);
+			const dateKey = getDateKey(view.date);
+			const dayEvents = events[dateKey] || [];
+			return <CalendarInfo date={view.date} events={dayEvents} />;
 
 		case "daily-analytics":
 			return;
