@@ -488,6 +488,7 @@ export default function AnualGoalsPage() {
                         formattedGoals.map((goal) => (
                             <GoalCard
                                 key={goal.id}
+                                goalId={goal.id}
                                 title={goal.name}
                                 description={
                                     goal.description || goal.categoryName
@@ -497,12 +498,8 @@ export default function AnualGoalsPage() {
                                 category={goal.categoryName}
                                 tasks={goal.formattedTasks}
                                 habits={goal.formattedHabits}
-                                onTaskAdd={() =>
-                                    console.log(`Add task to ${goal.name}`)
-                                }
-                                onHabitAdd={() =>
-                                    console.log(`Add habit to ${goal.name}`)
-                                }
+                                onTaskAdd={() => fetchGoalsData()}
+                                onHabitAdd={() => fetchGoalsData()}
                                 onTaskEdit={(taskIndex) =>
                                     console.log(
                                         `Edit task ${taskIndex} from ${goal.name}`,
