@@ -23,6 +23,7 @@ interface GoalCardProps {
     progress: number;
     targetDate: string;
     category: string;
+    goalId: number;
     tasks?: Task[];
     habits?: Habit[];
     onEdit: () => void;
@@ -41,6 +42,7 @@ export default function GoalCard({
     progress = 0,
     targetDate,
     category,
+    goalId,
     tasks = [],
     habits = [],
     onEdit,
@@ -125,7 +127,7 @@ export default function GoalCard({
                 className={clsx(
                     "transition-all duration-500",
                     isExpanded
-                        ? "min-h-40 max-h-96 opacity-100 overflow-y-auto"
+                        ? "min-h-40 max-h-96 opacity-100 overflow-y-auto scrollbar-custom mb-5"
                         : "max-h-0 opacity-0 overflow-hidden",
                 )}
             >
@@ -134,6 +136,7 @@ export default function GoalCard({
                         <TaskHabitColumn
                             type="task"
                             items={tasks}
+                            goalId={goalId}
                             onAdd={onTaskAdd}
                             onEdit={onTaskEdit}
                             onDelete={onTaskDelete}
@@ -141,6 +144,7 @@ export default function GoalCard({
                         <TaskHabitColumn
                             type="habit"
                             items={habits}
+                            goalId={goalId}
                             onAdd={onHabitAdd}
                             onEdit={onHabitEdit}
                             onDelete={onHabitDelete}

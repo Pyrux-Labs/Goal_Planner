@@ -2,24 +2,30 @@
 import CalendarInfo from "@/components/Calendar/CalendarInfo/CalendarInfo";
 import type { SidebarView } from "@/types/sidebar";
 import type { CalendarEventsMap } from "@/types/calendar";
+import { getDateKey } from "@/utils/dateUtils";
 
 interface SidebarContentProps {
 	view: SidebarView;
 	events: CalendarEventsMap;
 	onSuccess?: () => void; // To close the modal after creating
+	onRefresh?: () => void; // To refresh the data
 }
 
 export default function SidebarContent({
 	view,
 	events,
 	onSuccess,
+	onRefresh,
 }: SidebarContentProps) {
 	switch (view.type) {
 		case "day-info":
+			const dateKey = getDateKey(view.date);
+			const dayEvents = events[dateKey] || [];
 			return (
 				<CalendarInfo
 					date={view.date}
-					events={events[view.date.toISOString().split("T")[0]] || []}
+					events={dayEvents}
+					onRefresh={onRefresh}
 				/>
 			);
 
