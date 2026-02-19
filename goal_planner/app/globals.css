@@ -59,24 +59,6 @@
     background: transparent;
 }
 
-/* Stronger rules to hide any remaining scrollbar buttons */
-.scrollbar-custom::-webkit-scrollbar-button,
-.scrollbar-custom::-webkit-scrollbar-button:single-button,
-.scrollbar-custom::-webkit-scrollbar-button:start,
-.scrollbar-custom::-webkit-scrollbar-button:end,
-.scrollbar-custom::-webkit-scrollbar-button:vertical,
-.scrollbar-custom::-webkit-scrollbar-button:horizontal,
-.scrollbar-custom::-webkit-scrollbar-button:decrement,
-.scrollbar-custom::-webkit-scrollbar-button:increment {
-    display: none !important;
-    -webkit-appearance: none !important;
-    appearance: none !important;
-    width: 0 !important;
-    height: 0 !important;
-    min-width: 0 !important;
-    min-height: 0 !important;
-}
-
 @layer base {
     html {
         scroll-behavior: smooth;
