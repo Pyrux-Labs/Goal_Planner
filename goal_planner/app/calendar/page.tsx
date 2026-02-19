@@ -1,6 +1,6 @@
 "use client";
 import { ChevronRight } from "lucide-react";
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import CalendarUI from "@/components/Calendar/CalendarUI/CalendarUI";
 import Navbar from "@/components/Layout/Navbar/Navbar";
 import SidebarModal from "@/components/ui/SidebarModal/SidebarModal";
@@ -28,34 +28,45 @@ export default function CalendarPage() {
 		new Date().getMonth(),
 	);
 
-	// Fetch 3 years (previous, current, next) centered on given year
+	// prevent concurrent fetches
+	const isFetchingRef = useRef(false);
+
+	// Fetch 3 years
 	const fetchThreeYears = useCallback(async (centerYear: number) => {
+		// prevent concurrent calls
+		if (isFetchingRef.current) return;
+		isFetchingRef.current = true;
+
 		const supabase = createClient();
 		const startYear = centerYear - 1;
 		const endYear = centerYear + 1;
 
-		const { data, error } = await supabase.rpc(
-			"get_user_events_current_month",
-			{
-				p_start: `${startYear}-01-01`,
-				p_end: `${endYear}-12-31`,
-			},
-		);
+		try {
+			const { data, error } = await supabase.rpc(
+				"get_user_events_current_month",
+				{
+					p_start: `${startYear}-01-01`,
+					p_end: `${endYear}-12-31`,
+				},
+			);
 
-		if (error) {
-			console.error("Error fetching events:", error);
-		} else {
-			setAllEvents(data || []);
-			setLoadedYearRange({ start: startYear, end: endYear });
+			if (error) {
+				console.error("Error fetching events:", error);
+			} else {
+				setAllEvents(data || []);
+				setLoadedYearRange({ start: startYear, end: endYear });
+			}
+		} finally {
+			isFetchingRef.current = false;
 		}
 	}, []);
 
-	// Initial fetch on mount
+	// Initial fetch on mount - Only runs once you fucking idiot
 	useEffect(() => {
 		fetchThreeYears(new Date().getFullYear());
 	}, [fetchThreeYears]);
 
-	// Re-fetch when user navigates outside loaded range
+	// Re-fetch when year is out of range
 	useEffect(() => {
 		if (
 			loadedYearRange &&
@@ -65,15 +76,12 @@ export default function CalendarPage() {
 		}
 	}, [currentYear, loadedYearRange, fetchThreeYears]);
 
-	// Filter events by current month (instant, no fetch needed)
 	const events = useMemo(() => {
 		const filtered = allEvents.filter((event) => {
-			// Parse date manually to avoid timezone issues
 			const [year, month] = event.date.split("-").map(Number);
 			return year === currentYear && month - 1 === currentMonth;
 		});
 
-		// Transform to CalendarEventsMap format
 		return filtered.reduce((acc: CalendarEventsMap, event) => {
 			const dateKey = event.date;
 			if (!acc[dateKey]) acc[dateKey] = [];
@@ -82,43 +90,42 @@ export default function CalendarPage() {
 		}, {});
 	}, [allEvents, currentYear, currentMonth]);
 
-	// Handler for when CalendarUI changes month
 	const handleMonthChange = useCallback((year: number, month: number) => {
 		setCurrentYear(year);
 		setCurrentMonth(month);
 	}, []);
 
-	// Sidebar handlers
-	const handleDateSelect = (date: Date) => {
+	const handleDateSelect = useCallback((date: Date) => {
 		setSidebarView({ type: "day-info", date });
-	};
+	}, []);
 
-	const openAnalytics = () => {
+	const openAnalytics = useCallback(() => {
 		setSidebarView({ type: "daily-analytics" });
-	};
+	}, []);
 
-	const openWeeklyStats = () => {
+	const openWeeklyStats = useCallback(() => {
 		setSidebarView({ type: "weekly-stats" });
-	};
+	}, []);
 
-	const handleAddHabit = () => {
+	const handleAddHabit = useCallback(() => {
 		setSidebarView({ type: "add-habit" });
-	};
+	}, []);
 
-	const handleAddTask = () => {
+	const handleAddTask = useCallback(() => {
 		setSidebarView({ type: "add-task" });
-	};
+	}, []);
 
-	const closeModal = () => {
+	const closeModal = useCallback(() => {
 		setSidebarView({ type: "closed" });
-	};
-
-	const handleSuccess = () => {
-		// Refresh events after creating task/habit
+	}, []);
+	const handleSuccess = useCallback(() => {
 		fetchThreeYears(currentYear);
 		closeModal();
-	};
-
+	}, [currentYear, fetchThreeYears, closeModal]);
+	//Implement refresh data functionality
+	const handleRefresh = useCallback(() => {
+		fetchThreeYears(currentYear);
+	}, [currentYear, fetchThreeYears]);
 	const isModalOpen = sidebarView.type !== "closed";
 
 	return (
@@ -142,6 +149,7 @@ export default function CalendarPage() {
 						view={sidebarView}
 						events={events}
 						onSuccess={handleSuccess}
+						onRefresh={handleRefresh}
 					/>
 				</SidebarModal>
 			)}

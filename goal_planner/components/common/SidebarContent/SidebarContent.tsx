@@ -8,18 +8,26 @@ interface SidebarContentProps {
 	view: SidebarView;
 	events: CalendarEventsMap;
 	onSuccess?: () => void; // To close the modal after creating
+	onRefresh?: () => void; // To refresh the data
 }
 
 export default function SidebarContent({
 	view,
 	events,
 	onSuccess,
+	onRefresh,
 }: SidebarContentProps) {
 	switch (view.type) {
 		case "day-info":
 			const dateKey = getDateKey(view.date);
 			const dayEvents = events[dateKey] || [];
-			return <CalendarInfo date={view.date} events={dayEvents} />;
+			return (
+				<CalendarInfo
+					date={view.date}
+					events={dayEvents}
+					onRefresh={onRefresh}
+				/>
+			);
 
 		case "daily-analytics":
 			return;
