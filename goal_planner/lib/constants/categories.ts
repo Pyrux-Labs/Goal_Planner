@@ -9,4 +9,4 @@ export const categories = [
     { name: "Social", icon: "./Social.svg" },
 ];
 
-export const colors = ["#D94E06", "#1F6AE1", "#2EBB57", "#C0392B", "#F0E23A"];
+export const colors = ["#D94E06", "#1F6AE1", "#2EBB57", "#8B5CF6", "#F0E23A"];
