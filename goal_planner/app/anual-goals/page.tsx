@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import Navbar from "@/components/Layout/Navbar/Navbar";
 import Top from "@/components/Layout/Top/Top";
 import GoalCard from "@/components/common/GoalCard/GoalCard";
@@ -302,6 +303,7 @@ function calculateOverallYearProgressFromGoals(goals: Goal[]): number {
 
 // ===== COMPONENT =====
 export default function AnualGoalsPage() {
+    const router = useRouter();
     const [goals, setGoals] = useState<Goal[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedFilter, setSelectedFilter] = useState<
@@ -375,8 +377,8 @@ export default function AnualGoalsPage() {
     );
 
     const handleNewGoal = useCallback(() => {
-        console.log("New Goal clicked");
-    }, []);
+        router.push("/new-goal");
+    }, [router]);
 
     // Memoize formatted goals to avoid re-formatting on every render
     const formattedGoals = useMemo(

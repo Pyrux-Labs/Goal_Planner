@@ -1,0 +1,88 @@
+"use client";
+
+import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import Navbar from "@/components/Layout/Navbar/Navbar";
+import Top from "@/components/Layout/Top/Top";
+import NewGoal, { NewGoalRef } from "@/components/common/NewGoal/NewGoal";
+import NavigationButtons from "@/components/Onboarding/NavigationButtons/NavigationButtons";
+import { createClient } from "@/lib/supabase/client";
+
+export default function NewGoalPage() {
+    const router = useRouter();
+    const newGoalRef = useRef<NewGoalRef>(null);
+    const [isSaving, setIsSaving] = useState(false);
+    const [goalId, setGoalId] = useState<number | null>(null);
+
+    const deleteGoalAndRelated = async (currentGoalId: number) => {
+        try {
+            const supabase = createClient();
+
+            // Delete goal (cascade will handle related tables if configured,
+            // otherwise we delete explicitly)
+            const { error } = await supabase
+                .from("goals")
+                .delete()
+                .eq("id", currentGoalId);
+
+            if (error) {
+                console.error("Error deleting goal:", error);
+            }
+        } catch (error) {
+            console.error("Error in cleanup:", error);
+        }
+    };
+
+    const handleNext = async () => {
+        if (goalId) {
+            // If goal already created, navigate to my goals
+            router.push("/anual-goals");
+            return;
+        }
+
+        setIsSaving(true);
+        const newGoalId = await newGoalRef.current?.saveGoal();
+        setIsSaving(false);
+
+        if (newGoalId) {
+            setGoalId(newGoalId);
+        }
+    };
+
+    const handleCancel = async () => {
+        if (goalId) {
+            await deleteGoalAndRelated(goalId);
+        }
+        router.push("/anual-goals");
+    };
+
+    return (
+        <div className="min-h-screen bg-deep-bg flex flex-col">
+            <Navbar />
+            <div className="ml-20 mr-7 p-6 pb-28">
+                <Top
+                    title={goalId ? "Add Tasks & Habits" : "Create New Goal"}
+                    buttons={[
+                        {
+                            text: "Cancel",
+                            onClick: handleCancel,
+                            variant: "secondary",
+                        },
+                    ]}
+                />
+                <div className="mt-6">
+                    <NewGoal ref={newGoalRef} />
+                </div>
+            </div>
+
+            <NavigationButtons
+                onNext={handleNext}
+                nextLabel={
+                    isSaving ? "Saving..." : goalId ? "Create Goal" : "Continue"
+                }
+                showPrevious={false}
+                containerClassName="pr-8 pl-4"
+            />
+        </div>
+    );
+}

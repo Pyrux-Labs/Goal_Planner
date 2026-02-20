@@ -8,6 +8,7 @@ interface ButtonProps {
     onClick?: () => void;
     className?: string;
     children?: ReactNode;
+    disabled?: boolean;
 }
 
 const Button = ({
@@ -17,11 +18,14 @@ const Button = ({
     onClick,
     className = "",
     children,
+    disabled = false,
 }: ButtonProps) => {
     const baseStyles =
         "px-3 py-1.5 md:px-4 md:py-2 text-sm md:text-base font-text font-normal rounded bg-vibrant-orange text-white-pearl transition";
 
-    const styles = `${baseStyles} ${className}`;
+    const disabledStyles = disabled ? "opacity-50 cursor-not-allowed" : "";
+
+    const styles = `${baseStyles} ${disabledStyles} ${className}`;
 
     const content = children ? (
         children
@@ -43,7 +47,7 @@ const Button = ({
     }
 
     return (
-        <button onClick={onClick} className={styles}>
+        <button onClick={onClick} className={styles} disabled={disabled}>
             {content}
         </button>
     );

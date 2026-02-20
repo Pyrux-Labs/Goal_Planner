@@ -266,8 +266,6 @@ const NewGoal = forwardRef<NewGoalRef, NewGoalProps>(
                         status: "active",
                     };
 
-                    console.log("Creating goal with data:", goalData);
-
                     const { data: goal, error } = await supabase
                         .from("goals")
                         .insert(goalData)
@@ -436,11 +434,8 @@ const NewGoal = forwardRef<NewGoalRef, NewGoalProps>(
                             })}
                             goalId={goalId}
                             onAdd={() => fetchTasksAndHabits(goalId)}
-                            onEdit={(index) => console.log("Edit task", index)}
-                            onDelete={(index) => {
-                                console.log("Delete task", index);
-                                fetchTasksAndHabits(goalId);
-                            }}
+                            onEdit={() => {}}
+                            onDelete={() => fetchTasksAndHabits(goalId)}
                         />
                         <TaskHabitColumn
                             type="habit"
@@ -450,11 +445,8 @@ const NewGoal = forwardRef<NewGoalRef, NewGoalProps>(
                             }))}
                             goalId={goalId}
                             onAdd={() => fetchTasksAndHabits(goalId)}
-                            onEdit={(index) => console.log("Edit habit", index)}
-                            onDelete={(index) => {
-                                console.log("Delete habit", index);
-                                fetchTasksAndHabits(goalId);
-                            }}
+                            onEdit={() => {}}
+                            onDelete={() => fetchTasksAndHabits(goalId)}
                         />
                     </div>
                 )}
