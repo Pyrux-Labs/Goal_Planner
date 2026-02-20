@@ -3,6 +3,8 @@ import CalendarInfo from "@/components/Calendar/CalendarInfo/CalendarInfo";
 import type { SidebarView } from "@/types/sidebar";
 import type { CalendarEventsMap } from "@/types/calendar";
 import { getDateKey } from "@/utils/dateUtils";
+import AddHabit from "../AddHabit/AddHabit";
+import AddTask from "../AddTask/AddTask";
 
 interface SidebarContentProps {
 	view: SidebarView;
@@ -36,10 +38,26 @@ export default function SidebarContent({
 			return;
 
 		case "add-task":
-			return;
+			return (
+				<AddTask
+					onClose={() => {
+						onSuccess?.();
+					}}
+					onCancel={() => {}}
+					showGoalSelect
+				/>
+			);
 
 		case "add-habit":
-			return;
+			return (
+				<AddHabit
+					onClose={() => {
+						onSuccess?.();
+					}}
+					onCancel={() => {}}
+					showGoalSelect
+				/>
+			);
 
 		default:
 			return null;
