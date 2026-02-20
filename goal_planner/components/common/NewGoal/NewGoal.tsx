@@ -40,14 +40,14 @@ const COLOR_MAP: Record<string, string> = {
 
 // Map UI category names to database enum values
 const CATEGORY_MAP: Record<string, string> = {
-    "Health": "health",
-    "Career": "career",
-    "Academic": "academic",
-    "Finance": "finance",
-    "Fitness": "fitness",
-    "Skill": "skill",
-    "Creative": "creative",
-    "Social": "social",
+    Health: "health",
+    Career: "career",
+    Academic: "academic",
+    Finance: "finance",
+    Fitness: "fitness",
+    Skill: "skill",
+    Creative: "creative",
+    Social: "social",
 };
 
 const DAY_MAP: { [key: string]: string } = {
@@ -98,107 +98,117 @@ const NewGoal = forwardRef<NewGoalRef, NewGoalProps>(
         const [tasks, setTasks] = useState<Task[]>([]);
         const [habits, setHabits] = useState<Habit[]>([]);
 
-        const fetchTasksAndHabits = useCallback(async (currentGoalId: number) => {
-            try {
-                const supabase = createClient();
+        const fetchTasksAndHabits = useCallback(
+            async (currentGoalId: number) => {
+                try {
+                    const supabase = createClient();
 
-                // Fetch tasks with repeat days and logs
-                const { data: tasksData } = await supabase
-                    .from("tasks")
-                    .select("id, name, start_time, start_date, end_date")
-                    .eq("goal_id", currentGoalId)
-                    .is("deleted_at", null);
+                    // Fetch tasks with repeat days and logs
+                    const { data: tasksData } = await supabase
+                        .from("tasks")
+                        .select("id, name, start_time, start_date, end_date")
+                        .eq("goal_id", currentGoalId)
+                        .is("deleted_at", null);
 
-                const taskIds = tasksData?.map((t) => t.id) || [];
+                    const taskIds = tasksData?.map((t) => t.id) || [];
 
-                const [{ data: taskRepeatDays }, { data: taskLogs }] = await Promise.all([
-                    taskIds.length > 0
-                        ? supabase
-                              .from("task_repeat_days")
-                              .select("task_id, day")
-                              .in("task_id", taskIds)
-                        : Promise.resolve({ data: [] }),
-                    taskIds.length > 0
-                        ? supabase
-                              .from("task_logs")
-                              .select("task_id, date")
-                              .in("task_id", taskIds)
-                        : Promise.resolve({ data: [] }),
-                ]);
+                    const [{ data: taskRepeatDays }, { data: taskLogs }] =
+                        await Promise.all([
+                            taskIds.length > 0
+                                ? supabase
+                                      .from("task_repeat_days")
+                                      .select("task_id, day")
+                                      .in("task_id", taskIds)
+                                : Promise.resolve({ data: [] }),
+                            taskIds.length > 0
+                                ? supabase
+                                      .from("task_logs")
+                                      .select("task_id, date")
+                                      .in("task_id", taskIds)
+                                : Promise.resolve({ data: [] }),
+                        ]);
 
-                // Build task repeat days map
-                const taskRepeatDaysMap = new Map<number, string[]>();
-                taskRepeatDays?.forEach((item: any) => {
-                    if (!taskRepeatDaysMap.has(item.task_id)) {
-                        taskRepeatDaysMap.set(item.task_id, []);
-                    }
-                    taskRepeatDaysMap.get(item.task_id)!.push(item.day);
-                });
+                    // Build task repeat days map
+                    const taskRepeatDaysMap = new Map<number, string[]>();
+                    taskRepeatDays?.forEach((item: any) => {
+                        if (!taskRepeatDaysMap.has(item.task_id)) {
+                            taskRepeatDaysMap.set(item.task_id, []);
+                        }
+                        taskRepeatDaysMap.get(item.task_id)!.push(item.day);
+                    });
 
-                // Build task logs map
-                const taskLogsMap = new Map<number, any[]>();
-                taskLogs?.forEach((log: any) => {
-                    if (!taskLogsMap.has(log.task_id)) {
-                        taskLogsMap.set(log.task_id, []);
-                    }
-                    taskLogsMap.get(log.task_id)!.push(log);
-                });
+                    // Build task logs map
+                    const taskLogsMap = new Map<number, any[]>();
+                    taskLogs?.forEach((log: any) => {
+                        if (!taskLogsMap.has(log.task_id)) {
+                            taskLogsMap.set(log.task_id, []);
+                        }
+                        taskLogsMap.get(log.task_id)!.push(log);
+                    });
 
-                const formattedTasks: Task[] = (tasksData || []).map((task) => {
-                    const repeatDays = taskRepeatDaysMap.get(task.id) || [];
-                    let logDate = null;
-                    if (!task.start_date && !task.end_date) {
-                        const logs = taskLogsMap.get(task.id) || [];
-                        logDate = logs.length > 0 ? logs[0].date : null;
-                    }
-                    return {
-                        id: task.id,
-                        name: task.name,
-                        start_time: task.start_time,
-                        start_date: task.start_date,
-                        end_date: task.end_date,
-                        repeat_days: repeatDays,
-                        log_date: logDate,
-                    };
-                });
+                    const formattedTasks: Task[] = (tasksData || []).map(
+                        (task) => {
+                            const repeatDays =
+                                taskRepeatDaysMap.get(task.id) || [];
+                            let logDate = null;
+                            if (!task.start_date && !task.end_date) {
+                                const logs = taskLogsMap.get(task.id) || [];
+                                logDate = logs.length > 0 ? logs[0].date : null;
+                            }
+                            return {
+                                id: task.id,
+                                name: task.name,
+                                start_time: task.start_time,
+                                start_date: task.start_date,
+                                end_date: task.end_date,
+                                repeat_days: repeatDays,
+                                log_date: logDate,
+                            };
+                        },
+                    );
 
-                // Fetch habits with repeat days
-                const { data: habitsData } = await supabase
-                    .from("habits")
-                    .select("id, name")
-                    .eq("goal_id", currentGoalId)
-                    .is("deleted_at", null);
+                    // Fetch habits with repeat days
+                    const { data: habitsData } = await supabase
+                        .from("habits")
+                        .select("id, name")
+                        .eq("goal_id", currentGoalId)
+                        .is("deleted_at", null);
 
-                const habitIds = habitsData?.map((h) => h.id) || [];
+                    const habitIds = habitsData?.map((h) => h.id) || [];
 
-                const { data: habitRepeatDays } = habitIds.length > 0
-                    ? await supabase
-                          .from("habit_repeat_days")
-                          .select("habit_id, day")
-                          .in("habit_id", habitIds)
-                    : { data: [] };
+                    const { data: habitRepeatDays } =
+                        habitIds.length > 0
+                            ? await supabase
+                                  .from("habit_repeat_days")
+                                  .select("habit_id, day")
+                                  .in("habit_id", habitIds)
+                            : { data: [] };
 
-                // Build habit repeat days map
-                const habitRepeatDaysMap = new Map<number, string[]>();
-                habitRepeatDays?.forEach((item: any) => {
-                    if (!habitRepeatDaysMap.has(item.habit_id)) {
-                        habitRepeatDaysMap.set(item.habit_id, []);
-                    }
-                    habitRepeatDaysMap.get(item.habit_id)!.push(item.day);
-                });
+                    // Build habit repeat days map
+                    const habitRepeatDaysMap = new Map<number, string[]>();
+                    habitRepeatDays?.forEach((item: any) => {
+                        if (!habitRepeatDaysMap.has(item.habit_id)) {
+                            habitRepeatDaysMap.set(item.habit_id, []);
+                        }
+                        habitRepeatDaysMap.get(item.habit_id)!.push(item.day);
+                    });
 
-                const formattedHabits: Habit[] = (habitsData || []).map((habit) => ({
-                    id: habit.id,
-                    name: habit.name,
-                    repeat_days: habitRepeatDaysMap.get(habit.id) || [],
-                }));
+                    const formattedHabits: Habit[] = (habitsData || []).map(
+                        (habit) => ({
+                            id: habit.id,
+                            name: habit.name,
+                            repeat_days: habitRepeatDaysMap.get(habit.id) || [],
+                        }),
+                    );
 
-                setTasks(formattedTasks);
-                setHabits(formattedHabits);
-            } catch (error) {
-                console.error("Error fetching tasks and habits:", error);
-            }
-        }, []);
+                    setTasks(formattedTasks);
+                    setHabits(formattedHabits);
+                } catch (error) {
+                    console.error("Error fetching tasks and habits:", error);
+                }
+            },
+            [],
+        );
 
         useImperativeHandle(ref, () => ({
             saveGoal: async () => {
@@ -287,7 +297,9 @@ const NewGoal = forwardRef<NewGoalRef, NewGoalProps>(
                     console.error("Error message:", error?.message);
                     console.error("Error details:", error?.details);
                     console.error("Error hint:", error?.hint);
-                    alert(`Failed to create goal: ${error?.message || "Unknown error"}`);
+                    alert(
+                        `Failed to create goal: ${error?.message || "Unknown error"}`,
+                    );
                     return null;
                 } finally {
                     setIsSaving(false);
@@ -407,7 +419,11 @@ const NewGoal = forwardRef<NewGoalRef, NewGoalProps>(
                             type="task"
                             items={tasks.map((task) => {
                                 let days: string | undefined;
-                                if (!task.start_date && !task.end_date && task.log_date) {
+                                if (
+                                    !task.start_date &&
+                                    !task.end_date &&
+                                    task.log_date
+                                ) {
                                     days = formatDate(task.log_date);
                                 } else if (task.repeat_days.length > 0) {
                                     days = formatRepeatDays(task.repeat_days);
@@ -446,9 +462,7 @@ const NewGoal = forwardRef<NewGoalRef, NewGoalProps>(
                 {/* Message when goal is not created yet */}
                 {!goalId && (
                     <div className="text-center py-8 text-input-text">
-                        <p className="text-lg">
-                            Click "Save Goal" to continue
-                        </p>
+                        <p className="text-lg">Click "Save Goal" to continue</p>
                     </div>
                 )}
             </div>

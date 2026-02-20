@@ -139,18 +139,22 @@ export default function OnboardingPage() {
             const goalIds = goalsData.map((g: any) => g.id);
 
             // Fetch tasks and habits
-            const [{ data: allTasks }, { data: allHabits }] = await Promise.all([
-                supabase
-                    .from("tasks")
-                    .select("id, goal_id, name, start_time, start_date, end_date")
-                    .in("goal_id", goalIds)
-                    .is("deleted_at", null),
-                supabase
-                    .from("habits")
-                    .select("id, goal_id, name")
-                    .in("goal_id", goalIds)
-                    .is("deleted_at", null),
-            ]);
+            const [{ data: allTasks }, { data: allHabits }] = await Promise.all(
+                [
+                    supabase
+                        .from("tasks")
+                        .select(
+                            "id, goal_id, name, start_time, start_date, end_date",
+                        )
+                        .in("goal_id", goalIds)
+                        .is("deleted_at", null),
+                    supabase
+                        .from("habits")
+                        .select("id, goal_id, name")
+                        .in("goal_id", goalIds)
+                        .is("deleted_at", null),
+                ],
+            );
 
             const taskIds = allTasks?.map((t: any) => t.id) || [];
             const habitIds = allHabits?.map((h: any) => h.id) || [];
@@ -274,17 +278,23 @@ export default function OnboardingPage() {
                 tasks.forEach((task) => {
                     const logs = taskLogsMap.get(task.id) || [];
                     totalLogs += logs.length;
-                    completedLogs += logs.filter((log: any) => log.completed).length;
+                    completedLogs += logs.filter(
+                        (log: any) => log.completed,
+                    ).length;
                 });
 
                 habits.forEach((habit) => {
                     const logs = habitLogsMap.get(habit.id) || [];
                     totalLogs += logs.length;
-                    completedLogs += logs.filter((log: any) => log.completed).length;
+                    completedLogs += logs.filter(
+                        (log: any) => log.completed,
+                    ).length;
                 });
 
                 const progress =
-                    totalLogs > 0 ? Math.round((completedLogs / totalLogs) * 100) : 0;
+                    totalLogs > 0
+                        ? Math.round((completedLogs / totalLogs) * 100)
+                        : 0;
 
                 return {
                     id: goal.id,
@@ -394,7 +404,11 @@ export default function OnboardingPage() {
                     <>
                         <main className="pt-4 pb-28 overflow-y-auto mx-28">
                             <StepHeader
-                                title={currentGoalId ? "Add Tasks & Habits" : "Define Your First Goal"}
+                                title={
+                                    currentGoalId
+                                        ? "Add Tasks & Habits"
+                                        : "Define Your First Goal"
+                                }
                                 description={
                                     currentGoalId
                                         ? "Organize your goal with tasks and daily habits. You can add more later!"
@@ -406,7 +420,9 @@ export default function OnboardingPage() {
                         <NavigationButtons
                             onPrevious={handlePrevious}
                             onNext={handleNext}
-                            nextLabel={currentGoalId ? "Finish Setup" : "Save Goal"}
+                            nextLabel={
+                                currentGoalId ? "Finish Setup" : "Save Goal"
+                            }
                         />
                     </>
                 )}
@@ -434,25 +450,43 @@ export default function OnboardingPage() {
                             ) : (
                                 goals.map((goal) => {
                                     // Format tasks for GoalCard
-                                    const formattedTasks = goal.tasks.map((task) => {
-                                        let days: string | undefined;
-                                        if (!task.start_date && !task.end_date && task.log_date) {
-                                            days = formatDateShort(task.log_date);
-                                        } else if (task.repeat_days.length > 0) {
-                                            days = formatRepeatDays(task.repeat_days);
-                                        }
-                                        return {
-                                            title: task.name,
-                                            days,
-                                            time: formatTime(task.start_time),
-                                        };
-                                    });
+                                    const formattedTasks = goal.tasks.map(
+                                        (task) => {
+                                            let days: string | undefined;
+                                            if (
+                                                !task.start_date &&
+                                                !task.end_date &&
+                                                task.log_date
+                                            ) {
+                                                days = formatDateShort(
+                                                    task.log_date,
+                                                );
+                                            } else if (
+                                                task.repeat_days.length > 0
+                                            ) {
+                                                days = formatRepeatDays(
+                                                    task.repeat_days,
+                                                );
+                                            }
+                                            return {
+                                                title: task.name,
+                                                days,
+                                                time: formatTime(
+                                                    task.start_time,
+                                                ),
+                                            };
+                                        },
+                                    );
 
                                     // Format habits for GoalCard
-                                    const formattedHabits = goal.habits.map((habit) => ({
-                                        title: habit.name,
-                                        days: formatRepeatDays(habit.repeat_days),
-                                    }));
+                                    const formattedHabits = goal.habits.map(
+                                        (habit) => ({
+                                            title: habit.name,
+                                            days: formatRepeatDays(
+                                                habit.repeat_days,
+                                            ),
+                                        }),
+                                    );
 
                                     return (
                                         <GoalCard
@@ -460,7 +494,8 @@ export default function OnboardingPage() {
                                             goalId={goal.id}
                                             title={goal.name}
                                             description={
-                                                goal.description || goal.category
+                                                goal.description ||
+                                                goal.category
                                             }
                                             progress={goal.progress}
                                             targetDate={formatDate(
@@ -502,7 +537,9 @@ export default function OnboardingPage() {
                                                 console.log(`Edit ${goal.name}`)
                                             }
                                             onDelete={() =>
-                                                console.log(`Delete ${goal.name}`)
+                                                console.log(
+                                                    `Delete ${goal.name}`,
+                                                )
                                             }
                                         />
                                     );
