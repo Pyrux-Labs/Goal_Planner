@@ -59,6 +59,26 @@ export default function SidebarContent({
 				/>
 			);
 
+		case "edit-task":
+			// TODO: Implement EditTask component
+			return (
+				<div className="p-4">
+					<h3 className="text-lg font-semibold mb-2">Edit Task</h3>
+					<p>Task ID: {view.taskId}</p>
+					<p>EditTask component to be implemented</p>
+				</div>
+			);
+
+		case "edit-habit":
+			// TODO: Implement EditHabit component
+			return (
+				<div className="p-4">
+					<h3 className="text-lg font-semibold mb-2">Edit Habit</h3>
+					<p>Habit ID: {view.habitId}</p>
+					<p>EditHabit component to be implemented</p>
+				</div>
+			);
+
 		default:
 			return null;
 	}
@@ -77,6 +97,10 @@ export function getSidebarTitle(view: SidebarView): string {
 			return "New Task";
 		case "add-habit":
 			return "New Habit";
+		case "edit-task":
+			return "Edit Task";
+		case "edit-habit":
+			return "Edit Habit";
 		default:
 			return "";
 	}
