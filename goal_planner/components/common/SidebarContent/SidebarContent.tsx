@@ -1,6 +1,6 @@
 // components/Calendar/SidebarContent/SidebarContent.tsx
 import CalendarInfo from "@/components/Calendar/CalendarInfo/CalendarInfo";
-import type { SidebarView } from "@/types/sidebar";
+import type { SidebarView, TaskEditData, HabitEditData } from "@/types/sidebar";
 import type { CalendarEventsMap } from "@/types/calendar";
 import { getDateKey } from "@/utils/dateUtils";
 import AddHabit from "../AddHabit/AddHabit";
@@ -9,15 +9,21 @@ import AddTask from "../AddTask/AddTask";
 interface SidebarContentProps {
 	view: SidebarView;
 	events: CalendarEventsMap;
+	goals?: { id: number; name: string }[];
 	onSuccess?: () => void; // To close the modal after creating
 	onRefresh?: () => void; // To refresh the data
+	onEditTask?: (data: TaskEditData) => void;
+	onEditHabit?: (data: HabitEditData) => void;
 }
 
 export default function SidebarContent({
 	view,
 	events,
+	goals,
 	onSuccess,
 	onRefresh,
+	onEditTask,
+	onEditHabit,
 }: SidebarContentProps) {
 	switch (view.type) {
 		case "day-info":
@@ -28,6 +34,8 @@ export default function SidebarContent({
 					date={view.date}
 					events={dayEvents}
 					onRefresh={onRefresh}
+					onEditTask={onEditTask}
+					onEditHabit={onEditHabit}
 				/>
 			);
 
@@ -45,6 +53,7 @@ export default function SidebarContent({
 					}}
 					onCancel={() => {}}
 					showGoalSelect
+					goals={goals}
 				/>
 			);
 
@@ -56,6 +65,31 @@ export default function SidebarContent({
 					}}
 					onCancel={() => {}}
 					showGoalSelect
+					goals={goals}
+				/>
+			);
+
+		case "edit-task":
+			return (
+				<AddTask
+					editData={view.data}
+					onClose={() => {
+						onSuccess?.();
+					}}
+					onCancel={() => {}}
+					goals={goals}
+				/>
+			);
+
+		case "edit-habit":
+			return (
+				<AddHabit
+					editData={view.data}
+					onClose={() => {
+						onSuccess?.();
+					}}
+					onCancel={() => {}}
+					goals={goals}
 				/>
 			);
 
@@ -77,6 +111,10 @@ export function getSidebarTitle(view: SidebarView): string {
 			return "New Task";
 		case "add-habit":
 			return "New Habit";
+		case "edit-task":
+			return "Edit Task";
+		case "edit-habit":
+			return "Edit Habit";
 		default:
 			return "";
 	}

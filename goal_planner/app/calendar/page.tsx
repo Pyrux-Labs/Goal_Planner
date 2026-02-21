@@ -10,13 +10,14 @@ import SidebarContent, {
 } from "@/components/common/SidebarContent/SidebarContent";
 import { createClient } from "@/lib/supabase/client";
 import type { CalendarEventsMap, CalendarEvent } from "@/types/calendar";
-import type { SidebarView } from "@/types/sidebar";
+import type { SidebarView, TaskEditData, HabitEditData } from "@/types/sidebar";
 
 export default function CalendarPage() {
 	const [sidebarView, setSidebarView] = useState<SidebarView>({
 		type: "closed",
 	});
 	const [allEvents, setAllEvents] = useState<CalendarEvent[]>([]);
+	const [goals, setGoals] = useState<{ id: number; name: string }[]>([]);
 	const [loadedYearRange, setLoadedYearRange] = useState<{
 		start: number;
 		end: number;
@@ -31,7 +32,8 @@ export default function CalendarPage() {
 	// prevent concurrent fetches
 	const isFetchingRef = useRef(false);
 
-	// Fetch 3 years
+	// Fetch 3 years (previous, current, next)
+	// ~5MB payload is acceptable for instant navigation and edit optimization
 	const fetchThreeYears = useCallback(async (centerYear: number) => {
 		// prevent concurrent calls
 		if (isFetchingRef.current) return;
@@ -61,10 +63,29 @@ export default function CalendarPage() {
 		}
 	}, []);
 
-	// Initial fetch on mount - Only runs once you fucking idiot
+	// Fetch goals once on mount
+	const fetchGoals = useCallback(async () => {
+		const supabase = createClient();
+		const {
+			data: { user },
+		} = await supabase.auth.getUser();
+		if (!user) return;
+
+		const { data } = await supabase
+			.from("goals")
+			.select("id, name")
+			.eq("user_id", user.id)
+			.is("deleted_at", null)
+			.order("name");
+
+		if (data) setGoals(data);
+	}, []);
+
+	// Initial fetch on mount
 	useEffect(() => {
 		fetchThreeYears(new Date().getFullYear());
-	}, [fetchThreeYears]);
+		fetchGoals();
+	}, [fetchThreeYears, fetchGoals]);
 
 	// Re-fetch when year is out of range
 	useEffect(() => {
@@ -118,6 +139,15 @@ export default function CalendarPage() {
 	const closeModal = useCallback(() => {
 		setSidebarView({ type: "closed" });
 	}, []);
+
+	const handleEditTask = useCallback((data: TaskEditData) => {
+		setSidebarView({ type: "edit-task", data });
+	}, []);
+
+	const handleEditHabit = useCallback((data: HabitEditData) => {
+		setSidebarView({ type: "edit-habit", data });
+	}, []);
+
 	const handleSuccess = useCallback(() => {
 		fetchThreeYears(currentYear);
 		closeModal();
@@ -148,8 +178,11 @@ export default function CalendarPage() {
 					<SidebarContent
 						view={sidebarView}
 						events={events}
+						goals={goals}
 						onSuccess={handleSuccess}
 						onRefresh={handleRefresh}
+						onEditTask={handleEditTask}
+						onEditHabit={handleEditHabit}
 					/>
 				</SidebarModal>
 			)}

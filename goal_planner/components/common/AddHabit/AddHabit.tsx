@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import InputField from "@/components/ui/InputField/InputField";
+import type { HabitEditData } from "@/types/sidebar";
 
 interface AddHabitProps {
 	goalId?: number;
@@ -9,6 +10,8 @@ interface AddHabitProps {
 	onCancel: () => void;
 	showGoalSelect?: boolean;
 	inline?: boolean;
+	editData?: HabitEditData;
+	goals?: { id: number; name: string }[];
 }
 
 interface Goal {
@@ -32,22 +35,22 @@ const AddHabit = ({
 	onCancel,
 	showGoalSelect = false,
 	inline = false,
+	editData,
+	goals: preloadedGoals,
 }: AddHabitProps) => {
-	const [goals, setGoals] = useState<Goal[]>([]);
-	const [selectedGoalId, setSelectedGoalId] = useState<number | null>(
-		goalId || null,
-	);
-	const [habitName, setHabitName] = useState("");
-	const [selectedDays, setSelectedDays] = useState<string[]>([]);
-	const [startDate, setStartDate] = useState("");
-	const [endDate, setEndDate] = useState("");
-	const [isSubmitting, setIsSubmitting] = useState(false);
+	const isEditMode = !!editData;
 
-	useEffect(() => {
-		if (showGoalSelect) {
-			fetchGoals();
-		}
-	}, [showGoalSelect]);
+	const [goals, setGoals] = useState<Goal[]>(preloadedGoals || []);
+	const [selectedGoalId, setSelectedGoalId] = useState<number | null>(
+		editData?.goal_id ?? goalId ?? null,
+	);
+	const [habitName, setHabitName] = useState(editData?.name ?? "");
+	const [selectedDays, setSelectedDays] = useState<string[]>(
+		editData?.repeat_days ?? [],
+	);
+	const [startDate, setStartDate] = useState(editData?.start_date ?? "");
+	const [endDate, setEndDate] = useState(editData?.end_date ?? "");
+	const [isSubmitting, setIsSubmitting] = useState(false);
 
 	const fetchGoals = useCallback(async () => {
 		const supabase = createClient();
@@ -66,6 +69,13 @@ const AddHabit = ({
 
 		if (data) setGoals(data);
 	}, []);
+
+	useEffect(() => {
+		// Only fetch goals if not preloaded and showGoalSelect is true
+		if (showGoalSelect && !preloadedGoals) {
+			fetchGoals();
+		}
+	}, [showGoalSelect, preloadedGoals, fetchGoals]);
 
 	const toggleDay = useCallback((dayId: string) => {
 		setSelectedDays((prev) =>
@@ -93,48 +103,36 @@ const AddHabit = ({
 
 		try {
 			const supabase = createClient();
-			const {
-				data: { user },
-			} = await supabase.auth.getUser();
 
-			if (!user) {
-				alert("Please login to add habits");
-				return;
+			if (isEditMode && editData) {
+				// Update existing habit using RPC function
+				const { error } = await supabase.rpc("update_habit_with_repeat_days", {
+					p_habit_id: editData.id,
+					p_goal_id: selectedGoalId,
+					p_name: habitName,
+					p_start_date: startDate,
+					p_end_date: endDate,
+					p_repeat_days: selectedDays,
+				});
+
+				if (error) throw error;
+			} else {
+				// Create new habit using RPC function
+				const { error } = await supabase.rpc("create_habit_with_repeat_days", {
+					p_goal_id: selectedGoalId,
+					p_name: habitName,
+					p_start_date: startDate,
+					p_end_date: endDate,
+					p_repeat_days: selectedDays,
+				});
+
+				if (error) throw error;
 			}
-
-			// Create habit
-			const habitData: any = {
-				user_id: user.id,
-				goal_id: selectedGoalId,
-				name: habitName,
-				start_date: startDate,
-				end_date: endDate,
-			};
-
-			const { data: habit, error: habitError } = await supabase
-				.from("habits")
-				.insert(habitData)
-				.select()
-				.single();
-
-			if (habitError) throw habitError;
-
-			// Create habit repeat days
-			const repeatDaysData = selectedDays.map((day) => ({
-				habit_id: habit.id,
-				day: day,
-			}));
-
-			const { error: repeatError } = await supabase
-				.from("habit_repeat_days")
-				.insert(repeatDaysData);
-
-			if (repeatError) throw repeatError;
 
 			onClose();
 		} catch (error) {
-			console.error("Error adding habit:", error);
-			alert("Failed to add habit");
+			console.error("Error saving habit:", error);
+			alert("Failed to save habit");
 		} finally {
 			setIsSubmitting(false);
 		}
@@ -149,7 +147,7 @@ const AddHabit = ({
 			}>
 			{inline && (
 				<h2 className="text-white-pearl font-title text-2xl font-semibold mb-4">
-					Add Habit
+					{isEditMode ? "Edit Habit" : "Add Habit"}
 				</h2>
 			)}
 
@@ -247,7 +245,13 @@ const AddHabit = ({
 								: "w-full h-10 rounded-xl bg-vibrant-orange text-white-pearl font-medium hover:bg-vibrant-orange/90 transition disabled:opacity-50 disabled:cursor-not-allowed "
 						}
 						disabled={isSubmitting}>
-						{isSubmitting ? "Adding..." : "Add Habit"}
+						{isSubmitting
+							? isEditMode
+								? "Updating..."
+								: "Adding..."
+							: isEditMode
+								? "Update Habit"
+								: "Add Habit"}
 					</button>
 				</div>
 			</div>
