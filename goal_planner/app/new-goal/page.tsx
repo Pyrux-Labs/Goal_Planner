@@ -4,13 +4,13 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Layout/Navbar/Navbar";
 import Top from "@/components/Layout/Top/Top";
-import NewGoal, { NewGoalRef } from "@/components/common/NewGoal/NewGoal";
+import GoalForm, { GoalFormRef } from "@/components/common/GoalForm/GoalForm";
 import NavigationButtons from "@/components/Onboarding/NavigationButtons/NavigationButtons";
 import { createClient } from "@/lib/supabase/client";
 
 export default function NewGoalPage() {
     const router = useRouter();
-    const newGoalRef = useRef<NewGoalRef>(null);
+    const goalFormRef = useRef<GoalFormRef>(null);
     const [isSaving, setIsSaving] = useState(false);
     const [goalId, setGoalId] = useState<number | null>(null);
 
@@ -41,7 +41,7 @@ export default function NewGoalPage() {
         }
 
         setIsSaving(true);
-        const newGoalId = await newGoalRef.current?.saveGoal();
+        const newGoalId = await goalFormRef.current?.saveGoal();
         setIsSaving(false);
 
         if (newGoalId) {
@@ -71,7 +71,7 @@ export default function NewGoalPage() {
                     ]}
                 />
                 <div className="mt-6">
-                    <NewGoal ref={newGoalRef} />
+                    <GoalForm ref={goalFormRef} />
                 </div>
             </div>
 

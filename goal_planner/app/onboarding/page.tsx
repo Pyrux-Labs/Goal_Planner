@@ -9,7 +9,7 @@ import { TfiArrowRight } from "react-icons/tfi";
 import ProgressBar from "@/components/Onboarding/ProgressBar/ProgressBar";
 import StepHeader from "@/components/Onboarding/StepHeader/StepHeader";
 import NavigationButtons from "@/components/Onboarding/NavigationButtons/NavigationButtons";
-import NewGoal, { NewGoalRef } from "@/components/common/NewGoal/NewGoal";
+import GoalForm, { GoalFormRef } from "@/components/common/GoalForm/GoalForm";
 import Button from "@/components/ui/Button/Button";
 import CalendarImg from "../../public/CalendarScreenshot.png";
 import GoalCard from "@/components/common/GoalCard/GoalCard";
@@ -84,7 +84,7 @@ export default function OnboardingPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const currentStep = parseInt(searchParams.get("step") || "1", 10);
-    const newGoalRef = useRef<NewGoalRef>(null);
+    const goalFormRef = useRef<GoalFormRef>(null);
 
     const [goals, setGoals] = useState<Goal[]>([]);
     const [isLoadingGoals, setIsLoadingGoals] = useState(false);
@@ -94,7 +94,7 @@ export default function OnboardingPage() {
         if (currentStep === 2) {
             // If goal not created yet, save it and stay on step 2
             if (!currentGoalId) {
-                const goalId = await newGoalRef.current?.saveGoal();
+                const goalId = await goalFormRef.current?.saveGoal();
                 if (!goalId) {
                     return; // Don't proceed if goal creation failed
                 }
@@ -415,7 +415,7 @@ export default function OnboardingPage() {
                                         : "Break down your ambition into actionable daily or weekly tasks."
                                 }
                             />
-                            <NewGoal ref={newGoalRef} />
+                            <GoalForm ref={goalFormRef} />
                         </main>
                         <NavigationButtons
                             onPrevious={handlePrevious}
@@ -534,7 +534,9 @@ export default function OnboardingPage() {
                                                 fetchGoals();
                                             }}
                                             onEdit={() =>
-                                                console.log(`Edit ${goal.name}`)
+                                                router.push(
+                                                    `/edit-goal?id=${goal.id}`,
+                                                )
                                             }
                                             onDelete={() =>
                                                 console.log(

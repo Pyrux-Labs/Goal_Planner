@@ -522,7 +522,9 @@ export default function AnualGoalsPage() {
                                         `Delete habit ${habitIndex} from ${goal.name}`,
                                     )
                                 }
-                                onEdit={() => console.log(`Edit ${goal.name}`)}
+                                onEdit={() =>
+                                    router.push(`/edit-goal?id=${goal.id}`)
+                                }
                                 onDelete={() =>
                                     console.log(`Delete ${goal.name}`)
                                 }
