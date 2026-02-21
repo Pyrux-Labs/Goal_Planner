@@ -17,6 +17,7 @@
 - [x] Crear nueva meta (componentes implementados)
 - [x] **Editar meta** - Implementar funcionalidad completa de edición
 - [ ] **Eliminar meta** - Implementar confirmación y eliminación
+- [x] Visualización de metas en anual-goals page
 
 ### 📅 Funcionalidad del Calendario
 

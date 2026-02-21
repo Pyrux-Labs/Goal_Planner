@@ -4,7 +4,9 @@ import { useRouter } from "next/navigation";
 import Navbar from "@/components/Layout/Navbar/Navbar";
 import Top from "@/components/Layout/Top/Top";
 import GoalCard from "@/components/common/GoalCard/GoalCard";
+import ConfirmModal from "@/components/ui/ConfirmModal/ConfirmModal";
 import { createClient } from "@/lib/supabase/client";
+import { deleteGoalWithRelatedData } from "@/utils/deleteGoal";
 
 // ===== TYPE DEFINITIONS =====
 interface Task {
@@ -310,6 +312,12 @@ export default function AnualGoalsPage() {
         "all" | "active" | "completed"
     >("all");
     const [overallProgress, setOverallProgress] = useState(0);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [goalToDelete, setGoalToDelete] = useState<{
+        id: number;
+        name: string;
+    } | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     useEffect(() => {
         fetchGoalsData();
@@ -345,6 +353,33 @@ export default function AnualGoalsPage() {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleDeleteClick = (goalId: number, goalName: string) => {
+        setGoalToDelete({ id: goalId, name: goalName });
+        setIsDeleteModalOpen(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!goalToDelete) return;
+
+        setIsDeleting(true);
+        const result = await deleteGoalWithRelatedData(goalToDelete.id);
+        setIsDeleting(false);
+
+        if (result.success) {
+            // Close modal and refresh goals
+            setIsDeleteModalOpen(false);
+            setGoalToDelete(null);
+            await fetchGoalsData();
+        } else {
+            alert(`Failed to delete goal: ${result.error}`);
+        }
+    };
+
+    const handleCancelDelete = () => {
+        setIsDeleteModalOpen(false);
+        setGoalToDelete(null);
     };
 
     // ===== FILTERS AND STATS (MEMOIZED) =====
@@ -526,13 +561,35 @@ export default function AnualGoalsPage() {
                                     router.push(`/edit-goal?id=${goal.id}`)
                                 }
                                 onDelete={() =>
-                                    console.log(`Delete ${goal.name}`)
+                                    handleDeleteClick(goal.id, goal.name)
                                 }
                             />
                         ))
                     )}
                 </div>
             </div>
+
+            {/* Confirm Delete Modal */}
+            <ConfirmModal
+                isOpen={isDeleteModalOpen}
+                title="Delete Goal?"
+                message={
+                    <>
+                        Are you sure you want to delete{" "}
+                        <strong className="text-white-pearl">
+                            {goalToDelete?.name}
+                        </strong>
+                        ? This will permanently delete the goal and all
+                        associated tasks, habits, and their logs. This action
+                        cannot be undone.
+                    </>
+                }
+                confirmText="Delete"
+                cancelText="Cancel"
+                onConfirm={handleConfirmDelete}
+                onCancel={handleCancelDelete}
+                isLoading={isDeleting}
+            />
         </div>
     );
 }

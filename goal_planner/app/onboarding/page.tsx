@@ -13,7 +13,9 @@ import GoalForm, { GoalFormRef } from "@/components/common/GoalForm/GoalForm";
 import Button from "@/components/ui/Button/Button";
 import CalendarImg from "../../public/CalendarScreenshot.png";
 import GoalCard from "@/components/common/GoalCard/GoalCard";
+import ConfirmModal from "@/components/ui/ConfirmModal/ConfirmModal";
 import { createClient } from "@/lib/supabase/client";
+import { deleteGoalWithRelatedData } from "@/utils/deleteGoal";
 
 interface Task {
     id: number;
@@ -89,6 +91,12 @@ export default function OnboardingPage() {
     const [goals, setGoals] = useState<Goal[]>([]);
     const [isLoadingGoals, setIsLoadingGoals] = useState(false);
     const [currentGoalId, setCurrentGoalId] = useState<number | null>(null);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [goalToDelete, setGoalToDelete] = useState<{
+        id: number;
+        name: string;
+    } | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const handleNext = async () => {
         if (currentStep === 2) {
@@ -319,6 +327,33 @@ export default function OnboardingPage() {
         }
     };
 
+    const handleDeleteClick = (goalId: number, goalName: string) => {
+        setGoalToDelete({ id: goalId, name: goalName });
+        setIsDeleteModalOpen(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!goalToDelete) return;
+
+        setIsDeleting(true);
+        const result = await deleteGoalWithRelatedData(goalToDelete.id);
+        setIsDeleting(false);
+
+        if (result.success) {
+            // Close modal and refresh goals
+            setIsDeleteModalOpen(false);
+            setGoalToDelete(null);
+            await fetchGoals();
+        } else {
+            alert(`Failed to delete goal: ${result.error}`);
+        }
+    };
+
+    const handleCancelDelete = () => {
+        setIsDeleteModalOpen(false);
+        setGoalToDelete(null);
+    };
+
     useEffect(() => {
         if (currentStep === 3) {
             fetchGoals();
@@ -539,8 +574,9 @@ export default function OnboardingPage() {
                                                 )
                                             }
                                             onDelete={() =>
-                                                console.log(
-                                                    `Delete ${goal.name}`,
+                                                handleDeleteClick(
+                                                    goal.id,
+                                                    goal.name,
                                                 )
                                             }
                                         />
@@ -556,6 +592,28 @@ export default function OnboardingPage() {
                     </>
                 )}
             </div>
+
+            {/* Confirm Delete Modal */}
+            <ConfirmModal
+                isOpen={isDeleteModalOpen}
+                title="Delete Goal?"
+                message={
+                    <>
+                        Are you sure you want to delete{" "}
+                        <strong className="text-white-pearl">
+                            {goalToDelete?.name}
+                        </strong>
+                        ? This will permanently delete the goal and all
+                        associated tasks, habits, and their logs. This action
+                        cannot be undone.
+                    </>
+                }
+                confirmText="Delete"
+                cancelText="Cancel"
+                onConfirm={handleConfirmDelete}
+                onCancel={handleCancelDelete}
+                isLoading={isDeleting}
+            />
         </Suspense>
     );
 }
