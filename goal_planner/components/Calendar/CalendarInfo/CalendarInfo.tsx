@@ -1,14 +1,24 @@
 import type { CalendarEvent } from "@/types/calendar";
+import type { TaskEditData, HabitEditData } from "@/types/sidebar";
 import { createClient } from "@/lib/supabase/client";
 import { useState } from "react";
+import { Pencil } from "lucide-react";
 
 interface CalendarInfoProps {
 	date: Date;
 	events: CalendarEvent[];
 	onRefresh?: () => void;
+	onEditTask?: (data: TaskEditData) => void;
+	onEditHabit?: (data: HabitEditData) => void;
 }
 
-const CalendarInfo = ({ date, events, onRefresh }: CalendarInfoProps) => {
+const CalendarInfo = ({
+	date,
+	events,
+	onRefresh,
+	onEditTask,
+	onEditHabit,
+}: CalendarInfoProps) => {
 	const [updatingIds, setUpdatingIds] = useState<Set<number>>(new Set());
 	const dateStr = date.toLocaleDateString();
 
@@ -30,6 +40,46 @@ const CalendarInfo = ({ date, events, onRefresh }: CalendarInfoProps) => {
 			return 0;
 		});
 	};
+
+	const handleEditTask = (event: CalendarEvent) => {
+		if (!onEditTask) return;
+
+		// Transform CalendarEvent directly to TaskEditData - no fetch needed!
+		const isRepeating = (event.repeat_days?.length ?? 0) > 0;
+
+		const editData: TaskEditData = {
+			id: event.task_id!, // Use task_id for editing
+			goal_id: event.goal_id ?? null,
+			name: event.title,
+			start_date: event.start_date ?? null,
+			end_date: event.end_date ?? null,
+			start_time: event.start_time ?? null,
+			end_time: event.end_time ?? null,
+			repeat_days: event.repeat_days ?? [],
+			is_repeating: isRepeating,
+			edit_date: event.date,
+			log_id: event.log_id,
+		};
+
+		onEditTask(editData);
+	};
+
+	const handleEditHabit = (event: CalendarEvent) => {
+		if (!onEditHabit) return;
+
+		// Transform CalendarEvent directly to HabitEditData - no fetch needed!
+		const editData: HabitEditData = {
+			id: event.habit_id!, // Use habit_id for editing
+			goal_id: event.goal_id ?? null,
+			name: event.title,
+			start_date: event.start_date ?? "",
+			end_date: event.end_date ?? "",
+			repeat_days: event.repeat_days ?? [],
+		};
+
+		onEditHabit(editData);
+	};
+
 	const handleToggle = async (event: CalendarEvent) => {
 		if (updatingIds.has(event.id)) return; // Prevent multiple clicks
 		setUpdatingIds((prev) => new Set(prev).add(event.id));
@@ -74,6 +124,7 @@ const CalendarInfo = ({ date, events, onRefresh }: CalendarInfoProps) => {
 		isHabit?: boolean;
 	}) => {
 		const isUpdating = updatingIds.has(event.id);
+
 		return (
 			<div className="flex items-center gap-2 p-2 bg-input-bg rounded-lg min-h-12 w-full">
 				{!isHabit && (
@@ -100,6 +151,14 @@ const CalendarInfo = ({ date, events, onRefresh }: CalendarInfoProps) => {
 						</div>
 					)}
 				</div>
+				<button
+					onClick={() =>
+						isHabit ? handleEditHabit(event) : handleEditTask(event)
+					}
+					className="p-1.5 hover:bg-vibrant-orange/10 rounded-md transition-colors"
+					title="Edit">
+					<Pencil className="w-4 h-4 text-vibrant-orange" />
+				</button>
 				{isHabit && (
 					<input
 						type="checkbox"

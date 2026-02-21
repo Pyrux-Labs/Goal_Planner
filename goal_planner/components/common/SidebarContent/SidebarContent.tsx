@@ -1,6 +1,6 @@
 // components/Calendar/SidebarContent/SidebarContent.tsx
 import CalendarInfo from "@/components/Calendar/CalendarInfo/CalendarInfo";
-import type { SidebarView } from "@/types/sidebar";
+import type { SidebarView, TaskEditData, HabitEditData } from "@/types/sidebar";
 import type { CalendarEventsMap } from "@/types/calendar";
 import { getDateKey } from "@/utils/dateUtils";
 import AddHabit from "../AddHabit/AddHabit";
@@ -9,15 +9,21 @@ import AddTask from "../AddTask/AddTask";
 interface SidebarContentProps {
 	view: SidebarView;
 	events: CalendarEventsMap;
+	goals?: { id: number; name: string }[];
 	onSuccess?: () => void; // To close the modal after creating
 	onRefresh?: () => void; // To refresh the data
+	onEditTask?: (data: TaskEditData) => void;
+	onEditHabit?: (data: HabitEditData) => void;
 }
 
 export default function SidebarContent({
 	view,
 	events,
+	goals,
 	onSuccess,
 	onRefresh,
+	onEditTask,
+	onEditHabit,
 }: SidebarContentProps) {
 	switch (view.type) {
 		case "day-info":
@@ -28,6 +34,8 @@ export default function SidebarContent({
 					date={view.date}
 					events={dayEvents}
 					onRefresh={onRefresh}
+					onEditTask={onEditTask}
+					onEditHabit={onEditHabit}
 				/>
 			);
 
@@ -45,6 +53,7 @@ export default function SidebarContent({
 					}}
 					onCancel={() => {}}
 					showGoalSelect
+					goals={goals}
 				/>
 			);
 
@@ -56,27 +65,32 @@ export default function SidebarContent({
 					}}
 					onCancel={() => {}}
 					showGoalSelect
+					goals={goals}
 				/>
 			);
 
 		case "edit-task":
-			// TODO: Implement EditTask component
 			return (
-				<div className="p-4">
-					<h3 className="text-lg font-semibold mb-2">Edit Task</h3>
-					<p>Task ID: {view.taskId}</p>
-					<p>EditTask component to be implemented</p>
-				</div>
+				<AddTask
+					editData={view.data}
+					onClose={() => {
+						onSuccess?.();
+					}}
+					onCancel={() => {}}
+					goals={goals}
+				/>
 			);
 
 		case "edit-habit":
-			// TODO: Implement EditHabit component
 			return (
-				<div className="p-4">
-					<h3 className="text-lg font-semibold mb-2">Edit Habit</h3>
-					<p>Habit ID: {view.habitId}</p>
-					<p>EditHabit component to be implemented</p>
-				</div>
+				<AddHabit
+					editData={view.data}
+					onClose={() => {
+						onSuccess?.();
+					}}
+					onCancel={() => {}}
+					goals={goals}
+				/>
 			);
 
 		default:

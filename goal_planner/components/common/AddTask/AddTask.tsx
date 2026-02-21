@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import InputField from "@/components/ui/InputField/InputField";
+import type { TaskEditData } from "@/types/sidebar";
 
 interface AddTaskProps {
 	goalId?: number;
@@ -9,6 +10,8 @@ interface AddTaskProps {
 	onCancel: () => void;
 	showGoalSelect?: boolean;
 	inline?: boolean;
+	editData?: TaskEditData;
+	goals?: { id: number; name: string }[];
 }
 
 interface Goal {
@@ -32,29 +35,36 @@ const AddTask = ({
 	onCancel,
 	showGoalSelect = false,
 	inline = false,
+	editData,
+	goals: preloadedGoals,
 }: AddTaskProps) => {
-	const [goals, setGoals] = useState<Goal[]>([]);
+	const isEditMode = !!editData;
+
+	const [goals, setGoals] = useState<Goal[]>(preloadedGoals || []);
 	const [selectedGoalId, setSelectedGoalId] = useState<number | null>(
-		goalId || null,
+		editData?.goal_id ?? goalId ?? null,
 	);
-	const [taskName, setTaskName] = useState("");
+	const [taskName, setTaskName] = useState(editData?.name ?? "");
 	const [taskType, setTaskType] = useState<"one-time" | "repeating">(
-		"repeating",
+		editData?.is_repeating ? "repeating" : "one-time",
 	);
-	const [selectedDate, setSelectedDate] = useState("");
-	const [selectedDays, setSelectedDays] = useState<string[]>([]);
-	const [startDate, setStartDate] = useState("");
-	const [endDate, setEndDate] = useState("");
-	const [isAllDay, setIsAllDay] = useState(true);
-	const [startTime, setStartTime] = useState("");
-	const [endTime, setEndTime] = useState("");
+	const [selectedDate, setSelectedDate] = useState(editData?.edit_date ?? "");
+	const [selectedDays, setSelectedDays] = useState<string[]>(
+		editData?.repeat_days ?? [],
+	);
+	const [startDate, setStartDate] = useState(editData?.start_date ?? "");
+	const [endDate, setEndDate] = useState(editData?.end_date ?? "");
+	const [isAllDay, setIsAllDay] = useState(!editData?.start_time);
+	const [startTime, setStartTime] = useState(editData?.start_time ?? "");
+	const [endTime, setEndTime] = useState(editData?.end_time ?? "");
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
 	useEffect(() => {
-		if (showGoalSelect) {
+		// Only fetch goals if not preloaded and showGoalSelect is true
+		if (showGoalSelect && !preloadedGoals) {
 			fetchGoals();
 		}
-	}, [showGoalSelect]);
+	}, [showGoalSelect, preloadedGoals]);
 
 	useEffect(() => {
 		const handleEscape = (e: KeyboardEvent) => {
@@ -118,62 +128,42 @@ const AddTask = ({
 
 		try {
 			const supabase = createClient();
-			const {
-				data: { user },
-			} = await supabase.auth.getUser();
 
-			if (!user) {
-				alert("Please login to add tasks");
-				return;
-			}
-
-			// Create task
-			const taskData: any = {
-				user_id: user.id,
-				goal_id: selectedGoalId,
-				name: taskName,
-				start_date: taskType === "repeating" ? startDate : null,
-				end_date: taskType === "repeating" ? endDate : null,
-				start_time: !isAllDay ? startTime : null,
-				end_time: !isAllDay && endTime ? endTime : null,
-			};
-
-			const { data: task, error: taskError } = await supabase
-				.from("tasks")
-				.insert(taskData)
-				.select()
-				.single();
-
-			if (taskError) throw taskError;
-
-			// Handle one-time task
-			if (taskType === "one-time") {
-				const { error: logError } = await supabase.from("task_logs").insert({
-					task_id: task.id,
-					date: selectedDate,
+			if (isEditMode && editData) {
+				// Update existing task using RPC function
+				const { error } = await supabase.rpc("update_task_with_repeat_days", {
+					p_task_id: editData.id,
+					p_goal_id: selectedGoalId,
+					p_name: taskName,
+					p_start_date: taskType === "repeating" ? startDate : null,
+					p_end_date: taskType === "repeating" ? endDate : null,
+					p_start_time: !isAllDay ? startTime : null,
+					p_end_time: !isAllDay && endTime ? endTime : null,
+					p_repeat_days: taskType === "repeating" ? selectedDays : [],
 				});
 
-				if (logError) throw logError;
-			}
+				if (error) throw error;
+			} else {
+				// Create new task using RPC function
+				const { error } = await supabase.rpc("create_task_with_repeat_days", {
+					p_goal_id: selectedGoalId,
+					p_name: taskName,
+					p_start_date: taskType === "repeating" ? startDate : null,
+					p_end_date: taskType === "repeating" ? endDate : null,
+					p_start_time: !isAllDay ? startTime : null,
+					p_end_time: !isAllDay && endTime ? endTime : null,
+					p_is_one_time: taskType === "one-time",
+					p_one_time_date: taskType === "one-time" ? selectedDate : null,
+					p_repeat_days: taskType === "repeating" ? selectedDays : [],
+				});
 
-			// Handle repeating task
-			if (taskType === "repeating") {
-				const repeatDaysData = selectedDays.map((day) => ({
-					task_id: task.id,
-					day: day,
-				}));
-
-				const { error: repeatError } = await supabase
-					.from("task_repeat_days")
-					.insert(repeatDaysData);
-
-				if (repeatError) throw repeatError;
+				if (error) throw error;
 			}
 
 			onClose();
 		} catch (error) {
-			console.error("Error adding task:", error);
-			alert("Failed to add task");
+			console.error("Error saving task:", error);
+			alert("Failed to save task");
 		} finally {
 			setIsSubmitting(false);
 		}
@@ -188,7 +178,7 @@ const AddTask = ({
 			}>
 			{inline && (
 				<h2 className="text-white-pearl font-title text-2xl font-semibold mb-4">
-					Add Task
+					{isEditMode ? "Edit Task" : "Add Task"}
 				</h2>
 			)}
 
@@ -370,7 +360,13 @@ const AddTask = ({
 								: "w-full h-10 rounded-xl bg-vibrant-orange text-white-pearl font-medium hover:bg-vibrant-orange/90 transition disabled:opacity-50 disabled:cursor-not-allowed"
 						}
 						disabled={isSubmitting}>
-						{isSubmitting ? "Adding..." : "Add Task"}
+						{isSubmitting
+							? isEditMode
+								? "Updating..."
+								: "Adding..."
+							: isEditMode
+								? "Update Task"
+								: "Add Task"}
 					</button>
 				</div>
 			</div>
