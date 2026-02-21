@@ -1,15 +1,22 @@
-import { useState, forwardRef, useImperativeHandle, useCallback } from "react";
+import {
+    useState,
+    forwardRef,
+    useImperativeHandle,
+    useCallback,
+    useEffect,
+} from "react";
 import Image from "next/image";
 import TaskHabitColumn from "../TaskHabitColumn/TaskHabitColumn";
 import InputField from "../../ui/InputField/InputField";
 import { categories, colors } from "@/lib/constants/categories";
 import { createClient } from "@/lib/supabase/client";
 
-export interface NewGoalRef {
+export interface GoalFormRef {
     saveGoal: () => Promise<number | null>;
 }
 
-interface NewGoalProps {
+interface GoalFormProps {
+    goalId?: number | null;
     onGoalCreated?: (goalId: number) => void;
 }
 
@@ -38,6 +45,15 @@ const COLOR_MAP: Record<string, string> = {
     "#F0E23A": "yellow",
 };
 
+// Reverse map for loading from database
+const REVERSE_COLOR_MAP: Record<string, string> = {
+    orange: "#D94E06",
+    blue: "#1F6AE1",
+    green: "#2EBB57",
+    purple: "#8B5CF6",
+    yellow: "#F0E23A",
+};
+
 // Map UI category names to database enum values
 const CATEGORY_MAP: Record<string, string> = {
     Health: "health",
@@ -48,6 +64,18 @@ const CATEGORY_MAP: Record<string, string> = {
     Skill: "skill",
     Creative: "creative",
     Social: "social",
+};
+
+// Reverse map for loading from database
+const REVERSE_CATEGORY_MAP: Record<string, string> = {
+    health: "Health",
+    career: "Career",
+    academic: "Academic",
+    finance: "Finance",
+    fitness: "Fitness",
+    skill: "Skill",
+    creative: "Creative",
+    social: "Social",
 };
 
 const DAY_MAP: { [key: string]: string } = {
@@ -85,9 +113,11 @@ const formatDate = (date: string | null): string | undefined => {
     return `${day} ${month}`;
 };
 
-const NewGoal = forwardRef<NewGoalRef, NewGoalProps>(
-    ({ onGoalCreated }, ref) => {
-        const [goalId, setGoalId] = useState<number | null>(null);
+const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
+    ({ goalId: initialGoalId, onGoalCreated }, ref) => {
+        const [goalId, setGoalId] = useState<number | null>(
+            initialGoalId || null,
+        );
         const [goalName, setGoalName] = useState("");
         const [description, setDescription] = useState("");
         const [selectedCategory, setSelectedCategory] = useState("");
@@ -95,8 +125,63 @@ const NewGoal = forwardRef<NewGoalRef, NewGoalProps>(
         const [startDate, setStartDate] = useState("");
         const [targetDate, setTargetDate] = useState("");
         const [isSaving, setIsSaving] = useState(false);
+        const [isLoading, setIsLoading] = useState(false);
         const [tasks, setTasks] = useState<Task[]>([]);
         const [habits, setHabits] = useState<Habit[]>([]);
+
+        const isEditMode = !!initialGoalId;
+
+        // Load existing goal data if in edit mode
+        useEffect(() => {
+            if (initialGoalId) {
+                loadGoalData(initialGoalId);
+            }
+        }, [initialGoalId]);
+
+        const loadGoalData = async (id: number) => {
+            try {
+                setIsLoading(true);
+                const supabase = createClient();
+
+                const { data: goalData, error: goalError } = await supabase
+                    .from("goals")
+                    .select("*")
+                    .eq("id", id)
+                    .is("deleted_at", null)
+                    .single();
+
+                if (goalError) {
+                    console.error("Error fetching goal:", goalError);
+                    throw new Error(
+                        `Failed to fetch goal: ${goalError.message}`,
+                    );
+                }
+
+                if (!goalData) {
+                    throw new Error("Goal not found or has been deleted");
+                }
+
+                // Load goal data into state
+                setGoalName(goalData.name || "");
+                setDescription(goalData.description || "");
+                setSelectedCategory(
+                    REVERSE_CATEGORY_MAP[goalData.category] || "Skill",
+                );
+                setSelectedColor(
+                    REVERSE_COLOR_MAP[goalData.color] || "#D94E06",
+                );
+                setStartDate(goalData.start_date || "");
+                setTargetDate(goalData.target_date || "");
+
+                // Fetch tasks and habits
+                await fetchTasksAndHabits(id);
+            } catch (error: any) {
+                console.error("Error loading goal data:", error);
+                alert(error.message || "Failed to load goal data");
+            } finally {
+                setIsLoading(false);
+            }
+        };
 
         const fetchTasksAndHabits = useCallback(
             async (currentGoalId: number) => {
@@ -212,10 +297,7 @@ const NewGoal = forwardRef<NewGoalRef, NewGoalProps>(
 
         useImperativeHandle(ref, () => ({
             saveGoal: async () => {
-                if (goalId) {
-                    return goalId; // Goal already created
-                }
-
+                // Validation
                 if (!goalName.trim()) {
                     alert("Please enter a goal name");
                     return null;
@@ -236,7 +318,6 @@ const NewGoal = forwardRef<NewGoalRef, NewGoalProps>(
                     return null;
                 }
 
-                // Validate that target date is after start date
                 if (new Date(targetDate) <= new Date(startDate)) {
                     alert("Target date must be after start date");
                     return null;
@@ -251,52 +332,80 @@ const NewGoal = forwardRef<NewGoalRef, NewGoalProps>(
                     } = await supabase.auth.getUser();
 
                     if (!user) {
-                        alert("Please login to create a goal");
+                        alert("Please login to save the goal");
                         return null;
                     }
 
-                    const goalData = {
-                        user_id: user.id,
+                    const goalData: any = {
                         name: goalName,
                         description: description || null,
                         category: CATEGORY_MAP[selectedCategory] || "skill",
                         color: COLOR_MAP[selectedColor] || "orange",
                         start_date: startDate,
                         target_date: targetDate,
-                        status: "active",
                     };
 
-                    const { data: goal, error } = await supabase
-                        .from("goals")
-                        .insert(goalData)
-                        .select()
-                        .single();
+                    let resultGoalId: number;
 
-                    if (error) {
-                        console.error("Supabase error details:", error);
-                        throw error;
+                    if (isEditMode && goalId) {
+                        // Update existing goal
+                        goalData.updated_at = new Date().toISOString();
+
+                        const { error } = await supabase
+                            .from("goals")
+                            .update(goalData)
+                            .eq("id", goalId);
+
+                        if (error) {
+                            console.error("Error updating goal:", error);
+                            throw new Error(
+                                `Failed to update goal: ${error.message}`,
+                            );
+                        }
+
+                        resultGoalId = goalId;
+                    } else {
+                        // Create new goal
+                        goalData.user_id = user.id;
+                        goalData.status = "active";
+
+                        const { data: goal, error } = await supabase
+                            .from("goals")
+                            .insert(goalData)
+                            .select()
+                            .single();
+
+                        if (error) {
+                            console.error("Error creating goal:", error);
+                            throw new Error(
+                                `Failed to create goal: ${error.message}`,
+                            );
+                        }
+
+                        if (!goal) {
+                            throw new Error("No goal returned from database");
+                        }
+
+                        resultGoalId = goal.id;
+                        setGoalId(resultGoalId);
+
+                        if (onGoalCreated) {
+                            onGoalCreated(resultGoalId);
+                        }
                     }
 
-                    if (!goal) {
-                        throw new Error("No goal returned from database");
-                    }
+                    // Fetch tasks and habits
+                    await fetchTasksAndHabits(resultGoalId);
 
-                    setGoalId(goal.id);
-                    if (onGoalCreated) {
-                        onGoalCreated(goal.id);
-                    }
-
-                    // Fetch tasks and habits for the new goal
-                    await fetchTasksAndHabits(goal.id);
-
-                    return goal.id;
+                    return resultGoalId;
                 } catch (error: any) {
-                    console.error("Error creating goal:", error);
-                    console.error("Error message:", error?.message);
-                    console.error("Error details:", error?.details);
-                    console.error("Error hint:", error?.hint);
+                    console.error(
+                        `Error ${isEditMode ? "updating" : "creating"} goal:`,
+                        error,
+                    );
                     alert(
-                        `Failed to create goal: ${error?.message || "Unknown error"}`,
+                        error.message ||
+                            `Failed to ${isEditMode ? "update" : "create"} goal. Please try again.`,
                     );
                     return null;
                 } finally {
@@ -304,6 +413,20 @@ const NewGoal = forwardRef<NewGoalRef, NewGoalProps>(
                 }
             },
         }));
+
+        if (isLoading) {
+            return (
+                <div className="py-4 px-4">
+                    <div className="bg-modal-bg p-8 border border-input-bg rounded-3xl shadow-[0px_0px_10px_2px_rgba(217,78,6,0.8)] mb-8">
+                        <div className="text-center py-8 text-white-pearl">
+                            <p className="text-lg">Loading goal data...</p>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        const formDisabled = isSaving || (!isEditMode && goalId !== null);
 
         return (
             <div className="py-4 px-4">
@@ -320,12 +443,12 @@ const NewGoal = forwardRef<NewGoalRef, NewGoalProps>(
                                     onClick={() =>
                                         setSelectedCategory(category.name)
                                     }
-                                    disabled={isSaving || goalId !== null}
+                                    disabled={formDisabled}
                                     className={`relative h-24 w-24 flex items-center justify-center rounded-3xl transition-all ${
                                         selectedCategory === category.name
                                             ? "bg-vibrant-orange shadow-[0px_0px_10px_2px_rgba(217,78,6,0.8)]"
                                             : "bg-input-bg hover:shadow-[0px_0px_10px_2px_rgba(217,78,6,0.8)]"
-                                    } ${isSaving || goalId !== null ? "opacity-50 cursor-not-allowed" : ""}`}
+                                    } ${formDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
                                 >
                                     <div className="absolute top-[38%] -translate-y-1/2">
                                         <Image
@@ -355,14 +478,14 @@ const NewGoal = forwardRef<NewGoalRef, NewGoalProps>(
                             placeholder="Master UI Design"
                             value={goalName}
                             onChange={(e) => setGoalName(e.target.value)}
-                            disabled={isSaving || goalId !== null}
+                            disabled={formDisabled}
                         />
                         <InputField
                             label="DESCRIPTION"
                             placeholder="Describe your goal"
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
-                            disabled={isSaving || goalId !== null}
+                            disabled={formDisabled}
                         />
                     </div>
                     {/* Date and Color Selection */}
@@ -372,14 +495,14 @@ const NewGoal = forwardRef<NewGoalRef, NewGoalProps>(
                             type="date"
                             value={startDate}
                             onChange={(e) => setStartDate(e.target.value)}
-                            disabled={isSaving || goalId !== null}
+                            disabled={formDisabled}
                         />
                         <InputField
                             label="TARGET DATE"
                             type="date"
                             value={targetDate}
                             onChange={(e) => setTargetDate(e.target.value)}
-                            disabled={isSaving || goalId !== null}
+                            disabled={formDisabled}
                         />
                         <div>
                             <label className="block text-white-pearl mb-4">
@@ -390,12 +513,12 @@ const NewGoal = forwardRef<NewGoalRef, NewGoalProps>(
                                     <button
                                         key={color}
                                         onClick={() => setSelectedColor(color)}
-                                        disabled={isSaving || goalId !== null}
+                                        disabled={formDisabled}
                                         className={`w-6 h-6 rounded-full transition-all ${
                                             selectedColor === color
                                                 ? "scale-110"
                                                 : "hover:scale-110"
-                                        } ${isSaving || goalId !== null ? "opacity-50 cursor-not-allowed" : ""}`}
+                                        } ${formDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
                                         style={{
                                             backgroundColor: color,
                                             boxShadow:
@@ -410,8 +533,8 @@ const NewGoal = forwardRef<NewGoalRef, NewGoalProps>(
                     </div>
                 </div>
 
-                {/* Tasks and Daily Habits - Only show if goal is created */}
-                {goalId && (
+                {/* Tasks and Daily Habits - Only show if goal is created or in edit mode */}
+                {(goalId || isEditMode) && (
                     <div className="grid grid-cols-2 gap-14">
                         <TaskHabitColumn
                             type="task"
@@ -432,10 +555,18 @@ const NewGoal = forwardRef<NewGoalRef, NewGoalProps>(
                                     time: formatTime(task.start_time),
                                 };
                             })}
-                            goalId={goalId}
-                            onAdd={() => fetchTasksAndHabits(goalId)}
+                            goalId={goalId || initialGoalId || 0}
+                            onAdd={() =>
+                                fetchTasksAndHabits(
+                                    goalId || initialGoalId || 0,
+                                )
+                            }
                             onEdit={() => {}}
-                            onDelete={() => fetchTasksAndHabits(goalId)}
+                            onDelete={() =>
+                                fetchTasksAndHabits(
+                                    goalId || initialGoalId || 0,
+                                )
+                            }
                         />
                         <TaskHabitColumn
                             type="habit"
@@ -443,16 +574,24 @@ const NewGoal = forwardRef<NewGoalRef, NewGoalProps>(
                                 title: habit.name,
                                 days: formatRepeatDays(habit.repeat_days),
                             }))}
-                            goalId={goalId}
-                            onAdd={() => fetchTasksAndHabits(goalId)}
+                            goalId={goalId || initialGoalId || 0}
+                            onAdd={() =>
+                                fetchTasksAndHabits(
+                                    goalId || initialGoalId || 0,
+                                )
+                            }
                             onEdit={() => {}}
-                            onDelete={() => fetchTasksAndHabits(goalId)}
+                            onDelete={() =>
+                                fetchTasksAndHabits(
+                                    goalId || initialGoalId || 0,
+                                )
+                            }
                         />
                     </div>
                 )}
 
-                {/* Message when goal is not created yet */}
-                {!goalId && (
+                {/* Message when goal is not created yet in create mode */}
+                {!goalId && !isEditMode && (
                     <div className="text-center py-8 text-input-text">
                         <p className="text-lg">Click "Save Goal" to continue</p>
                     </div>
@@ -462,6 +601,6 @@ const NewGoal = forwardRef<NewGoalRef, NewGoalProps>(
     },
 );
 
-NewGoal.displayName = "NewGoal";
+GoalForm.displayName = "GoalForm";
 
-export default NewGoal;
+export default GoalForm;

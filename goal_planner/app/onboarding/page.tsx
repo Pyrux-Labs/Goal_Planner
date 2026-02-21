@@ -9,11 +9,13 @@ import { TfiArrowRight } from "react-icons/tfi";
 import ProgressBar from "@/components/Onboarding/ProgressBar/ProgressBar";
 import StepHeader from "@/components/Onboarding/StepHeader/StepHeader";
 import NavigationButtons from "@/components/Onboarding/NavigationButtons/NavigationButtons";
-import NewGoal, { NewGoalRef } from "@/components/common/NewGoal/NewGoal";
+import GoalForm, { GoalFormRef } from "@/components/common/GoalForm/GoalForm";
 import Button from "@/components/ui/Button/Button";
 import CalendarImg from "../../public/CalendarScreenshot.png";
 import GoalCard from "@/components/common/GoalCard/GoalCard";
+import ConfirmModal from "@/components/ui/ConfirmModal/ConfirmModal";
 import { createClient } from "@/lib/supabase/client";
+import { deleteGoalWithRelatedData } from "@/utils/deleteGoal";
 
 interface Task {
     id: number;
@@ -84,17 +86,23 @@ export default function OnboardingPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const currentStep = parseInt(searchParams.get("step") || "1", 10);
-    const newGoalRef = useRef<NewGoalRef>(null);
+    const goalFormRef = useRef<GoalFormRef>(null);
 
     const [goals, setGoals] = useState<Goal[]>([]);
     const [isLoadingGoals, setIsLoadingGoals] = useState(false);
     const [currentGoalId, setCurrentGoalId] = useState<number | null>(null);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [goalToDelete, setGoalToDelete] = useState<{
+        id: number;
+        name: string;
+    } | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const handleNext = async () => {
         if (currentStep === 2) {
             // If goal not created yet, save it and stay on step 2
             if (!currentGoalId) {
-                const goalId = await newGoalRef.current?.saveGoal();
+                const goalId = await goalFormRef.current?.saveGoal();
                 if (!goalId) {
                     return; // Don't proceed if goal creation failed
                 }
@@ -319,6 +327,33 @@ export default function OnboardingPage() {
         }
     };
 
+    const handleDeleteClick = (goalId: number, goalName: string) => {
+        setGoalToDelete({ id: goalId, name: goalName });
+        setIsDeleteModalOpen(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!goalToDelete) return;
+
+        setIsDeleting(true);
+        const result = await deleteGoalWithRelatedData(goalToDelete.id);
+        setIsDeleting(false);
+
+        if (result.success) {
+            // Close modal and refresh goals
+            setIsDeleteModalOpen(false);
+            setGoalToDelete(null);
+            await fetchGoals();
+        } else {
+            alert(`Failed to delete goal: ${result.error}`);
+        }
+    };
+
+    const handleCancelDelete = () => {
+        setIsDeleteModalOpen(false);
+        setGoalToDelete(null);
+    };
+
     useEffect(() => {
         if (currentStep === 3) {
             fetchGoals();
@@ -415,7 +450,7 @@ export default function OnboardingPage() {
                                         : "Break down your ambition into actionable daily or weekly tasks."
                                 }
                             />
-                            <NewGoal ref={newGoalRef} />
+                            <GoalForm ref={goalFormRef} />
                         </main>
                         <NavigationButtons
                             onPrevious={handlePrevious}
@@ -534,11 +569,14 @@ export default function OnboardingPage() {
                                                 fetchGoals();
                                             }}
                                             onEdit={() =>
-                                                console.log(`Edit ${goal.name}`)
+                                                router.push(
+                                                    `/edit-goal?id=${goal.id}`,
+                                                )
                                             }
                                             onDelete={() =>
-                                                console.log(
-                                                    `Delete ${goal.name}`,
+                                                handleDeleteClick(
+                                                    goal.id,
+                                                    goal.name,
                                                 )
                                             }
                                         />
@@ -554,6 +592,28 @@ export default function OnboardingPage() {
                     </>
                 )}
             </div>
+
+            {/* Confirm Delete Modal */}
+            <ConfirmModal
+                isOpen={isDeleteModalOpen}
+                title="Delete Goal?"
+                message={
+                    <>
+                        Are you sure you want to delete{" "}
+                        <strong className="text-white-pearl">
+                            {goalToDelete?.name}
+                        </strong>
+                        ? This will permanently delete the goal and all
+                        associated tasks, habits, and their logs. This action
+                        cannot be undone.
+                    </>
+                }
+                confirmText="Delete"
+                cancelText="Cancel"
+                onConfirm={handleConfirmDelete}
+                onCancel={handleCancelDelete}
+                isLoading={isDeleting}
+            />
         </Suspense>
     );
 }

@@ -15,9 +15,9 @@
 ### ✅ Funcionalidad Básica de Metas
 
 - [x] Crear nueva meta (componentes implementados)
-- [ ] **Editar meta** - Implementar funcionalidad completa de edición
+- [x] **Editar meta** - Implementar funcionalidad completa de edición
 - [ ] **Eliminar meta** - Implementar confirmación y eliminación
-- [ ] Visualización de metas en anual-goals page
+- [x] Visualización de metas en anual-goals page
 
 ### 📅 Funcionalidad del Calendario
 
