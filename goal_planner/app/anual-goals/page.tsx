@@ -7,6 +7,10 @@ import GoalCard from "@/components/common/GoalCard/GoalCard";
 import ConfirmModal from "@/components/ui/ConfirmModal/ConfirmModal";
 import { createClient } from "@/lib/supabase/client";
 import { deleteGoalWithRelatedData } from "@/utils/deleteGoal";
+import {
+    deleteTaskWithFutureLogs,
+    deleteHabitWithFutureLogs,
+} from "@/utils/deleteTaskHabit";
 
 // ===== TYPE DEFINITIONS =====
 interface Task {
@@ -382,6 +386,56 @@ export default function AnualGoalsPage() {
         setGoalToDelete(null);
     };
 
+    const handleTaskDelete = async (goalIndex: number, taskIndex: number) => {
+        const goal = formattedGoals[goalIndex];
+        const taskId = goals.find((g) => g.id === goal.id)?.tasks[taskIndex]
+            ?.id;
+
+        if (!taskId) {
+            console.error("Task ID not found");
+            return;
+        }
+
+        const confirmed = window.confirm(
+            `Are you sure you want to delete "${goal.formattedTasks[taskIndex].title}"? This will delete the task and all its logs from today onwards.`,
+        );
+
+        if (!confirmed) return;
+
+        const result = await deleteTaskWithFutureLogs(taskId);
+
+        if (result.success) {
+            await fetchGoalsData();
+        } else {
+            alert(`Failed to delete task: ${result.error}`);
+        }
+    };
+
+    const handleHabitDelete = async (goalIndex: number, habitIndex: number) => {
+        const goal = formattedGoals[goalIndex];
+        const habitId = goals.find((g) => g.id === goal.id)?.habits[habitIndex]
+            ?.id;
+
+        if (!habitId) {
+            console.error("Habit ID not found");
+            return;
+        }
+
+        const confirmed = window.confirm(
+            `Are you sure you want to delete "${goal.formattedHabits[habitIndex].title}"? This will delete the habit and all its logs from today onwards.`,
+        );
+
+        if (!confirmed) return;
+
+        const result = await deleteHabitWithFutureLogs(habitId);
+
+        if (result.success) {
+            await fetchGoalsData();
+        } else {
+            alert(`Failed to delete habit: ${result.error}`);
+        }
+    };
+
     // ===== FILTERS AND STATS (MEMOIZED) =====
     const FILTERS = useMemo(
         () => [
@@ -522,7 +576,7 @@ export default function AnualGoalsPage() {
                             No goals found. Create your first goal!
                         </div>
                     ) : (
-                        formattedGoals.map((goal) => (
+                        formattedGoals.map((goal, goalIndex) => (
                             <GoalCard
                                 key={goal.id}
                                 goalId={goal.id}
@@ -543,9 +597,7 @@ export default function AnualGoalsPage() {
                                     )
                                 }
                                 onTaskDelete={(taskIndex) =>
-                                    console.log(
-                                        `Delete task ${taskIndex} from ${goal.name}`,
-                                    )
+                                    handleTaskDelete(goalIndex, taskIndex)
                                 }
                                 onHabitEdit={(habitIndex) =>
                                     console.log(
@@ -553,9 +605,7 @@ export default function AnualGoalsPage() {
                                     )
                                 }
                                 onHabitDelete={(habitIndex) =>
-                                    console.log(
-                                        `Delete habit ${habitIndex} from ${goal.name}`,
-                                    )
+                                    handleHabitDelete(goalIndex, habitIndex)
                                 }
                                 onEdit={() =>
                                     router.push(`/edit-goal?id=${goal.id}`)

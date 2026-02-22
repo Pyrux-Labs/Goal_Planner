@@ -16,6 +16,10 @@ import GoalCard from "@/components/common/GoalCard/GoalCard";
 import ConfirmModal from "@/components/ui/ConfirmModal/ConfirmModal";
 import { createClient } from "@/lib/supabase/client";
 import { deleteGoalWithRelatedData } from "@/utils/deleteGoal";
+import {
+    deleteTaskWithFutureLogs,
+    deleteHabitWithFutureLogs,
+} from "@/utils/deleteTaskHabit";
 
 interface Task {
     id: number;
@@ -151,9 +155,7 @@ export default function OnboardingPage() {
                 [
                     supabase
                         .from("tasks")
-                        .select(
-                            "id, goal_id, name, start_date, end_date",
-                        )
+                        .select("id, goal_id, name, start_date, end_date")
                         .in("goal_id", goalIds)
                         .is("deleted_at", null),
                     supabase
@@ -354,6 +356,54 @@ export default function OnboardingPage() {
         setGoalToDelete(null);
     };
 
+    const handleTaskDelete = async (goalIndex: number, taskIndex: number) => {
+        const goal = goals[goalIndex];
+        const taskId = goal.tasks[taskIndex]?.id;
+
+        if (!taskId) {
+            console.error("Task ID not found");
+            return;
+        }
+
+        const confirmed = window.confirm(
+            `Are you sure you want to delete "${goal.tasks[taskIndex].name}"? This will delete the task and all its logs from today onwards.`,
+        );
+
+        if (!confirmed) return;
+
+        const result = await deleteTaskWithFutureLogs(taskId);
+
+        if (result.success) {
+            await fetchGoals();
+        } else {
+            alert(`Failed to delete task: ${result.error}`);
+        }
+    };
+
+    const handleHabitDelete = async (goalIndex: number, habitIndex: number) => {
+        const goal = goals[goalIndex];
+        const habitId = goal.habits[habitIndex]?.id;
+
+        if (!habitId) {
+            console.error("Habit ID not found");
+            return;
+        }
+
+        const confirmed = window.confirm(
+            `Are you sure you want to delete "${goal.habits[habitIndex].name}"? This will delete the habit and all its logs from today onwards.`,
+        );
+
+        if (!confirmed) return;
+
+        const result = await deleteHabitWithFutureLogs(habitId);
+
+        if (result.success) {
+            await fetchGoals();
+        } else {
+            alert(`Failed to delete habit: ${result.error}`);
+        }
+    };
+
     useEffect(() => {
         if (currentStep === 3) {
             fetchGoals();
@@ -483,7 +533,7 @@ export default function OnboardingPage() {
                                     </p>
                                 </div>
                             ) : (
-                                goals.map((goal) => {
+                                goals.map((goal, goalIndex) => {
                                     // Format tasks for GoalCard
                                     const formattedTasks = goal.tasks.map(
                                         (task) => {
@@ -551,23 +601,23 @@ export default function OnboardingPage() {
                                                     `Edit task ${taskIndex} from ${goal.name}`,
                                                 )
                                             }
-                                            onTaskDelete={(taskIndex) => {
-                                                console.log(
-                                                    `Delete task ${taskIndex} from ${goal.name}`,
-                                                );
-                                                fetchGoals();
-                                            }}
+                                            onTaskDelete={(taskIndex) =>
+                                                handleTaskDelete(
+                                                    goalIndex,
+                                                    taskIndex,
+                                                )
+                                            }
                                             onHabitEdit={(habitIndex) =>
                                                 console.log(
                                                     `Edit habit ${habitIndex} from ${goal.name}`,
                                                 )
                                             }
-                                            onHabitDelete={(habitIndex) => {
-                                                console.log(
-                                                    `Delete habit ${habitIndex} from ${goal.name}`,
-                                                );
-                                                fetchGoals();
-                                            }}
+                                            onHabitDelete={(habitIndex) =>
+                                                handleHabitDelete(
+                                                    goalIndex,
+                                                    habitIndex,
+                                                )
+                                            }
                                             onEdit={() =>
                                                 router.push(
                                                     `/edit-goal?id=${goal.id}`,
