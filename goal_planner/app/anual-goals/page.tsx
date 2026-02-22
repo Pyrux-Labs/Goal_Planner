@@ -108,7 +108,7 @@ async function fetchAllGoalsDataOptimized(supabase: any, userId: string) {
     const [{ data: allTasks }, { data: allHabits }] = await Promise.all([
         supabase
             .from("tasks")
-            .select("id, goal_id, name, start_time, start_date, end_date")
+            .select("id, goal_id, name, start_date, end_date")
             .in("goal_id", goalIds)
             .is("deleted_at", null),
         supabase
@@ -230,7 +230,7 @@ async function fetchAllGoalsDataOptimized(supabase: any, userId: string) {
             return {
                 id: task.id,
                 name: task.name,
-                start_time: task.start_time,
+                start_time: null, // Times are now stored in task_logs per occurrence
                 start_date: task.start_date,
                 end_date: task.end_date,
                 repeat_days: repeatDays,

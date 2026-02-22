@@ -23,25 +23,25 @@
 
 - [x] Vista de calendario con navegación mensual
 - [x] Mostrar información del día (CalendarInfo)
-- [ ] **Calendar info edit sidebar** - Implementar edición de eventos del día
+- [x] **Calendar info edit sidebar** - Implementar edición de eventos del día
 - [ ] Vista semanal del calendario (opcional para Alpha)
 
 ### ✏️ Gestión de Tareas y Hábitos
 
 - [x] Agregar nueva tarea (sidebar funcional)
-- [ ] **Editar tarea** - Hacer que el sidebar de agregar sirva para editar
+- [x] **Editar tarea** - Hacer que el sidebar de agregar sirva para editar
 - [ ] **Eliminar tarea** - Implementar confirmación y eliminación
 - [x] Agregar nuevo hábito (sidebar funcional)
-- [ ] **Editar hábito** - Hacer que el sidebar de agregar sirva para editar
+- [x] **Editar hábito** - Hacer que el sidebar de agregar sirva para editar
 - [ ] **Eliminar hábito** - Implementar confirmación y eliminación
 
 ### 🎨 UX/UI Esenciales
 
 - [ ] **Sistema de notificaciones/toasts** - Feedback de acciones exitosas/errores
 - [ ] **Estados de carga** - Skeletons o spinners en todas las páginas
-- [ ] **Estados vacíos** - Mensajes cuando no hay metas/tareas/hábitos
+- [x] **Estados vacíos** - Mensajes cuando no hay metas/tareas/hábitos
 - [ ] **Validación de formularios** - Mensajes de error claros en inputs
-- [ ] **Modal de confirmación** - Para acciones destructivas (borrar)
+- [x] **Modal de confirmación** - Para acciones destructivas (borrar)
 
 ### 🔐 Autenticación y Usuario
 
@@ -114,8 +114,7 @@
 ### 🔐 Autenticación Avanzada
 
 - [ ] **Crear cuenta con Google** - OAuth integration
-- [ ] **Crear cuenta con Apple** - OAuth integration (opcional)
-- [ ] **Two-factor authentication** - Seguridad adicional (opcional)
+- [ ] **Two-factor authentication mobile** - Seguridad adicional (opcional)
 
 ### ✨ Pulido Final
 
@@ -185,7 +184,7 @@
 ### 🎨 Personalización
 
 - [ ] **Cambiar color del calendario** - Temas personalizables
-- [ ] **Temas oscuro/claro** - Toggle en settings
+- [ ] **Temas oscuro/claro** - Toggle en settings (modo claro blanco y naranja)
 - [ ] **Fondos personalizados** - Para el calendario
 - [ ] **Iconos custom** - Para categorías de metas
 
@@ -247,47 +246,3 @@
 - [ ] **Rate limiting** - Prevenir abuso de API
 - [ ] **GDPR compliance** - Si se opera en EU
 - [ ] **Privacy policy** - Términos y condiciones claros
-
----
-
-## 📊 Resumen de Prioridades
-
-### 🚨 Crítico para Alpha 1.0 (MVP)
-
-**Funcionalidad Core:** 5 items
-
-- Editar meta
-- Eliminar meta
-- Editar/eliminar tareas y hábitos (4 items total, contando como 1)
-- Calendar info edit sidebar
-
-**UX/UI Esencial:** 5 items
-
-- Sistema de notificaciones/toasts
-- Estados de carga
-- Estados vacíos
-- Validación de formularios
-- Modal de confirmación
-
-**Autenticación:** 3 items
-
-- Funcionalidad de logout
-- Página de Settings básica
-- Protección de rutas
-
-**Total Crítico para Alpha 1.0:** ~13-15 items bloqueantes
-
-### ⏱️ Estimación
-
-- **Alpha 1.0:** 2-3 semanas (con los items críticos)
-- **Beta 1.0:** +2-3 semanas
-- **Version 1.0:** +4-6 semanas
-- **Version 2.0+:** Roadmap a largo plazo (3-6 meses)
-
-### 🎯 Próximos Pasos Inmediatos
-
-1. Implementar sistema de toasts/notificaciones (base para todo)
-2. Agregar estados de carga (mejora UX inmediata)
-3. Implementar edición de metas (funcionalidad crítica)
-4. Agregar eliminación con confirmación (funcionalidad crítica)
-5. Implementar edición de tareas/hábitos (reutilizar sidebars existentes)

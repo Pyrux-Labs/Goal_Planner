@@ -191,7 +191,7 @@ const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
                     // Fetch tasks with repeat days and logs
                     const { data: tasksData } = await supabase
                         .from("tasks")
-                        .select("id, name, start_time, start_date, end_date")
+                        .select("id, name, start_date, end_date")
                         .eq("goal_id", currentGoalId)
                         .is("deleted_at", null);
 
@@ -243,7 +243,7 @@ const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
                             return {
                                 id: task.id,
                                 name: task.name,
-                                start_time: task.start_time,
+                                start_time: null, // Times are now stored in task_logs per occurrence
                                 start_date: task.start_date,
                                 end_date: task.end_date,
                                 repeat_days: repeatDays,
