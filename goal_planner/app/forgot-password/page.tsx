@@ -18,19 +18,21 @@ export default function ForgotPassword() {
 
 	// Handle form submission
 	const handleSubmit = async () => {
+		setError("");
+		let hasErrors = false;
+
 		// Validation
 		if (!email) {
 			setError("Email is required");
-			return;
+			hasErrors = true;
+		} else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+			setError("Please enter a valid email address");
+			hasErrors = true;
 		}
 
-		if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-			setError("Please enter a valid email address");
-			return;
-		}
+		if (hasErrors) return;
 
 		setIsLoading(true);
-		setError("");
 
 		try {
 			const supabase = createClient();

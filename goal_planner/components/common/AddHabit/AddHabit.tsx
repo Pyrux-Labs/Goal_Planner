@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import InputField from "@/components/ui/InputField/InputField";
+import { BiSolidError } from "react-icons/bi";
 import type { HabitEditData } from "@/types/sidebar";
 
 interface AddHabitProps {
@@ -52,6 +53,13 @@ const AddHabit = ({
 	const [endDate, setEndDate] = useState(editData?.end_date ?? "");
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
+	// Error states
+	const [goalError, setGoalError] = useState("");
+	const [habitNameError, setHabitNameError] = useState("");
+	const [repeatDaysError, setRepeatDaysError] = useState("");
+	const [dateRangeError, setDateRangeError] = useState("");
+	const [generalError, setGeneralError] = useState("");
+
 	const fetchGoals = useCallback(async () => {
 		const supabase = createClient();
 		const {
@@ -84,20 +92,61 @@ const AddHabit = ({
 	}, []);
 
 	const handleSubmit = async () => {
+		// Clear all errors
+		setGoalError("");
+		setHabitNameError("");
+		setRepeatDaysError("");
+		setDateRangeError("");
+		setGeneralError("");
+
+		let hasErrors = false;
+
+		// Validation
+		/* 		if (showGoalSelect && !selectedGoalId) {
+			setGoalError("Please select a goal");
+			hasErrors = true;
+		} */
+
 		if (!habitName.trim()) {
-			alert("Please enter a habit name");
-			return;
+			setHabitNameError("Habit name is required");
+			hasErrors = true;
 		}
 
 		if (selectedDays.length === 0) {
-			alert("Please select at least one repeat day");
-			return;
+			setRepeatDaysError("Please select at least one repeat day");
+			hasErrors = true;
 		}
 
 		if (!startDate || !endDate) {
-			alert("Please select start and end dates");
-			return;
+			setDateRangeError("Please select start and end dates");
+			hasErrors = true;
 		}
+
+		// Validate start date is not in the past
+		if (startDate) {
+			const start = new Date(startDate);
+			start.setHours(0, 0, 0, 0);
+			const today = new Date();
+			today.setHours(0, 0, 0, 0);
+			if (start < today) {
+				setDateRangeError("Start date cannot be in the past");
+				hasErrors = true;
+			}
+		}
+
+		// Validate date range
+		if (startDate && endDate) {
+			const start = new Date(startDate);
+			start.setHours(0, 0, 0, 0);
+			const end = new Date(endDate);
+			end.setHours(0, 0, 0, 0);
+			if (end < start) {
+				setDateRangeError("End date must be after start date");
+				hasErrors = true;
+			}
+		}
+
+		if (hasErrors) return;
 
 		setIsSubmitting(true);
 
@@ -132,7 +181,7 @@ const AddHabit = ({
 			onClose();
 		} catch (error) {
 			console.error("Error saving habit:", error);
-			alert("Failed to save habit");
+			setGeneralError("Failed to save habit. Please try again.");
 		} finally {
 			setIsSubmitting(false);
 		}
@@ -160,11 +209,12 @@ const AddHabit = ({
 						</label>
 						<select
 							value={selectedGoalId || ""}
-							onChange={(e) =>
+							onChange={(e) => {
 								setSelectedGoalId(
 									e.target.value ? Number(e.target.value) : null,
-								)
-							}
+								);
+								if (goalError) setGoalError("");
+							}}
 							className="w-full h-12 bg-input-bg border border-input-bg text-white-pearl rounded-2xl px-3 focus:outline-none focus:border-vibrant-orange transition-colors">
 							<option value="">Not Selected</option>
 							{goals.map((goal) => (
@@ -173,18 +223,35 @@ const AddHabit = ({
 								</option>
 							))}
 						</select>
+						{goalError && (
+							<span className="text-xs text-carmin flex items-center gap-1 mt-1">
+								<BiSolidError />
+								{goalError}
+							</span>
+						)}
 					</div>
 				)}
 
 				{/* Habit Name */}
-				<InputField
-					label="Habit Name"
-					type="text"
-					placeholder="Enter habit name"
-					value={habitName}
-					onChange={(e) => setHabitName(e.target.value)}
-					labelClassName="block text-white-pearl mb-2 text-sm"
-				/>
+				<div>
+					<InputField
+						label="Habit Name"
+						type="text"
+						placeholder="Enter habit name"
+						value={habitName}
+						onChange={(e) => {
+							setHabitName(e.target.value);
+							if (habitNameError) setHabitNameError("");
+						}}
+						labelClassName="block text-white-pearl mb-2 text-sm"
+					/>
+					{habitNameError && (
+						<span className="text-xs text-carmin flex items-center gap-1 mt-1">
+							<BiSolidError />
+							{habitNameError}
+						</span>
+					)}
+				</div>
 
 				{/* Repeat Days */}
 				<div>
@@ -195,7 +262,10 @@ const AddHabit = ({
 						{DAYS.map((day) => (
 							<button
 								key={day.id}
-								onClick={() => toggleDay(day.id)}
+								onClick={() => {
+									toggleDay(day.id);
+									if (repeatDaysError) setRepeatDaysError("");
+								}}
 								className={`${
 									inline ? "w-10 h-10" : "w-[1.75rem] h-[1.75rem] text-sm"
 								} rounded-full font-semibold transition ${
@@ -207,25 +277,53 @@ const AddHabit = ({
 							</button>
 						))}
 					</div>
+					{repeatDaysError && (
+						<span className="text-xs text-carmin flex items-center gap-1 mt-1">
+							<BiSolidError />
+							{repeatDaysError}
+						</span>
+					)}
 				</div>
 
 				{/* Date Range */}
-				<div className={inline ? "grid grid-cols-2 gap-4" : "space-y-4"}>
-					<InputField
-						label="Start Date"
-						type="date"
-						value={startDate}
-						onChange={(e) => setStartDate(e.target.value)}
-						labelClassName="block text-white-pearl mb-2 text-sm"
-					/>
-					<InputField
-						label="End Date"
-						type="date"
-						value={endDate}
-						onChange={(e) => setEndDate(e.target.value)}
-						labelClassName="block text-white-pearl mb-2 text-sm"
-					/>
+				<div>
+					<div className={inline ? "grid grid-cols-2 gap-4" : "space-y-4"}>
+						<InputField
+							label="Start Date"
+							type="date"
+							value={startDate}
+							onChange={(e) => {
+								setStartDate(e.target.value);
+								if (dateRangeError) setDateRangeError("");
+							}}
+							labelClassName="block text-white-pearl mb-2 text-sm"
+						/>
+						<InputField
+							label="End Date"
+							type="date"
+							value={endDate}
+							onChange={(e) => {
+								setEndDate(e.target.value);
+								if (dateRangeError) setDateRangeError("");
+							}}
+							labelClassName="block text-white-pearl mb-2 text-sm"
+						/>
+					</div>
+					{dateRangeError && (
+						<span className="text-xs text-carmin flex items-center gap-1 mt-1">
+							<BiSolidError />
+							{dateRangeError}
+						</span>
+					)}
 				</div>
+
+				{/* General Error */}
+				{generalError && (
+					<div className="flex items-center gap-2 text-carmin text-sm">
+						<BiSolidError className="text-lg" />
+						<span>{generalError}</span>
+					</div>
+				)}
 
 				{/* Buttons */}
 				<div className="flex gap-3 pt-2">

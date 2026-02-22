@@ -29,14 +29,19 @@ const SignIn = ({ onClose }: SignInProps) => {
 		setPasswordError("");
 		setGeneralError("");
 
+		let hasErrors = false;
+
 		if (!email) {
 			setEmailError("Email is required");
-			return;
+			hasErrors = true;
 		}
+
 		if (!password) {
 			setPasswordError("Password is required");
-			return;
+			hasErrors = true;
 		}
+
+		if (hasErrors) return;
 
 		setIsLoading(true);
 
