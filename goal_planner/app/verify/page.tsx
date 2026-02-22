@@ -13,16 +13,13 @@ export default function VerifyEmail() {
 	const [error, setError] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
 	const [userEmail, setUserEmail] = useState("");
+	const [resendSuccess, setResendSuccess] = useState(false);
 
 	useEffect(() => {
-		// Debug: Verificar sessionStorage
 		console.log("SessionStorage items:", Object.keys(sessionStorage));
 		console.log("verifyEmail value:", sessionStorage.getItem("verifyEmail"));
 
-		// Get email from sessionStorage (set during registration)
 		let email = sessionStorage.getItem("verifyEmail");
-
-		// Fallback a localStorage si sessionStorage está vacío
 		if (!email) {
 			email = localStorage.getItem("verifyEmail");
 			console.log("Fallback to localStorage:", email);
@@ -30,9 +27,6 @@ export default function VerifyEmail() {
 
 		if (email) {
 			setUserEmail(email);
-			// No eliminar el email hasta después de verificar exitosamente
-			// sessionStorage.removeItem("verifyEmail");
-			// localStorage.removeItem("verifyEmail"); // Limpiar backup
 		} else {
 			setError("Session expired. Please sign up again.");
 			setTimeout(() => {
@@ -92,19 +86,21 @@ export default function VerifyEmail() {
 	const handleSubmit = async () => {
 		const verificationCode = code.join("");
 
+		setError("");
+		let hasErrors = false;
+
 		// Validation
 		if (verificationCode.length !== 8) {
 			setError("Please enter all 8 digits");
-			return;
+			hasErrors = true;
+		} else if (!userEmail) {
+			setError("No email found. Please sign up again.");
+			hasErrors = true;
 		}
 
-		if (!userEmail) {
-			setError("No email found. Please sign up again.");
-			return;
-		}
+		if (hasErrors) return;
 
 		setIsLoading(true);
-		setError("");
 
 		try {
 			const supabase = createClient();
@@ -178,6 +174,8 @@ export default function VerifyEmail() {
 
 				// Show success feedback
 				setError(""); // Clear any existing error
+				setResendSuccess(true);
+				setTimeout(() => setResendSuccess(false), 4000);
 			}
 		} catch (err) {
 			console.error("Resend catch error:", err);
@@ -223,7 +221,7 @@ export default function VerifyEmail() {
 								onPaste={index === 0 ? handlePaste : undefined}
 								className={`w-12 h-14 text-center text-2xl font-bold rounded-lg border-2 ${
 									error
-										? "border-red-500 bg-red-500/10 text-red-500"
+									? "border-carmin bg-carmin/10 text-carmin"
 										: "border-white-pearl/30 bg-white-pearl/5 text-white-pearl focus:border-vibrant-orange"
 								} focus:outline-none focus:ring-2 focus:ring-vibrant-orange/20 transition-all duration-200`}
 							/>
@@ -232,11 +230,28 @@ export default function VerifyEmail() {
 
 					{/* Error message */}
 					{error && (
-						<div className="flex items-center gap-2 text-red-500 text-sm">
-							<BiSolidError className="text-lg" />
-							<span>{error}</span>
-						</div>
-					)}
+					<div className="flex items-center gap-2 text-carmin text-sm">
+						<BiSolidError className="text-lg" />
+						<span>{error}</span>
+					</div>
+				)}
+
+				{/* Success message */}
+				{resendSuccess && (
+					<div className="flex items-center gap-2 text-sea-green text-sm">
+						<svg
+							className="w-4 h-4"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24">
+							<path
+								strokeLinecap="round"
+								strokeLinejoin="round"
+								strokeWidth={2}
+								d="M5 13l4 4L19 7"
+							/>
+						</svg>
+						<span>Code sent successfully! Check your email.</span>
 
 					{/* Verify Button */}
 					<Button

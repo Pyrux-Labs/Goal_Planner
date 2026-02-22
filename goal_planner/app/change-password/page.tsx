@@ -16,7 +16,9 @@ export default function ChangePassword() {
 	const [confirmPassword, setConfirmPassword] = useState("");
 	const [showNewPassword, setShowNewPassword] = useState(false);
 	const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-	const [error, setError] = useState("");
+	const [newPasswordError, setNewPasswordError] = useState("");
+	const [confirmPasswordError, setConfirmPasswordError] = useState("");
+	const [generalError, setGeneralError] = useState("");
 	const [success, setSuccess] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
 
@@ -40,24 +42,40 @@ export default function ChangePassword() {
 
 	// Handle form submission
 	const handleSubmit = async () => {
+		// Clear all errors
+		setNewPasswordError("");
+		setConfirmPasswordError("");
+		setGeneralError("");
+
+		let hasErrors = false;
+
 		// Validation
 		if (!newPassword) {
-			setError("New password is required");
-			return;
+			setNewPasswordError("New password is required");
+			hasErrors = true;
+		} else if (newPassword.length < 8) {
+			setNewPasswordError("Password must be at least 8 characters long");
+			hasErrors = true;
+		}
+		//Todo: better password validation
+		/* else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(newPassword)) {
+			setNewPasswordError(
+				"Password must contain at least one uppercase letter, one lowercase letter, and one number",
+			);
+			hasErrors = true;
+		} */
+
+		if (!confirmPassword) {
+			setConfirmPasswordError("Please confirm your password");
+			hasErrors = true;
+		} else if (newPassword !== confirmPassword) {
+			setConfirmPasswordError("Passwords do not match");
+			hasErrors = true;
 		}
 
-		if (newPassword.length < 8) {
-			setError("Password must be at least 8 characters long");
-			return;
-		}
-
-		if (newPassword !== confirmPassword) {
-			setError("Passwords do not match");
-			return;
-		}
+		if (hasErrors) return;
 
 		setIsLoading(true);
-		setError("");
 
 		try {
 			const supabase = createClient();
@@ -67,9 +85,11 @@ export default function ChangePassword() {
 
 			if (error) {
 				if (error.message?.includes("Password")) {
-					setError("Password is too weak. Please use a stronger password.");
+					setNewPasswordError(
+						"Password is too weak. Please use a stronger password.",
+					);
 				} else {
-					setError(
+					setGeneralError(
 						error.message || "Failed to change password. Please try again.",
 					);
 				}
@@ -79,7 +99,7 @@ export default function ChangePassword() {
 			// Show success message
 			setSuccess(true);
 		} catch (err) {
-			setError("Failed to change password. Please try again.");
+			setGeneralError("Failed to change password. Please try again.");
 		} finally {
 			setIsLoading(false);
 		}
@@ -88,12 +108,14 @@ export default function ChangePassword() {
 	// Handle input changes
 	const handleNewPasswordChange = (value: string) => {
 		setNewPassword(value);
-		if (error) setError("");
+		if (newPasswordError) setNewPasswordError("");
+		if (generalError) setGeneralError("");
 	};
 
 	const handleConfirmPasswordChange = (value: string) => {
 		setConfirmPassword(value);
-		if (error) setError("");
+		if (confirmPasswordError) setConfirmPasswordError("");
+		if (generalError) setGeneralError("");
 	};
 
 	return (
@@ -109,38 +131,54 @@ export default function ChangePassword() {
 					{!success ? (
 						<>
 							{/* New Password Input */}
-							<InputField
-								label="New Password"
-								type="password"
-								placeholder="Enter your new password"
-								value={newPassword}
-								onChange={(e) => handleNewPasswordChange(e.target.value)}
-								labelClassName="block text-white-pearl mb-2 text-sm font-medium"
-								showPasswordToggle={true}
-								isPasswordVisible={showNewPassword}
-								onPasswordToggle={() => setShowNewPassword(!showNewPassword)}
-							/>
+							<div>
+								<InputField
+									label="New Password"
+									type="password"
+									placeholder="Enter your new password"
+									value={newPassword}
+									onChange={(e) => handleNewPasswordChange(e.target.value)}
+									labelClassName="block text-white-pearl mb-2 text-sm font-medium"
+									showPasswordToggle={true}
+									isPasswordVisible={showNewPassword}
+									onPasswordToggle={() => setShowNewPassword(!showNewPassword)}
+								/>
+								{newPasswordError && (
+									<span className="text-xs text-carmin flex items-center gap-1 mt-1">
+										<BiSolidError />
+										{newPasswordError}
+									</span>
+								)}
+							</div>
 
 							{/* Confirm Password Input */}
-							<InputField
-								label="Confirm Password"
-								type="password"
-								placeholder="Confirm your new password"
-								value={confirmPassword}
-								onChange={(e) => handleConfirmPasswordChange(e.target.value)}
-								labelClassName="block text-white-pearl mb-2 text-sm font-medium"
-								showPasswordToggle={true}
-								isPasswordVisible={showConfirmPassword}
-								onPasswordToggle={() =>
-									setShowConfirmPassword(!showConfirmPassword)
-								}
-							/>
+							<div>
+								<InputField
+									label="Confirm Password"
+									type="password"
+									placeholder="Confirm your new password"
+									value={confirmPassword}
+									onChange={(e) => handleConfirmPasswordChange(e.target.value)}
+									labelClassName="block text-white-pearl mb-2 text-sm font-medium"
+									showPasswordToggle={true}
+									isPasswordVisible={showConfirmPassword}
+									onPasswordToggle={() =>
+										setShowConfirmPassword(!showConfirmPassword)
+									}
+								/>
+								{confirmPasswordError && (
+									<span className="text-xs text-carmin flex items-center gap-1 mt-1">
+										<BiSolidError />
+										{confirmPasswordError}
+									</span>
+								)}
+							</div>
 
-							{/* Error message */}
-							{error && (
-								<div className="flex items-center gap-2 text-red-500 text-sm">
+							{/* General Error message */}
+							{generalError && (
+								<div className="flex items-center gap-2 text-carmin text-sm">
 									<BiSolidError className="text-lg" />
-									<span>{error}</span>
+									<span>{generalError}</span>
 								</div>
 							)}
 

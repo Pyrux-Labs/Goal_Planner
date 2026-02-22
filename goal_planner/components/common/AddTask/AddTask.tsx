@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import InputField from "@/components/ui/InputField/InputField";
+import { BiSolidError } from "react-icons/bi";
 import type { TaskEditData } from "@/types/sidebar";
 
 interface AddTaskProps {
@@ -59,6 +60,16 @@ const AddTask = ({
 	const [endTime, setEndTime] = useState(editData?.end_time ?? "");
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
+	// Error states
+	const [goalError, setGoalError] = useState("");
+	const [taskNameError, setTaskNameError] = useState("");
+	const [repeatDaysError, setRepeatDaysError] = useState("");
+	const [dateRangeError, setDateRangeError] = useState("");
+	const [dateError, setDateError] = useState("");
+	const [startTimeError, setStartTimeError] = useState("");
+	const [endTimeError, setEndTimeError] = useState("");
+	const [generalError, setGeneralError] = useState("");
+
 	useEffect(() => {
 		// Only fetch goals if not preloaded and showGoalSelect is true
 		if (showGoalSelect && !preloadedGoals) {
@@ -102,27 +113,98 @@ const AddTask = ({
 	}, []);
 
 	const handleSubmit = async () => {
-		if (!taskName.trim()) return;
+		// Clear all errors
+		setGoalError("");
+		setTaskNameError("");
+		setRepeatDaysError("");
+		setDateRangeError("");
+		setDateError("");
+		setStartTimeError("");
+		setEndTimeError("");
+		setGeneralError("");
+
+		let hasErrors = false;
+
+		// Validation
+		/* 		if (showGoalSelect && !selectedGoalId) {
+			setGoalError("Please select a goal");
+			hasErrors = true;
+		} */
+
+		if (!taskName.trim()) {
+			setTaskNameError("Task name is required");
+			hasErrors = true;
+		}
 
 		if (taskType === "repeating" && selectedDays.length === 0) {
-			alert("Please select at least one repeat day");
-			return;
+			setRepeatDaysError("Please select at least one repeat day");
+			hasErrors = true;
 		}
 
 		if (taskType === "repeating" && (!startDate || !endDate)) {
-			alert("Please select start and end dates");
-			return;
+			setDateRangeError("Please select start and end dates");
+			hasErrors = true;
+		}
+
+		if (taskType === "repeating" && startDate && endDate) {
+			const start = new Date(startDate);
+			start.setHours(0, 0, 0, 0);
+			const end = new Date(endDate);
+			end.setHours(0, 0, 0, 0);
+			if (end < start) {
+				setDateRangeError("End date must be after start date");
+				hasErrors = true;
+			}
 		}
 
 		if (taskType === "one-time" && !selectedDate) {
-			alert("Please select a date");
-			return;
+			setDateError("Please select a date");
+			hasErrors = true;
+		}
+
+		// Validate date is not in the past
+		if (taskType === "one-time" && selectedDate) {
+			const selected = new Date(selectedDate);
+			selected.setHours(0, 0, 0, 0);
+			const today = new Date();
+			today.setHours(0, 0, 0, 0);
+			if (selected < today) {
+				setDateError("Date cannot be in the past");
+				hasErrors = true;
+			}
+		}
+
+		// Validate start date is not in the past
+		if (taskType === "repeating" && startDate) {
+			const start = new Date(startDate);
+			start.setHours(0, 0, 0, 0);
+			const today = new Date();
+			today.setHours(0, 0, 0, 0);
+			if (start < today) {
+				setDateRangeError("Start date cannot be in the past");
+				hasErrors = true;
+			}
 		}
 
 		if (!isAllDay && !startTime) {
-			alert("Please select a start time");
-			return;
+			setStartTimeError("Please select a start time");
+			hasErrors = true;
 		}
+
+		if (!isAllDay && startTime && endTime) {
+			// Compare times
+			const [startHour, startMin] = startTime.split(":").map(Number);
+			const [endHour, endMin] = endTime.split(":").map(Number);
+			const startMinutes = startHour * 60 + startMin;
+			const endMinutes = endHour * 60 + endMin;
+
+			if (endMinutes <= startMinutes) {
+				setEndTimeError("End time must be after start time");
+				hasErrors = true;
+			}
+		}
+
+		if (hasErrors) return;
 
 		setIsSubmitting(true);
 
@@ -163,7 +245,7 @@ const AddTask = ({
 			onClose();
 		} catch (error) {
 			console.error("Error saving task:", error);
-			alert("Failed to save task");
+			setGeneralError("Failed to save task. Please try again.");
 		} finally {
 			setIsSubmitting(false);
 		}
@@ -191,11 +273,12 @@ const AddTask = ({
 						</label>
 						<select
 							value={selectedGoalId || ""}
-							onChange={(e) =>
+							onChange={(e) => {
 								setSelectedGoalId(
 									e.target.value ? Number(e.target.value) : null,
-								)
-							}
+								);
+								if (goalError) setGoalError("");
+							}}
 							className="w-full h-12 bg-input-bg border border-input-bg text-white-pearl rounded-2xl px-3 focus:outline-none focus:border-vibrant-orange transition-colors">
 							<option value="">Not Selected</option>
 							{goals.map((goal) => (
@@ -204,18 +287,35 @@ const AddTask = ({
 								</option>
 							))}
 						</select>
+						{goalError && (
+							<span className="text-xs text-carmin flex items-center gap-1 mt-1">
+								<BiSolidError />
+								{goalError}
+							</span>
+						)}
 					</div>
 				)}
 
 				{/* Task Name */}
-				<InputField
-					label="Task Name"
-					type="text"
-					placeholder="Enter task name"
-					value={taskName}
-					onChange={(e) => setTaskName(e.target.value)}
-					labelClassName="block text-white-pearl mb-2 text-sm"
-				/>
+				<div>
+					<InputField
+						label="Task Name"
+						type="text"
+						placeholder="Enter task name"
+						value={taskName}
+						onChange={(e) => {
+							setTaskName(e.target.value);
+							if (taskNameError) setTaskNameError("");
+						}}
+						labelClassName="block text-white-pearl mb-2 text-sm"
+					/>
+					{taskNameError && (
+						<span className="text-xs text-carmin flex items-center gap-1 mt-1">
+							<BiSolidError />
+							{taskNameError}
+						</span>
+					)}
+				</div>
 
 				{/* Task Type Switch */}
 				<div>
@@ -246,13 +346,24 @@ const AddTask = ({
 
 				{/* One-Time: Date */}
 				{taskType === "one-time" && (
-					<InputField
-						label="Date"
-						type="date"
-						value={selectedDate}
-						onChange={(e) => setSelectedDate(e.target.value)}
-						labelClassName="block text-white-pearl mb-2 text-sm"
-					/>
+					<div>
+						<InputField
+							label="Date"
+							type="date"
+							value={selectedDate}
+							onChange={(e) => {
+								setSelectedDate(e.target.value);
+								if (dateError) setDateError("");
+							}}
+							labelClassName="block text-white-pearl mb-2 text-sm"
+						/>
+						{dateError && (
+							<span className="text-xs text-carmin flex items-center gap-1 mt-1">
+								<BiSolidError />
+								{dateError}
+							</span>
+						)}
+					</div>
 				)}
 
 				{/* Repeating: Repeat Days and Date Range */}
@@ -266,7 +377,10 @@ const AddTask = ({
 								{DAYS.map((day) => (
 									<button
 										key={day.id}
-										onClick={() => toggleDay(day.id)}
+										onClick={() => {
+											toggleDay(day.id);
+											if (repeatDaysError) setRepeatDaysError("");
+										}}
 										className={`${
 											inline ? "w-10 h-10" : "w-[1.75rem] h-[1.75rem] text-sm"
 										} rounded-full font-semibold transition ${
@@ -278,23 +392,43 @@ const AddTask = ({
 									</button>
 								))}
 							</div>
+							{repeatDaysError && (
+								<span className="text-xs text-carmin flex items-center gap-1 mt-1">
+									<BiSolidError />
+									{repeatDaysError}
+								</span>
+							)}
 						</div>
 
-						<div className={inline ? "grid grid-cols-2 gap-4" : "space-y-4"}>
-							<InputField
-								label="Start Date"
-								type="date"
-								value={startDate}
-								onChange={(e) => setStartDate(e.target.value)}
-								labelClassName="block text-white-pearl mb-2 text-sm"
-							/>
-							<InputField
-								label="End Date"
-								type="date"
-								value={endDate}
-								onChange={(e) => setEndDate(e.target.value)}
-								labelClassName="block text-white-pearl mb-2 text-sm"
-							/>
+						<div>
+							<div className={inline ? "grid grid-cols-2 gap-4" : "space-y-4"}>
+								<InputField
+									label="Start Date"
+									type="date"
+									value={startDate}
+									onChange={(e) => {
+										setStartDate(e.target.value);
+										if (dateRangeError) setDateRangeError("");
+									}}
+									labelClassName="block text-white-pearl mb-2 text-sm"
+								/>
+								<InputField
+									label="End Date"
+									type="date"
+									value={endDate}
+									onChange={(e) => {
+										setEndDate(e.target.value);
+										if (dateRangeError) setDateRangeError("");
+									}}
+									labelClassName="block text-white-pearl mb-2 text-sm"
+								/>
+							</div>
+							{dateRangeError && (
+								<span className="text-xs text-carmin flex items-center gap-1 mt-1">
+									<BiSolidError />
+									{dateRangeError}
+								</span>
+							)}
 						</div>
 					</>
 				)}
@@ -323,9 +457,18 @@ const AddTask = ({
 							<input
 								type="time"
 								value={startTime}
-								onChange={(e) => setStartTime(e.target.value)}
+								onChange={(e) => {
+									setStartTime(e.target.value);
+									if (startTimeError) setStartTimeError("");
+								}}
 								className="w-full h-12 bg-input-bg border border-input-bg text-white-pearl rounded-2xl px-3 focus:outline-none focus:border-vibrant-orange transition-colors"
 							/>
+							{startTimeError && (
+								<span className="text-xs text-carmin flex items-center gap-1 mt-1">
+									<BiSolidError />
+									{startTimeError}
+								</span>
+							)}
 						</div>
 						<div>
 							<label className="block text-white-pearl mb-2 text-sm">
@@ -335,10 +478,27 @@ const AddTask = ({
 							<input
 								type="time"
 								value={endTime}
-								onChange={(e) => setEndTime(e.target.value)}
+								onChange={(e) => {
+									setEndTime(e.target.value);
+									if (endTimeError) setEndTimeError("");
+								}}
 								className="w-full h-12 bg-input-bg border border-input-bg text-white-pearl rounded-2xl px-3 focus:outline-none focus:border-vibrant-orange transition-colors"
 							/>
+							{endTimeError && (
+								<span className="text-xs text-carmin flex items-center gap-1 mt-1">
+									<BiSolidError />
+									{endTimeError}
+								</span>
+							)}
 						</div>
+					</div>
+				)}
+
+				{/* General Error */}
+				{generalError && (
+					<div className="flex items-center gap-2 text-carmin text-sm">
+						<BiSolidError className="text-lg" />
+						<span>{generalError}</span>
 					</div>
 				)}
 

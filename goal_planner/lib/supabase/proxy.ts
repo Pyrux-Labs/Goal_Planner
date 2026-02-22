@@ -58,13 +58,12 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname !== "/anual-goals" &&
     request.nextUrl.pathname !== "/stats" &&
     request.nextUrl.pathname !== "/settings" &&
-    !user &&
-    !request.nextUrl.pathname.startsWith("/login") &&
-    !request.nextUrl.pathname.startsWith("/auth")
+    request.nextUrl.pathname !== "/not-found" &&
+    !user
   ) {
-    // no user, potentially respond by redirecting the user to the login page
+    // no user, redirect to 404 page
     const url = request.nextUrl.clone();
-    url.pathname = "/auth/login";
+    url.pathname = "/not-found";
     return NextResponse.redirect(url);
   }
 

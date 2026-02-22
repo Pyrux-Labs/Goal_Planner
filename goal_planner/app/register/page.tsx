@@ -31,42 +31,50 @@ export default function Register() {
 		setConfirmPasswordError("");
 		setGeneralError("");
 
+		let hasErrors = false;
+
 		if (!fullName) {
 			setFullNameError("Full name is required");
-			return;
+			hasErrors = true;
 		}
+
 		if (!email) {
 			setEmailError("Email is required");
-			return;
+			hasErrors = true;
+		} else {
+			const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+			if (!emailRegex.test(email)) {
+				setEmailError("Please enter a valid email address");
+				hasErrors = true;
+			}
 		}
-		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-		if (!emailRegex.test(email)) {
-			setEmailError("Please enter a valid email address");
-			return;
-		}
+
 		if (!password) {
 			setPasswordError("Password is required");
-			return;
-		}
-		if (password.length < 8) {
+			hasErrors = true;
+		} else if (password.length < 8) {
 			setPasswordError("Password must be at least 8 characters");
-			return;
+			hasErrors = true;
 		}
 		//Todo: better password validation
-		/* 		if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
+		/* else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
 			setPasswordError(
 				"Password must contain at least one uppercase letter, one lowercase letter, and one number",
 			);
-			return;
+			hasErrors = true;
 		} */
+
 		if (password !== confirmPassword) {
 			setConfirmPasswordError("Passwords do not match");
-			return;
+			hasErrors = true;
 		}
+
 		if (!acceptTerms) {
 			setGeneralError("You must accept the terms and conditions");
-			return;
+			hasErrors = true;
 		}
+
+		if (hasErrors) return;
 
 		setIsLoading(true);
 
