@@ -7,6 +7,10 @@ import GoalCard from "@/components/common/GoalCard/GoalCard";
 import ConfirmModal from "@/components/ui/ConfirmModal/ConfirmModal";
 import { createClient } from "@/lib/supabase/client";
 import { deleteGoalWithRelatedData } from "@/utils/deleteGoal";
+import {
+    deleteTaskWithFutureLogs,
+    deleteHabitWithFutureLogs,
+} from "@/utils/deleteTaskHabit";
 
 // ===== TYPE DEFINITIONS =====
 interface Task {
@@ -39,6 +43,7 @@ interface Goal {
 }
 
 // ===== CONSTANTS =====
+/** Mapping of day names to their abbreviated forms */
 const DAY_MAP: { [key: string]: string } = {
     monday: "Mon",
     tuesday: "Tue",
@@ -50,12 +55,22 @@ const DAY_MAP: { [key: string]: string } = {
 };
 
 // ===== UTILITY FUNCTIONS =====
+/**
+ * Formats an array of repeat days into a readable string
+ * @param days - Array of day names (e.g., ["monday", "tuesday"])
+ * @returns Formatted string (e.g., "Mon, Tue") or "Everyday" if all days
+ */
 const formatRepeatDays = (days: string[]): string | undefined => {
     if (days.length === 7) return "Everyday";
     if (days.length === 0) return undefined;
     return days.map((day) => DAY_MAP[day.toLowerCase()] || day).join(", ");
 };
 
+/**
+ * Formats a time string to 12-hour format with AM/PM
+ * @param time - Time string in 24-hour format (e.g., "14:30")
+ * @returns Formatted time (e.g., "2:30 PM") or undefined if no time
+ */
 const formatTime = (time: string | null): string | undefined => {
     if (!time) return undefined;
     const [hours, minutes] = time.split(":");
@@ -65,6 +80,11 @@ const formatTime = (time: string | null): string | undefined => {
     return `${displayHour}:${minutes} ${ampm}`;
 };
 
+/**
+ * Formats a date string to short format (e.g., "15 JAN")
+ * @param date - ISO date string
+ * @returns Formatted date or undefined if no date
+ */
 const formatDate = (date: string | null): string | undefined => {
     if (!date) return undefined;
     const d = new Date(date);
@@ -75,6 +95,11 @@ const formatDate = (date: string | null): string | undefined => {
     return `${day} ${month}`;
 };
 
+/**
+ * Formats a target date to long format (e.g., "Jan 15, 2026")
+ * @param date - ISO date string
+ * @returns Formatted date string
+ */
 const formatTargetDate = (date: string): string => {
     const targetDate = new Date(date);
     return targetDate.toLocaleDateString("en-US", {
@@ -84,11 +109,29 @@ const formatTargetDate = (date: string): string => {
     });
 };
 
+/**
+ * Capitalizes the first letter of a string
+ * @param str - String to capitalize
+ * @returns Capitalized string
+ */
 const capitalizeFirst = (str: string): string => {
     return str.charAt(0).toUpperCase() + str.slice(1);
 };
 
-// ===== OPTIMIZED BATCH DATA FETCHING =====
+/**
+ * Fetches all goals data with associated tasks, habits, and logs in optimized batch queries
+ *
+ * This function performs the following:
+ * 1. Fetches all goals for the user
+ * 2. Batch fetches all tasks and habits for those goals
+ * 3. Batch fetches all repeat days and logs for those tasks and habits
+ * 4. Builds lookup maps for O(1) access
+ * 5. Assembles the complete goal data with calculated progress
+ *
+ * @param supabase - Supabase client instance
+ * @param userId - User ID to fetch goals for
+ * @returns Array of goals with all related data
+ */
 async function fetchAllGoalsDataOptimized(supabase: any, userId: string) {
     // 1. Fetch all goals
     const { data: goalsData, error: goalsError } = await supabase
@@ -150,7 +193,7 @@ async function fetchAllGoalsDataOptimized(supabase: any, userId: string) {
         habitIds.length > 0
             ? supabase
                   .from("habit_logs")
-                  .select("habit_id, completed")
+                  .select("habit_id, completed, date")
                   .in("habit_id", habitIds)
             : Promise.resolve({ data: [] }),
     ]);
@@ -246,21 +289,25 @@ async function fetchAllGoalsDataOptimized(supabase: any, userId: string) {
         }));
 
         // Calculate progress efficiently from indexed data
+        // Count all logs (completed and incomplete) for this goal's tasks and habits
         let totalLogs = 0;
         let completedLogs = 0;
 
+        // Sum up task logs
         tasks.forEach((task) => {
             const logs = taskLogsMap.get(task.id) || [];
             totalLogs += logs.length;
             completedLogs += logs.filter((log: any) => log.completed).length;
         });
 
+        // Sum up habit logs
         habits.forEach((habit) => {
             const logs = habitLogsMap.get(habit.id) || [];
             totalLogs += logs.length;
             completedLogs += logs.filter((log: any) => log.completed).length;
         });
 
+        // Calculate progress percentage (0-100)
         const progress =
             totalLogs > 0 ? Math.round((completedLogs / totalLogs) * 100) : 0;
 
@@ -279,8 +326,16 @@ async function fetchAllGoalsDataOptimized(supabase: any, userId: string) {
     });
 }
 
-// Calculate overall year progress as a weighted average of each goal's progress
-// Weight is based on the number of logs each goal has (more realistic percentage)
+/**
+ * Calculate overall year progress as a weighted average of each goal's progress
+ *
+ * The weight is based on the number of logs each goal has, making the calculation
+ * more realistic. A goal with 1 log won't affect the year progress as much as
+ * a goal with 100 logs.
+ *
+ * @param goals - Array of goals with their progress and totalLogs
+ * @returns Overall year progress percentage (0-100)
+ */
 function calculateOverallYearProgressFromGoals(goals: Goal[]): number {
     const currentYear = new Date().getFullYear();
 
@@ -289,17 +344,22 @@ function calculateOverallYearProgressFromGoals(goals: Goal[]): number {
         (goal) => new Date(goal.target_date).getFullYear() === currentYear,
     );
 
+    // No goals for current year
     if (currentYearGoals.length === 0) return 0;
 
-    // Calculate weighted average based on totalLogs
+    // Calculate weighted sum: progress * totalLogs for each goal
     let weightedSum = 0;
     let totalWeight = 0;
 
     currentYearGoals.forEach((goal) => {
-        weightedSum += goal.progress * goal.totalLogs;
-        totalWeight += goal.totalLogs;
+        // Only include goals that have logs (avoid division by zero)
+        if (goal.totalLogs > 0) {
+            weightedSum += goal.progress * goal.totalLogs;
+            totalWeight += goal.totalLogs;
+        }
     });
 
+    // Return weighted average (or 0 if no logs exist)
     return totalWeight > 0 ? Math.round(weightedSum / totalWeight) : 0;
 }
 
@@ -319,11 +379,11 @@ export default function AnualGoalsPage() {
     } | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
 
-    useEffect(() => {
-        fetchGoalsData();
-    }, []);
-
-    const fetchGoalsData = async () => {
+    /**
+     * Fetches all goals data with associated tasks, habits, and logs
+     * Calculates progress for each goal and overall year progress
+     */
+    const fetchGoalsData = useCallback(async () => {
         try {
             const supabase = createClient();
 
@@ -331,6 +391,7 @@ export default function AnualGoalsPage() {
             const {
                 data: { user },
             } = await supabase.auth.getUser();
+
             if (!user) {
                 setLoading(false);
                 return;
@@ -353,14 +414,21 @@ export default function AnualGoalsPage() {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    const handleDeleteClick = (goalId: number, goalName: string) => {
-        setGoalToDelete({ id: goalId, name: goalName });
-        setIsDeleteModalOpen(true);
-    };
+    useEffect(() => {
+        fetchGoalsData();
+    }, [fetchGoalsData]);
 
-    const handleConfirmDelete = async () => {
+    const handleDeleteClick = useCallback(
+        (goalId: number, goalName: string) => {
+            setGoalToDelete({ id: goalId, name: goalName });
+            setIsDeleteModalOpen(true);
+        },
+        [],
+    );
+
+    const handleConfirmDelete = useCallback(async () => {
         if (!goalToDelete) return;
 
         setIsDeleting(true);
@@ -368,19 +436,18 @@ export default function AnualGoalsPage() {
         setIsDeleting(false);
 
         if (result.success) {
-            // Close modal and refresh goals
             setIsDeleteModalOpen(false);
             setGoalToDelete(null);
             await fetchGoalsData();
         } else {
             alert(`Failed to delete goal: ${result.error}`);
         }
-    };
+    }, [goalToDelete, fetchGoalsData]);
 
-    const handleCancelDelete = () => {
+    const handleCancelDelete = useCallback(() => {
         setIsDeleteModalOpen(false);
         setGoalToDelete(null);
-    };
+    }, []);
 
     // ===== FILTERS AND STATS (MEMOIZED) =====
     const FILTERS = useMemo(
@@ -459,6 +526,64 @@ export default function AnualGoalsPage() {
         [filteredGoals],
     );
 
+    /**
+     * Handles deletion of a task from a goal
+     * Deletes the task, its repeat days, and all logs from today onwards
+     */
+    const handleTaskDelete = async (goalIndex: number, taskIndex: number) => {
+        const goal = formattedGoals[goalIndex];
+        const taskId = goals.find((g) => g.id === goal.id)?.tasks[taskIndex]
+            ?.id;
+
+        if (!taskId) {
+            console.error("Task ID not found");
+            return;
+        }
+
+        const confirmed = window.confirm(
+            `Are you sure you want to delete "${goal.formattedTasks[taskIndex].title}"? This will delete the task and all its logs from today onwards.`,
+        );
+
+        if (!confirmed) return;
+
+        const result = await deleteTaskWithFutureLogs(taskId);
+
+        if (result.success) {
+            await fetchGoalsData();
+        } else {
+            alert(`Failed to delete task: ${result.error}`);
+        }
+    };
+
+    /**
+     * Handles deletion of a habit from a goal
+     * Deletes the habit, its repeat days, and all logs from today onwards
+     */
+    const handleHabitDelete = async (goalIndex: number, habitIndex: number) => {
+        const goal = formattedGoals[goalIndex];
+        const habitId = goals.find((g) => g.id === goal.id)?.habits[habitIndex]
+            ?.id;
+
+        if (!habitId) {
+            console.error("Habit ID not found");
+            return;
+        }
+
+        const confirmed = window.confirm(
+            `Are you sure you want to delete "${goal.formattedHabits[habitIndex].title}"? This will delete the habit and all its logs from today onwards.`,
+        );
+
+        if (!confirmed) return;
+
+        const result = await deleteHabitWithFutureLogs(habitId);
+
+        if (result.success) {
+            await fetchGoalsData();
+        } else {
+            alert(`Failed to delete habit: ${result.error}`);
+        }
+    };
+
     return (
         <div>
             <Navbar />
@@ -522,7 +647,7 @@ export default function AnualGoalsPage() {
                             No goals found. Create your first goal!
                         </div>
                     ) : (
-                        formattedGoals.map((goal) => (
+                        formattedGoals.map((goal, goalIndex) => (
                             <GoalCard
                                 key={goal.id}
                                 goalId={goal.id}
@@ -543,9 +668,7 @@ export default function AnualGoalsPage() {
                                     )
                                 }
                                 onTaskDelete={(taskIndex) =>
-                                    console.log(
-                                        `Delete task ${taskIndex} from ${goal.name}`,
-                                    )
+                                    handleTaskDelete(goalIndex, taskIndex)
                                 }
                                 onHabitEdit={(habitIndex) =>
                                     console.log(
@@ -553,9 +676,7 @@ export default function AnualGoalsPage() {
                                     )
                                 }
                                 onHabitDelete={(habitIndex) =>
-                                    console.log(
-                                        `Delete habit ${habitIndex} from ${goal.name}`,
-                                    )
+                                    handleHabitDelete(goalIndex, habitIndex)
                                 }
                                 onEdit={() =>
                                     router.push(`/edit-goal?id=${goal.id}`)

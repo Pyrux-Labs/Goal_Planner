@@ -10,9 +10,13 @@ interface MenuItem {
 
 interface DropdownMenuProps {
     items: MenuItem[];
+    align?: "left" | "right";
 }
 
-export default function DropdownMenu({ items }: DropdownMenuProps) {
+export default function DropdownMenu({
+    items,
+    align = "right",
+}: DropdownMenuProps) {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
 
@@ -50,7 +54,8 @@ export default function DropdownMenu({ items }: DropdownMenuProps) {
             {/* Dropdown Menu */}
             <div
                 className={clsx(
-                    "absolute right-0 top-full mt-2 w-48 bg-deep-bg border border-input-bg rounded-lg z-50 transition-all duration-300",
+                    "absolute top-full mt-2 w-48 bg-deep-bg border border-input-bg rounded-lg z-50 transition-all duration-300",
+                    align === "left" ? "left-0" : "right-0",
                     isMenuOpen
                         ? "opacity-100 translate-y-0 scale-100"
                         : "opacity-0 -translate-y-2 scale-95 pointer-events-none",
