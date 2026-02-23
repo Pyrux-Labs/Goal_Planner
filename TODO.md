@@ -59,7 +59,7 @@
 ### 🐛 Fixes Pendientes
 
 - [x] Página 404 (not-found.tsx)
-- [ ] **new-goal usa delete simple** - `deleteGoalAndRelated()` en new-goal/page.tsx no usa `deleteGoalWithRelatedData` (puede dejar datos huérfanos) [GINO]
+- [x] **new-goal usa delete simple** - `deleteGoalAndRelated()` en new-goal/page.tsx no usa `deleteGoalWithRelatedData` (puede dejar datos huérfanos) [GINO]
 - [ ] **keepLoggedIn en SignIn** - El checkbox no afecta el comportamiento de la sesión de Supabase [JUANMA]
 - [ ] **Google Auth buttons** - Los botones de "Sign in/up with Google" existen pero no hacen nada (`onClick={() => {}}`) [JUANMA]
 - [ ] **Missing useEffect deps** - `fetchGoals` no está en dependency array en AddTask y onboarding [GINO]
