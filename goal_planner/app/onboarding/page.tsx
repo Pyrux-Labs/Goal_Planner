@@ -12,7 +12,7 @@ import NavigationButtons from "@/components/Onboarding/NavigationButtons/Navigat
 import GoalForm, { GoalFormRef } from "@/components/common/GoalForm/GoalForm";
 import GoalCard from "@/components/common/GoalCard/GoalCard";
 import Button from "@/components/ui/Button/Button";
-import ConfirmModal from "@/components/ui/ConfirmModal/ConfirmModal";
+import Modal from "@/components/ui/Modal/Modal";
 
 import { createClient } from "@/lib/supabase/client";
 import { deleteGoalWithRelatedData } from "@/utils/deleteGoal";
@@ -634,7 +634,7 @@ function OnboardingContent() {
                 )}
             </div>
 
-            <ConfirmModal
+            <Modal
                 isOpen={isDeleteModalOpen}
                 title="Delete Goal?"
                 message={
@@ -652,7 +652,9 @@ function OnboardingContent() {
                 cancelText="Cancel"
                 onConfirm={handleConfirmDelete}
                 onCancel={handleCancelDelete}
+                onClose={handleCancelDelete}
                 isLoading={isDeleting}
+                maxWidth="md"
             />
         </>
     );

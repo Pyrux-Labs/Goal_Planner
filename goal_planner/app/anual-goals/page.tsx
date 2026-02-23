@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Navbar from "@/components/Layout/Navbar/Navbar";
 import Top from "@/components/Layout/Top/Top";
 import GoalCard from "@/components/common/GoalCard/GoalCard";
-import ConfirmModal from "@/components/ui/ConfirmModal/ConfirmModal";
+import Modal from "@/components/ui/Modal/Modal";
 import { createClient } from "@/lib/supabase/client";
 import { deleteGoalWithRelatedData } from "@/utils/deleteGoal";
 import {
@@ -530,7 +530,7 @@ export default function AnualGoalsPage() {
                 </div>
             </div>
 
-            <ConfirmModal
+            <Modal
                 isOpen={isDeleteModalOpen}
                 title="Delete Goal?"
                 message={
@@ -548,7 +548,9 @@ export default function AnualGoalsPage() {
                 cancelText="Cancel"
                 onConfirm={handleConfirmDelete}
                 onCancel={handleCancelDelete}
+                onClose={handleCancelDelete}
                 isLoading={isDeleting}
+                maxWidth="md"
             />
         </div>
     );
