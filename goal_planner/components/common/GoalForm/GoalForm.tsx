@@ -4,6 +4,7 @@ import {
     useImperativeHandle,
     useCallback,
     useEffect,
+    useRef,
 } from "react";
 import Image from "next/image";
 import ErrorMessage from "@/components/ui/ErrorMessage/ErrorMessage";
@@ -21,6 +22,7 @@ import type { Task, Habit } from "@/types/goal";
 
 export interface GoalFormRef {
     saveGoal: () => Promise<number | null>;
+    scrollToTasksHabits: () => void;
 }
 
 interface GoalFormProps {
@@ -82,9 +84,11 @@ const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
         const [startDate, setStartDate] = useState("");
         const [targetDate, setTargetDate] = useState("");
         const [isSaving, setIsSaving] = useState(false);
-        const [isLoading, setIsLoading] = useState(false);
         const [tasks, setTasks] = useState<Task[]>([]);
         const [habits, setHabits] = useState<Habit[]>([]);
+
+        // Ref for tasks and habits section
+        const tasksHabitsRef = useRef<HTMLDivElement>(null);
 
         // Error states
         const [goalNameError, setGoalNameError] = useState("");
@@ -105,7 +109,6 @@ const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
 
         const loadGoalData = async (id: number) => {
             try {
-                setIsLoading(true);
                 const supabase = createClient();
 
                 const { data: goalData, error: goalError } = await supabase
@@ -143,8 +146,6 @@ const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
             } catch (error: any) {
                 console.error("Error loading goal data:", error);
                 setGeneralError(error.message || "Failed to load goal data");
-            } finally {
-                setIsLoading(false);
             }
         };
 
@@ -401,19 +402,15 @@ const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
                     setIsSaving(false);
                 }
             },
+            scrollToTasksHabits: () => {
+                if (tasksHabitsRef.current) {
+                    tasksHabitsRef.current.scrollIntoView({
+                        behavior: "smooth",
+                        block: "start",
+                    });
+                }
+            },
         }));
-
-        if (isLoading) {
-            return (
-                <div className="py-4 px-4">
-                    <div className="bg-modal-bg p-8 border border-input-bg rounded-3xl shadow-[0px_0px_10px_2px_rgba(217,78,6,0.8)] mb-8">
-                        <div className="text-center py-8 text-white-pearl">
-                            <p className="text-lg">Loading goal data...</p>
-                        </div>
-                    </div>
-                </div>
-            );
-        }
 
         const formDisabled = isSaving || (!isEditMode && goalId !== null);
 
@@ -569,7 +566,10 @@ const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
 
                 {/* Tasks and Daily Habits - Only show if goal is created or in edit mode */}
                 {(goalId || isEditMode) && (
-                    <div className="grid grid-cols-2 gap-14">
+                    <div
+                        ref={tasksHabitsRef}
+                        className="grid grid-cols-2 gap-14"
+                    >
                         <TaskHabitColumn
                             type="task"
                             items={tasks.map((task) => {

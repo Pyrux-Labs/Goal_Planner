@@ -46,6 +46,10 @@ export default function NewGoalPage() {
 
         if (newGoalId) {
             setGoalId(newGoalId);
+            // Scroll to tasks and habits section after creating the goal
+            setTimeout(() => {
+                goalFormRef.current?.scrollToTasksHabits();
+            }, 100);
         }
     };
 

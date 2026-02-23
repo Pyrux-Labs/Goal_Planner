@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import Navbar from "@/components/Layout/Navbar/Navbar";
 import Top from "@/components/Layout/Top/Top";
 import GoalCard from "@/components/common/GoalCard/GoalCard";
-import ConfirmModal from "@/components/ui/ConfirmModal/ConfirmModal";
+import GoalCardSkeleton from "@/components/common/GoalCard/GoalCardSkeleton";
+import Modal from "@/components/ui/Modal/Modal";
 import { createClient } from "@/lib/supabase/client";
 import { deleteGoalWithRelatedData } from "@/utils/deleteGoal";
 import {
@@ -489,9 +490,11 @@ export default function AnualGoalsPage() {
                 {/* Goals List */}
                 <div className="space-y-4">
                     {loading ? (
-                        <div className="text-white-pearl text-center py-8">
-                            Loading goals...
-                        </div>
+                        <>
+                            <GoalCardSkeleton />
+                            <GoalCardSkeleton />
+                            <GoalCardSkeleton />
+                        </>
                     ) : formattedGoals.length === 0 ? (
                         <div className="text-white-pearl text-center py-8">
                             No goals found. Create your first goal!
@@ -530,7 +533,7 @@ export default function AnualGoalsPage() {
                 </div>
             </div>
 
-            <ConfirmModal
+            <Modal
                 isOpen={isDeleteModalOpen}
                 title="Delete Goal?"
                 message={
@@ -548,7 +551,9 @@ export default function AnualGoalsPage() {
                 cancelText="Cancel"
                 onConfirm={handleConfirmDelete}
                 onCancel={handleCancelDelete}
+                onClose={handleCancelDelete}
                 isLoading={isDeleting}
+                maxWidth="md"
             />
         </div>
     );

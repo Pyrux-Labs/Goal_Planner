@@ -40,14 +40,6 @@ function EditGoalContent() {
         router.push("/anual-goals");
     };
 
-    if (!goalId) {
-        return (
-            <div className="min-h-screen bg-deep-bg flex flex-col items-center justify-center">
-                <p className="text-white-pearl">Loading...</p>
-            </div>
-        );
-    }
-
     return (
         <div className="min-h-screen bg-deep-bg flex flex-col">
             <Navbar />
@@ -62,9 +54,11 @@ function EditGoalContent() {
                         },
                     ]}
                 />
-                <div className="mt-6">
-                    <GoalForm ref={goalFormRef} goalId={goalId} />
-                </div>
+                {goalId && (
+                    <div className="mt-6">
+                        <GoalForm ref={goalFormRef} goalId={goalId} />
+                    </div>
+                )}
             </div>
 
             <NavigationButtons
@@ -79,13 +73,7 @@ function EditGoalContent() {
 
 export default function EditGoalPage() {
     return (
-        <Suspense
-            fallback={
-                <div className="min-h-screen bg-deep-bg flex flex-col items-center justify-center">
-                    <p className="text-white-pearl">Loading...</p>
-                </div>
-            }
-        >
+        <Suspense fallback={<div className="min-h-screen bg-deep-bg" />}>
             <EditGoalContent />
         </Suspense>
     );

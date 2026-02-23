@@ -42,7 +42,7 @@
 ### 🎨 UX/UI Esenciales
 
 - [ ] **Sistema de toasts** - Feedback visual para acciones exitosas y errores (actualmente usa `alert()` y `window.confirm()`) [JUANMA]
-- [ ] **Estados de carga consistentes** - Skeletons/spinners en todas las páginas (anual-goals tiene spinner, pero otras no) [GINO]
+- [x] **Estados de carga consistentes** - Skeletons/spinners en todas las páginas (anual-goals tiene spinner, pero otras no) [GINO]
 - [x] Estados vacíos con mensajes claros
 - [ ] **Validación de formularios** - Activar validación de password en register y change-password (código comentado en ambos) [JUANMA]
 - [x] Modal de confirmación reutilizable
