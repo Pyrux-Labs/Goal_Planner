@@ -340,19 +340,25 @@ export default function AnualGoalsPage() {
     };
 
     // ===== FILTERED & FORMATTED DATA =====
-    const filteredGoals = useMemo(
-        () =>
-            goals.filter((g) =>
-                selectedFilter === "all" ? true : g.status === selectedFilter,
-            ),
-        [goals, selectedFilter],
-    );
+    const filteredGoals = useMemo(() => {
+        const filtered = goals.filter((g) => {
+            if (selectedFilter === "all") return true;
+            const isCompleted = g.progress >= 100;
+            return selectedFilter === "completed" ? isCompleted : !isCompleted;
+        });
+
+        // Sort: incomplete goals first, completed goals last
+        return filtered.sort((a, b) => {
+            const aCompleted = a.progress >= 100 ? 1 : 0;
+            const bCompleted = b.progress >= 100 ? 1 : 0;
+            return aCompleted - bCompleted;
+        });
+    }, [goals, selectedFilter]);
 
     const { activeCount, completedCount } = useMemo(
         () => ({
-            activeCount: goals.filter((g) => g.status === "active").length,
-            completedCount: goals.filter((g) => g.status === "completed")
-                .length,
+            activeCount: goals.filter((g) => g.progress < 100).length,
+            completedCount: goals.filter((g) => g.progress >= 100).length,
         }),
         [goals],
     );

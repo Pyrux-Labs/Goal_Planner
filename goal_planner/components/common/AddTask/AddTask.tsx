@@ -2,8 +2,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import InputField from "@/components/ui/InputField/InputField";
-import { BiSolidError } from "react-icons/bi";
+import ErrorMessage from "@/components/ui/ErrorMessage/ErrorMessage";
 import type { TaskEditData } from "@/types/sidebar";
+import { DAYS } from "@/lib/constants/days";
 
 interface AddTaskProps {
     goalId?: number;
@@ -19,8 +20,6 @@ interface Goal {
     id: number;
     name: string;
 }
-
-import { DAYS } from "@/lib/constants/days";
 
 const AddTask = ({
     goalId,
@@ -119,12 +118,6 @@ const AddTask = ({
 
         let hasErrors = false;
 
-        // Validation
-        /* 		if (showGoalSelect && !selectedGoalId) {
-			setGoalError("Please select a goal");
-			hasErrors = true;
-		} */
-
         if (!taskName.trim()) {
             setTaskNameError("Task name is required");
             hasErrors = true;
@@ -140,15 +133,14 @@ const AddTask = ({
             hasErrors = true;
         }
 
-        if (taskType === "repeating" && startDate && endDate) {
-            const start = new Date(startDate);
-            start.setHours(0, 0, 0, 0);
-            const end = new Date(endDate);
-            end.setHours(0, 0, 0, 0);
-            if (end < start) {
-                setDateRangeError("End date must be after start date");
-                hasErrors = true;
-            }
+        if (
+            taskType === "repeating" &&
+            startDate &&
+            endDate &&
+            endDate < startDate
+        ) {
+            setDateRangeError("End date must be after start date");
+            hasErrors = true;
         }
 
         if (taskType === "one-time" && !selectedDate) {
@@ -156,25 +148,20 @@ const AddTask = ({
             hasErrors = true;
         }
 
-        // Validate date is not in the past
-        if (taskType === "one-time" && selectedDate) {
-            const selected = new Date(selectedDate);
-            selected.setHours(0, 0, 0, 0);
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            if (selected < today) {
+        // Validate dates are not in the past (only for new tasks)
+        if (!isEditMode) {
+            const todayStr = new Date().toISOString().split("T")[0];
+
+            if (
+                taskType === "one-time" &&
+                selectedDate &&
+                selectedDate < todayStr
+            ) {
                 setDateError("Date cannot be in the past");
                 hasErrors = true;
             }
-        }
 
-        // Validate start date is not in the past
-        if (taskType === "repeating" && startDate) {
-            const start = new Date(startDate);
-            start.setHours(0, 0, 0, 0);
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            if (start < today) {
+            if (taskType === "repeating" && startDate && startDate < todayStr) {
                 setDateRangeError("Start date cannot be in the past");
                 hasErrors = true;
             }
@@ -183,19 +170,6 @@ const AddTask = ({
         if (!isAllDay && !startTime) {
             setStartTimeError("Please select a start time");
             hasErrors = true;
-        }
-
-        if (!isAllDay && startTime && endTime) {
-            // Compare times
-            const [startHour, startMin] = startTime.split(":").map(Number);
-            const [endHour, endMin] = endTime.split(":").map(Number);
-            const startMinutes = startHour * 60 + startMin;
-            const endMinutes = endHour * 60 + endMin;
-
-            if (endMinutes <= startMinutes) {
-                setEndTimeError("End time must be after start time");
-                hasErrors = true;
-            }
         }
 
         if (hasErrors) return;
@@ -223,9 +197,8 @@ const AddTask = ({
                     },
                 );
 
-                if (error) throw error;
+                if (error?.message) throw error;
             } else {
-                // Create new task using RPC function
                 const { error } = await supabase.rpc(
                     "create_task_with_repeat_days",
                     {
@@ -244,7 +217,7 @@ const AddTask = ({
                     },
                 );
 
-                if (error) throw error;
+                if (error?.message) throw error;
             }
 
             onClose();
@@ -296,12 +269,7 @@ const AddTask = ({
                                 </option>
                             ))}
                         </select>
-                        {goalError && (
-                            <span className="text-xs text-carmin flex items-center gap-1 mt-1">
-                                <BiSolidError />
-                                {goalError}
-                            </span>
-                        )}
+                        {goalError && <ErrorMessage message={goalError} />}
                     </div>
                 )}
 
@@ -318,12 +286,7 @@ const AddTask = ({
                         }}
                         labelClassName="block text-white-pearl mb-2 text-sm"
                     />
-                    {taskNameError && (
-                        <span className="text-xs text-carmin flex items-center gap-1 mt-1">
-                            <BiSolidError />
-                            {taskNameError}
-                        </span>
-                    )}
+                    {taskNameError && <ErrorMessage message={taskNameError} />}
                 </div>
 
                 {/* Task Type Switch */}
@@ -368,12 +331,7 @@ const AddTask = ({
                             }}
                             labelClassName="block text-white-pearl mb-2 text-sm"
                         />
-                        {dateError && (
-                            <span className="text-xs text-carmin flex items-center gap-1 mt-1">
-                                <BiSolidError />
-                                {dateError}
-                            </span>
-                        )}
+                        {dateError && <ErrorMessage message={dateError} />}
                     </div>
                 )}
 
@@ -408,10 +366,7 @@ const AddTask = ({
                                 ))}
                             </div>
                             {repeatDaysError && (
-                                <span className="text-xs text-carmin flex items-center gap-1 mt-1">
-                                    <BiSolidError />
-                                    {repeatDaysError}
-                                </span>
+                                <ErrorMessage message={repeatDaysError} />
                             )}
                         </div>
 
@@ -447,10 +402,7 @@ const AddTask = ({
                                 />
                             </div>
                             {dateRangeError && (
-                                <span className="text-xs text-carmin flex items-center gap-1 mt-1">
-                                    <BiSolidError />
-                                    {dateRangeError}
-                                </span>
+                                <ErrorMessage message={dateRangeError} />
                             )}
                         </div>
                     </>
@@ -494,10 +446,7 @@ const AddTask = ({
                                 className="w-full h-12 bg-input-bg border border-input-bg text-white-pearl rounded-2xl px-3 focus:outline-none focus:border-vibrant-orange transition-colors"
                             />
                             {startTimeError && (
-                                <span className="text-xs text-carmin flex items-center gap-1 mt-1">
-                                    <BiSolidError />
-                                    {startTimeError}
-                                </span>
+                                <ErrorMessage message={startTimeError} />
                             )}
                         </div>
                         <div>
@@ -517,10 +466,7 @@ const AddTask = ({
                                 className="w-full h-12 bg-input-bg border border-input-bg text-white-pearl rounded-2xl px-3 focus:outline-none focus:border-vibrant-orange transition-colors"
                             />
                             {endTimeError && (
-                                <span className="text-xs text-carmin flex items-center gap-1 mt-1">
-                                    <BiSolidError />
-                                    {endTimeError}
-                                </span>
+                                <ErrorMessage message={endTimeError} />
                             )}
                         </div>
                     </div>
@@ -528,10 +474,7 @@ const AddTask = ({
 
                 {/* General Error */}
                 {generalError && (
-                    <div className="flex items-center gap-2 text-carmin text-sm">
-                        <BiSolidError className="text-lg" />
-                        <span>{generalError}</span>
-                    </div>
+                    <ErrorMessage message={generalError} variant="general" />
                 )}
 
                 {/* Buttons */}

@@ -32,12 +32,13 @@ export default function TaskHabitColumn({
 }: TaskHabitColumnProps) {
     const isTask = type === "task";
 
-    // Form state: handles both add and edit modes
-    const [isExpanded, setIsExpanded] = useState(false);
-    const [showForm, setShowForm] = useState(false);
-    const [currentEditData, setCurrentEditData] = useState<
-        TaskEditData | HabitEditData | undefined
-    >(undefined);
+    // Form state
+    const [showAddForm, setShowAddForm] = useState(false);
+    const [addFormVisible, setAddFormVisible] = useState(false);
+    const [editingSortedIndex, setEditingSortedIndex] = useState<number | null>(
+        null,
+    );
+    const [editFormVisible, setEditFormVisible] = useState(false);
 
     // Sort items: incomplete first, completed last
     const sortedItems = useMemo(() => {
@@ -60,36 +61,61 @@ export default function TaskHabitColumn({
     }, [items]);
 
     const handleAddClick = () => {
-        setCurrentEditData(undefined);
-        setIsExpanded(true);
-        setTimeout(() => setShowForm(true), 10);
+        setEditingSortedIndex(null);
+        setEditFormVisible(false);
+        setShowAddForm(true);
+        setTimeout(() => setAddFormVisible(true), 10);
     };
 
     const handleEditClick = (sortedIndex: number) => {
         const item = sortedItems[sortedIndex];
-        if (item.editData) {
-            setCurrentEditData(item.editData);
-            setIsExpanded(true);
-            setTimeout(() => setShowForm(true), 10);
-        }
+        if (!item.editData) return;
+
+        // Close add form if open
+        setShowAddForm(false);
+        setAddFormVisible(false);
+
+        setEditingSortedIndex(sortedIndex);
+        setTimeout(() => setEditFormVisible(true), 10);
     };
 
     const handleClose = () => {
-        setShowForm(false);
+        setAddFormVisible(false);
+        setEditFormVisible(false);
         setTimeout(() => {
-            setIsExpanded(false);
-            setCurrentEditData(undefined);
+            setShowAddForm(false);
+            setEditingSortedIndex(null);
             onAdd?.();
         }, 300);
     };
 
     const handleCancel = () => {
-        setShowForm(false);
+        setAddFormVisible(false);
+        setEditFormVisible(false);
         setTimeout(() => {
-            setIsExpanded(false);
-            setCurrentEditData(undefined);
+            setShowAddForm(false);
+            setEditingSortedIndex(null);
         }, 300);
     };
+
+    const renderForm = (editData?: TaskEditData | HabitEditData) =>
+        isTask ? (
+            <AddTask
+                goalId={goalId}
+                onClose={handleClose}
+                onCancel={handleCancel}
+                inline
+                editData={editData as TaskEditData | undefined}
+            />
+        ) : (
+            <AddHabit
+                goalId={goalId}
+                onClose={handleClose}
+                onCancel={handleCancel}
+                inline
+                editData={editData as HabitEditData | undefined}
+            />
+        );
 
     return (
         <div className="flex flex-col items-center">
@@ -107,24 +133,37 @@ export default function TaskHabitColumn({
                 </h1>
             </div>
 
-            {/* Item List */}
-            {sortedItems.map((item, sortedIndex) => (
-                <TaskHabitSimpleView
-                    key={sortedIndex}
-                    title={item.title}
-                    days={item.days}
-                    time={item.time}
-                    type={type}
-                    completed={item.completed}
-                    onEdit={() => handleEditClick(sortedIndex)}
-                    onDelete={() =>
-                        onDelete(sortedToOriginalIndex[sortedIndex])
-                    }
-                />
-            ))}
+            {/* Item List — replace specific item with edit form when editing */}
+            {sortedItems.map((item, sortedIndex) =>
+                editingSortedIndex === sortedIndex ? (
+                    <div
+                        key={sortedIndex}
+                        className={`w-[33rem] my-2 transition-all duration-500 ease-out ${
+                            editFormVisible
+                                ? "opacity-100 translate-y-0"
+                                : "opacity-0 -translate-y-4"
+                        }`}
+                    >
+                        {renderForm(item.editData)}
+                    </div>
+                ) : (
+                    <TaskHabitSimpleView
+                        key={sortedIndex}
+                        title={item.title}
+                        days={item.days}
+                        time={item.time}
+                        type={type}
+                        completed={item.completed}
+                        onEdit={() => handleEditClick(sortedIndex)}
+                        onDelete={() =>
+                            onDelete(sortedToOriginalIndex[sortedIndex])
+                        }
+                    />
+                ),
+            )}
 
-            {/* Add Button / Inline Form (Add or Edit) */}
-            {!isExpanded ? (
+            {/* Add Button / Inline Add Form */}
+            {!showAddForm ? (
                 <button
                     onClick={handleAddClick}
                     className="w-[33rem] rounded-3xl border flex items-center my-2 h-20 p-6 border-dashed border-vibrant-orange/15 gap-2 hover:border-vibrant-orange transition-all duration-300"
@@ -139,32 +178,12 @@ export default function TaskHabitColumn({
             ) : (
                 <div
                     className={`w-[33rem] my-2 transition-all duration-500 ease-out ${
-                        showForm
+                        addFormVisible
                             ? "opacity-100 translate-y-0"
                             : "opacity-0 -translate-y-4"
                     }`}
                 >
-                    {isTask ? (
-                        <AddTask
-                            goalId={goalId}
-                            onClose={handleClose}
-                            onCancel={handleCancel}
-                            inline
-                            editData={
-                                currentEditData as TaskEditData | undefined
-                            }
-                        />
-                    ) : (
-                        <AddHabit
-                            goalId={goalId}
-                            onClose={handleClose}
-                            onCancel={handleCancel}
-                            inline
-                            editData={
-                                currentEditData as HabitEditData | undefined
-                            }
-                        />
-                    )}
+                    {renderForm()}
                 </div>
             )}
         </div>

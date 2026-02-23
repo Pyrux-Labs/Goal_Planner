@@ -40,6 +40,7 @@ export default function GoalCard({
     onHabitDelete,
 }: GoalCardProps) {
     const [isExpanded, setIsExpanded] = useState(false);
+    const isCompleted = progress >= 100;
 
     return (
         <div className="max-w-[70rem] w-full rounded-3xl border border-input-bg bg-modal-bg my-2 mx-auto">
@@ -49,7 +50,9 @@ export default function GoalCard({
                 onClick={() => setIsExpanded(!isExpanded)}
             >
                 {/* Icon Badge */}
-                <div className="w-14 h-14 bg-vibrant-orange rounded-2xl flex justify-center">
+                <div
+                    className={`w-14 h-14 rounded-2xl flex justify-center ${isCompleted ? "bg-green-500" : "bg-vibrant-orange"}`}
+                >
                     <Image
                         src={
                             categories.find((cat) => cat.name === category)!
@@ -75,12 +78,12 @@ export default function GoalCard({
                 {/* Progress */}
                 <div className="w-64 mr-8">
                     <div className="flex justify-between text-white-pearl text-sm mb-1 font-medium">
-                        <p>Progress</p>
+                        <p>{isCompleted ? "Completed" : "Progress"}</p>
                         <p>{progress}%</p>
                     </div>
                     <div className="h-2 bg-progress-empty rounded-full">
                         <div
-                            className="h-full bg-vibrant-orange rounded-full transition-all duration-300"
+                            className={`h-full rounded-full transition-all duration-300 ${isCompleted ? "bg-green-500" : "bg-vibrant-orange"}`}
                             style={{ width: `${progress}%` }}
                         />
                     </div>

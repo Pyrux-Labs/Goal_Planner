@@ -2,8 +2,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import InputField from "@/components/ui/InputField/InputField";
-import { BiSolidError } from "react-icons/bi";
+import ErrorMessage from "@/components/ui/ErrorMessage/ErrorMessage";
 import type { HabitEditData } from "@/types/sidebar";
+import { DAYS } from "@/lib/constants/days";
 
 interface AddHabitProps {
     goalId?: number;
@@ -19,8 +20,6 @@ interface Goal {
     id: number;
     name: string;
 }
-
-import { DAYS } from "@/lib/constants/days";
 
 const AddHabit = ({
     goalId,
@@ -95,12 +94,6 @@ const AddHabit = ({
 
         let hasErrors = false;
 
-        // Validation
-        /* 		if (showGoalSelect && !selectedGoalId) {
-			setGoalError("Please select a goal");
-			hasErrors = true;
-		} */
-
         if (!habitName.trim()) {
             setHabitNameError("Habit name is required");
             hasErrors = true;
@@ -116,28 +109,19 @@ const AddHabit = ({
             hasErrors = true;
         }
 
-        // Validate start date is not in the past
-        if (startDate) {
-            const start = new Date(startDate);
-            start.setHours(0, 0, 0, 0);
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            if (start < today) {
+        // Validate start date is not in the past (only for new habits)
+        if (!isEditMode && startDate) {
+            const todayStr = new Date().toISOString().split("T")[0];
+            if (startDate < todayStr) {
                 setDateRangeError("Start date cannot be in the past");
                 hasErrors = true;
             }
         }
 
         // Validate date range
-        if (startDate && endDate) {
-            const start = new Date(startDate);
-            start.setHours(0, 0, 0, 0);
-            const end = new Date(endDate);
-            end.setHours(0, 0, 0, 0);
-            if (end < start) {
-                setDateRangeError("End date must be after start date");
-                hasErrors = true;
-            }
+        if (startDate && endDate && endDate < startDate) {
+            setDateRangeError("End date must be after start date");
+            hasErrors = true;
         }
 
         if (hasErrors) return;
@@ -148,7 +132,6 @@ const AddHabit = ({
             const supabase = createClient();
 
             if (isEditMode && editData) {
-                // Update existing habit using RPC function
                 const { error } = await supabase.rpc(
                     "update_habit_with_repeat_days",
                     {
@@ -161,9 +144,8 @@ const AddHabit = ({
                     },
                 );
 
-                if (error) throw error;
+                if (error?.message) throw error;
             } else {
-                // Create new habit using RPC function
                 const { error } = await supabase.rpc(
                     "create_habit_with_repeat_days",
                     {
@@ -175,7 +157,7 @@ const AddHabit = ({
                     },
                 );
 
-                if (error) throw error;
+                if (error?.message) throw error;
             }
 
             onClose();
@@ -227,12 +209,7 @@ const AddHabit = ({
                                 </option>
                             ))}
                         </select>
-                        {goalError && (
-                            <span className="text-xs text-carmin flex items-center gap-1 mt-1">
-                                <BiSolidError />
-                                {goalError}
-                            </span>
-                        )}
+                        {goalError && <ErrorMessage message={goalError} />}
                     </div>
                 )}
 
@@ -250,10 +227,7 @@ const AddHabit = ({
                         labelClassName="block text-white-pearl mb-2 text-sm"
                     />
                     {habitNameError && (
-                        <span className="text-xs text-carmin flex items-center gap-1 mt-1">
-                            <BiSolidError />
-                            {habitNameError}
-                        </span>
+                        <ErrorMessage message={habitNameError} />
                     )}
                 </div>
 
@@ -285,10 +259,7 @@ const AddHabit = ({
                         ))}
                     </div>
                     {repeatDaysError && (
-                        <span className="text-xs text-carmin flex items-center gap-1 mt-1">
-                            <BiSolidError />
-                            {repeatDaysError}
-                        </span>
+                        <ErrorMessage message={repeatDaysError} />
                     )}
                 </div>
 
@@ -321,19 +292,13 @@ const AddHabit = ({
                         />
                     </div>
                     {dateRangeError && (
-                        <span className="text-xs text-carmin flex items-center gap-1 mt-1">
-                            <BiSolidError />
-                            {dateRangeError}
-                        </span>
+                        <ErrorMessage message={dateRangeError} />
                     )}
                 </div>
 
                 {/* General Error */}
                 {generalError && (
-                    <div className="flex items-center gap-2 text-carmin text-sm">
-                        <BiSolidError className="text-lg" />
-                        <span>{generalError}</span>
-                    </div>
+                    <ErrorMessage message={generalError} variant="general" />
                 )}
 
                 {/* Buttons */}

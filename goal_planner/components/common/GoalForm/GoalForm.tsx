@@ -6,7 +6,7 @@ import {
     useEffect,
 } from "react";
 import Image from "next/image";
-import { BiSolidError } from "react-icons/bi";
+import ErrorMessage from "@/components/ui/ErrorMessage/ErrorMessage";
 import TaskHabitColumn from "../TaskHabitColumn/TaskHabitColumn";
 import InputField from "../../ui/InputField/InputField";
 import { categories, colors } from "@/lib/constants/categories";
@@ -295,30 +295,19 @@ const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
                     hasErrors = true;
                 }
 
-                // Validate start date is not in the past
-                if (startDate) {
-                    const start = new Date(startDate);
-                    start.setHours(0, 0, 0, 0);
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    if (start < today) {
+                // Validate start date is not in the past (only for new goals)
+                if (!isEditMode && startDate) {
+                    const todayStr = new Date().toISOString().split("T")[0];
+                    if (startDate < todayStr) {
                         setStartDateError("Start date cannot be in the past");
                         hasErrors = true;
                     }
                 }
 
                 // Validate date range
-                if (startDate && targetDate) {
-                    const start = new Date(startDate);
-                    start.setHours(0, 0, 0, 0);
-                    const target = new Date(targetDate);
-                    target.setHours(0, 0, 0, 0);
-                    if (target <= start) {
-                        setDateRangeError(
-                            "Target date must be after start date",
-                        );
-                        hasErrors = true;
-                    }
+                if (startDate && targetDate && targetDate <= startDate) {
+                    setDateRangeError("Target date must be after start date");
+                    hasErrors = true;
                 }
 
                 if (hasErrors) return null;
@@ -472,10 +461,10 @@ const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
                             ))}
                         </div>
                         {categoryError && (
-                            <span className="text-xs text-carmin flex items-center gap-1 mt-2">
-                                <BiSolidError />
-                                {categoryError}
-                            </span>
+                            <ErrorMessage
+                                message={categoryError}
+                                className="text-xs text-carmin flex items-center gap-1 mt-2"
+                            />
                         )}
                     </div>
                     {/* Goal Name and Description */}
@@ -492,10 +481,7 @@ const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
                                 disabled={formDisabled}
                             />
                             {goalNameError && (
-                                <span className="text-xs text-carmin flex items-center gap-1 mt-1">
-                                    <BiSolidError />
-                                    {goalNameError}
-                                </span>
+                                <ErrorMessage message={goalNameError} />
                             )}
                         </div>
                         <InputField
@@ -521,10 +507,7 @@ const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
                                 disabled={formDisabled}
                             />
                             {startDateError && (
-                                <span className="text-xs text-carmin flex items-center gap-1 mt-1">
-                                    <BiSolidError />
-                                    {startDateError}
-                                </span>
+                                <ErrorMessage message={startDateError} />
                             )}
                         </div>
                         <div>
@@ -540,16 +523,10 @@ const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
                                 disabled={formDisabled}
                             />
                             {targetDateError && (
-                                <span className="text-xs text-carmin flex items-center gap-1 mt-1">
-                                    <BiSolidError />
-                                    {targetDateError}
-                                </span>
+                                <ErrorMessage message={targetDateError} />
                             )}
                             {dateRangeError && (
-                                <span className="text-xs text-carmin flex items-center gap-1 mt-1">
-                                    <BiSolidError />
-                                    {dateRangeError}
-                                </span>
+                                <ErrorMessage message={dateRangeError} />
                             )}
                         </div>
                         <div>
@@ -582,10 +559,11 @@ const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
 
                     {/* General Error */}
                     {generalError && (
-                        <div className="flex items-center gap-2 text-carmin text-sm mt-4">
-                            <BiSolidError className="text-lg" />
-                            <span>{generalError}</span>
-                        </div>
+                        <ErrorMessage
+                            message={generalError}
+                            variant="general"
+                            className="flex items-center gap-2 text-carmin text-sm mt-4"
+                        />
                     )}
                 </div>
 
