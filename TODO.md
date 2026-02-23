@@ -26,7 +26,7 @@
 - [x] Mostrar eventos del día con sidebar (CalendarInfo + CalendarCard)
 - [x] Editar eventos del día desde sidebar (CalendarInfoEdit → SidebarContent)
 - [x] Marcar tareas/hábitos como completados (checkbox en CalendarCard)
-- [ ] Vista semanal del calendario
+- [ ] Vista semanal del calendario [JUANMA]
 
 ### ✏️ Gestión de Tareas y Hábitos
 
@@ -41,10 +41,10 @@
 
 ### 🎨 UX/UI Esenciales
 
-- [ ] **Sistema de toasts** - Feedback visual para acciones exitosas y errores (actualmente usa `alert()` y `window.confirm()`)
-- [ ] **Estados de carga consistentes** - Skeletons/spinners en todas las páginas (anual-goals tiene spinner, pero otras no)
+- [ ] **Sistema de toasts** - Feedback visual para acciones exitosas y errores (actualmente usa `alert()` y `window.confirm()`) [JUANMA]
+- [ ] **Estados de carga consistentes** - Skeletons/spinners en todas las páginas (anual-goals tiene spinner, pero otras no) [GINO]
 - [x] Estados vacíos con mensajes claros
-- [ ] **Validación de formularios** - Activar validación de password en register y change-password (código comentado en ambos)
+- [ ] **Validación de formularios** - Activar validación de password en register y change-password (código comentado en ambos) [JUANMA]
 - [x] Modal de confirmación reutilizable
 
 ### 🔐 Autenticación y Usuario
@@ -52,24 +52,25 @@
 - [x] Login / Register / Forgot Password / Change Password
 - [x] Verificación de email con OTP
 - [x] Protección de rutas (middleware en proxy.ts)
-- [ ] **Logout funcional** - Implementar en navbar o settings (solo existe en debug-auth)
-- [ ] **Página de Settings** - Actualmente es un stub (`<div>settings</div>`)
-- [ ] **Eliminar debug-auth page** - Es una herramienta de debug que no debe ir a producción
+- [ ] **Logout funcional** - Implementar en navbar o settings (solo existe en debug-auth) [JUANMA]
+- [ ] **Página de Settings** - Actualmente es un stub (`<div>settings</div>`) [JUANMA]
+- [ ] **Eliminar debug-auth page** - Es una herramienta de debug que no debe ir a producción [JUANMA]
 
 ### 🐛 Fixes Pendientes
 
 - [x] Página 404 (not-found.tsx)
-- [ ] **new-goal usa delete simple** - `deleteGoalAndRelated()` en new-goal/page.tsx no usa `deleteGoalWithRelatedData` (puede dejar datos huérfanos)
-- [ ] **keepLoggedIn en SignIn** - El checkbox no afecta el comportamiento de la sesión de Supabase
-- [ ] **Google Auth buttons** - Los botones de "Sign in/up with Google" existen pero no hacen nada (`onClick={() => {}}`)
-- [ ] **Missing useEffect deps** - `fetchGoals` no está en dependency array en AddTask y onboarding
+- [ ] **new-goal usa delete simple** - `deleteGoalAndRelated()` en new-goal/page.tsx no usa `deleteGoalWithRelatedData` (puede dejar datos huérfanos) [GINO]
+- [ ] **keepLoggedIn en SignIn** - El checkbox no afecta el comportamiento de la sesión de Supabase [JUANMA]
+- [ ] **Google Auth buttons** - Los botones de "Sign in/up with Google" existen pero no hacen nada (`onClick={() => {}}`) [JUANMA]
+- [ ] **Missing useEffect deps** - `fetchGoals` no está en dependency array en AddTask y onboarding [GINO]
 
 ### 📱 Responsive Design
 
-- [ ] **Mobile navbar** - Menú hamburguesa o navbar bottom adaptable
-- [ ] **Calendario responsive** - Que funcione en pantallas pequeñas
-- [ ] **GoalCards responsive** - Adaptables a diferentes tamaños
-- [ ] **Sidebars responsive** - Fullscreen en mobile
+- [ ] **Mobile navbar** - Menú hamburguesa o navbar bottom adaptable [GINO]
+- [ ] **Calendario responsive** - Que funcione en pantallas pequeñas [GINO]
+- [ ] **GoalCards responsive** - Adaptables a diferentes tamaños [GINO]
+- [ ] **Sidebars responsive** - Fullscreen en mobile [GINO]
+      NOTA: Usar las vistas ya predeterminadas: lg, xxl, xl (pantallas desktop). Despues para telefono. Cambiar landing page para que te deje iniciar sesión en mobile web tambien
 
 ### 🧪 Testing y QA
 
