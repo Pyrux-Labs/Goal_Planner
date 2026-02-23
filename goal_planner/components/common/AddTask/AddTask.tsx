@@ -61,24 +61,6 @@ const AddTask = ({
     const [endTimeError, setEndTimeError] = useState("");
     const [generalError, setGeneralError] = useState("");
 
-    useEffect(() => {
-        // Only fetch goals if not preloaded and showGoalSelect is true
-        if (showGoalSelect && !preloadedGoals) {
-            fetchGoals();
-        }
-    }, [showGoalSelect, preloadedGoals]);
-
-    useEffect(() => {
-        const handleEscape = (e: KeyboardEvent) => {
-            if (e.key === "Escape") {
-                onCancel();
-            }
-        };
-
-        window.addEventListener("keydown", handleEscape);
-        return () => window.removeEventListener("keydown", handleEscape);
-    }, [onCancel]);
-
     const fetchGoals = useCallback(async () => {
         const supabase = createClient();
         const {
@@ -96,6 +78,24 @@ const AddTask = ({
 
         if (data) setGoals(data);
     }, []);
+
+    useEffect(() => {
+        // Only fetch goals if not preloaded and showGoalSelect is true
+        if (showGoalSelect && !preloadedGoals) {
+            fetchGoals();
+        }
+    }, [showGoalSelect, preloadedGoals, fetchGoals]);
+
+    useEffect(() => {
+        const handleEscape = (e: KeyboardEvent) => {
+            if (e.key === "Escape") {
+                onCancel();
+            }
+        };
+
+        window.addEventListener("keydown", handleEscape);
+        return () => window.removeEventListener("keydown", handleEscape);
+    }, [onCancel]);
 
     const toggleDay = useCallback((dayId: string) => {
         setSelectedDays((prev) =>

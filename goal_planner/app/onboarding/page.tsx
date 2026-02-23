@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, Suspense } from "react";
+import { useState, useRef, useEffect, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { BiSolidError } from "react-icons/bi";
@@ -77,7 +77,7 @@ function OnboardingContent() {
             fetchGoals();
             setCurrentGoalId(null);
         }
-    }, [currentStep]);
+    }, [currentStep, fetchGoals]);
 
     // ===== NAVIGATION =====
     const handleNext = async () => {
@@ -135,7 +135,7 @@ function OnboardingContent() {
     };
 
     // ===== DATA FETCHING =====
-    const fetchGoals = async () => {
+    const fetchGoals = useCallback(async () => {
         setIsLoadingGoals(true);
         try {
             const supabase = createClient();
@@ -331,7 +331,7 @@ function OnboardingContent() {
         } finally {
             setIsLoadingGoals(false);
         }
-    };
+    }, []);
 
     // ===== GOAL DELETION =====
     const handleDeleteClick = (goalId: number, goalName: string) => {

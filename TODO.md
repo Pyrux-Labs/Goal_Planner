@@ -41,7 +41,7 @@
 
 ### 🎨 UX/UI Esenciales
 
-- [ ] **Sistema de toasts** - Feedback visual para acciones exitosas y errores (actualmente usa `alert()` y `window.confirm()`) [JUANMA]
+- [ ] **Sistema de toasts** - Feedback visual para acciones exitosas y errores (actualmente usa `alert()` y `window.confirm()`) [GINO]
 - [x] **Estados de carga consistentes** - Skeletons/spinners en todas las páginas (anual-goals tiene spinner, pero otras no) [GINO]
 - [x] Estados vacíos con mensajes claros
 - [ ] **Validación de formularios** - Activar validación de password en register y change-password (código comentado en ambos) [JUANMA]
@@ -62,7 +62,7 @@
 - [x] **new-goal usa delete simple** - `deleteGoalAndRelated()` en new-goal/page.tsx no usa `deleteGoalWithRelatedData` (puede dejar datos huérfanos) [GINO]
 - [ ] **keepLoggedIn en SignIn** - El checkbox no afecta el comportamiento de la sesión de Supabase [JUANMA]
 - [ ] **Google Auth buttons** - Los botones de "Sign in/up with Google" existen pero no hacen nada (`onClick={() => {}}`) [JUANMA]
-- [ ] **Missing useEffect deps** - `fetchGoals` no está en dependency array en AddTask y onboarding [GINO]
+- [x] **Missing useEffect deps** - `fetchGoals` no está en dependency array en AddTask y onboarding [GINO]
 
 ### 📱 Responsive Design
 
