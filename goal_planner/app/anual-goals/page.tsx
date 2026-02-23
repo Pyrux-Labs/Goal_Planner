@@ -1,4 +1,5 @@
 "use client";
+
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Layout/Navbar/Navbar";
@@ -11,129 +12,33 @@ import {
     deleteTaskWithFutureLogs,
     deleteHabitWithFutureLogs,
 } from "@/utils/deleteTaskHabit";
+import {
+    formatRepeatDays,
+    formatTime,
+    formatDateShort,
+    formatTargetDate,
+    capitalizeFirst,
+} from "@/utils/formatUtils";
+import type { TaskEditData, HabitEditData } from "@/types/sidebar";
+import type { Task, Habit, Goal as BaseGoal } from "@/types/goal";
 
-// ===== TYPE DEFINITIONS =====
-interface Task {
-    id: number;
-    name: string;
-    start_time: string | null;
-    start_date: string | null;
-    end_date: string | null;
-    repeat_days: string[];
-    log_date: string | null;
-}
-
-interface Habit {
-    id: number;
-    name: string;
-    repeat_days: string[];
-}
-
-interface Goal {
-    id: number;
-    name: string;
-    description: string | null;
-    category: string;
+// Extend base Goal with page-specific fields
+interface Goal extends Omit<BaseGoal, "start_date" | "created_at" | "color"> {
     status: string;
-    target_date: string;
-    tasks: Task[];
-    habits: Habit[];
-    progress: number;
+    color?: string;
+    start_date?: string;
+    created_at?: string;
     totalLogs: number;
+    taskLogsMap: Map<number, any[]>;
+    habitLogsMap: Map<number, any[]>;
 }
 
-// ===== CONSTANTS =====
-/** Mapping of day names to their abbreviated forms */
-const DAY_MAP: { [key: string]: string } = {
-    monday: "Mon",
-    tuesday: "Tue",
-    wednesday: "Wed",
-    thursday: "Thu",
-    friday: "Fri",
-    saturday: "Sat",
-    sunday: "Sun",
-};
-
-// ===== UTILITY FUNCTIONS =====
+// ===== DATA FETCHING =====
 /**
- * Formats an array of repeat days into a readable string
- * @param days - Array of day names (e.g., ["monday", "tuesday"])
- * @returns Formatted string (e.g., "Mon, Tue") or "Everyday" if all days
+ * Fetches all goals with associated tasks, habits, and logs using optimized batch queries.
+ * Builds lookup maps for O(1) access and calculates progress per goal.
  */
-const formatRepeatDays = (days: string[]): string | undefined => {
-    if (days.length === 7) return "Everyday";
-    if (days.length === 0) return undefined;
-    return days.map((day) => DAY_MAP[day.toLowerCase()] || day).join(", ");
-};
-
-/**
- * Formats a time string to 12-hour format with AM/PM
- * @param time - Time string in 24-hour format (e.g., "14:30")
- * @returns Formatted time (e.g., "2:30 PM") or undefined if no time
- */
-const formatTime = (time: string | null): string | undefined => {
-    if (!time) return undefined;
-    const [hours, minutes] = time.split(":");
-    const hour = parseInt(hours, 10);
-    const ampm = hour >= 12 ? "PM" : "AM";
-    const displayHour = hour % 12 || 12;
-    return `${displayHour}:${minutes} ${ampm}`;
-};
-
-/**
- * Formats a date string to short format (e.g., "15 JAN")
- * @param date - ISO date string
- * @returns Formatted date or undefined if no date
- */
-const formatDate = (date: string | null): string | undefined => {
-    if (!date) return undefined;
-    const d = new Date(date);
-    const day = d.getDate();
-    const month = d
-        .toLocaleDateString("en-US", { month: "short" })
-        .toUpperCase();
-    return `${day} ${month}`;
-};
-
-/**
- * Formats a target date to long format (e.g., "Jan 15, 2026")
- * @param date - ISO date string
- * @returns Formatted date string
- */
-const formatTargetDate = (date: string): string => {
-    const targetDate = new Date(date);
-    return targetDate.toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-    });
-};
-
-/**
- * Capitalizes the first letter of a string
- * @param str - String to capitalize
- * @returns Capitalized string
- */
-const capitalizeFirst = (str: string): string => {
-    return str.charAt(0).toUpperCase() + str.slice(1);
-};
-
-/**
- * Fetches all goals data with associated tasks, habits, and logs in optimized batch queries
- *
- * This function performs the following:
- * 1. Fetches all goals for the user
- * 2. Batch fetches all tasks and habits for those goals
- * 3. Batch fetches all repeat days and logs for those tasks and habits
- * 4. Builds lookup maps for O(1) access
- * 5. Assembles the complete goal data with calculated progress
- *
- * @param supabase - Supabase client instance
- * @param userId - User ID to fetch goals for
- * @returns Array of goals with all related data
- */
-async function fetchAllGoalsDataOptimized(supabase: any, userId: string) {
-    // 1. Fetch all goals
+async function fetchAllGoalsData(supabase: any, userId: string) {
     const { data: goalsData, error: goalsError } = await supabase
         .from("goals")
         .select("*")
@@ -141,13 +46,10 @@ async function fetchAllGoalsDataOptimized(supabase: any, userId: string) {
         .is("deleted_at", null)
         .order("created_at", { ascending: false });
 
-    if (goalsError || !goalsData || goalsData.length === 0) {
-        return [];
-    }
+    if (goalsError || !goalsData || goalsData.length === 0) return [];
 
     const goalIds = goalsData.map((g: any) => g.id);
 
-    // 2. Fetch tasks and habits first to get their IDs
     const [{ data: allTasks }, { data: allHabits }] = await Promise.all([
         supabase
             .from("tasks")
@@ -156,16 +58,14 @@ async function fetchAllGoalsDataOptimized(supabase: any, userId: string) {
             .is("deleted_at", null),
         supabase
             .from("habits")
-            .select("id, goal_id, name")
+            .select("id, goal_id, name, start_date, end_date")
             .in("goal_id", goalIds)
             .is("deleted_at", null),
     ]);
 
-    // Extract IDs for batch queries
     const taskIds = allTasks?.map((t: any) => t.id) || [];
     const habitIds = allHabits?.map((h: any) => h.id) || [];
 
-    // 3. Batch fetch all related data in parallel using extracted IDs
     const [
         { data: allTaskRepeatDays },
         { data: allHabitRepeatDays },
@@ -198,7 +98,7 @@ async function fetchAllGoalsDataOptimized(supabase: any, userId: string) {
             : Promise.resolve({ data: [] }),
     ]);
 
-    // 4. Build lookup maps for O(1) access
+    // Build lookup maps
     const tasksByGoalId = new Map<number, any[]>();
     const habitsByGoalId = new Map<number, any[]>();
     const taskRepeatDaysMap = new Map<number, string[]>();
@@ -206,74 +106,53 @@ async function fetchAllGoalsDataOptimized(supabase: any, userId: string) {
     const taskLogsMap = new Map<number, any[]>();
     const habitLogsMap = new Map<number, any[]>();
 
-    // Index tasks by goal_id
-    allTasks?.forEach((task: any) => {
-        if (!tasksByGoalId.has(task.goal_id)) {
-            tasksByGoalId.set(task.goal_id, []);
-        }
-        tasksByGoalId.get(task.goal_id)!.push(task);
+    allTasks?.forEach((t: any) => {
+        if (!tasksByGoalId.has(t.goal_id)) tasksByGoalId.set(t.goal_id, []);
+        tasksByGoalId.get(t.goal_id)!.push(t);
     });
 
-    // Index habits by goal_id
-    allHabits?.forEach((habit: any) => {
-        if (!habitsByGoalId.has(habit.goal_id)) {
-            habitsByGoalId.set(habit.goal_id, []);
-        }
-        habitsByGoalId.get(habit.goal_id)!.push(habit);
+    allHabits?.forEach((h: any) => {
+        if (!habitsByGoalId.has(h.goal_id)) habitsByGoalId.set(h.goal_id, []);
+        habitsByGoalId.get(h.goal_id)!.push(h);
     });
 
-    // Index task repeat days
-    allTaskRepeatDays?.forEach((item: any) => {
-        if (!taskRepeatDaysMap.has(item.task_id)) {
-            taskRepeatDaysMap.set(item.task_id, []);
-        }
-        taskRepeatDaysMap.get(item.task_id)!.push(item.day);
+    allTaskRepeatDays?.forEach((r: any) => {
+        if (!taskRepeatDaysMap.has(r.task_id))
+            taskRepeatDaysMap.set(r.task_id, []);
+        taskRepeatDaysMap.get(r.task_id)!.push(r.day);
     });
 
-    // Index habit repeat days
-    allHabitRepeatDays?.forEach((item: any) => {
-        if (!habitRepeatDaysMap.has(item.habit_id)) {
-            habitRepeatDaysMap.set(item.habit_id, []);
-        }
-        habitRepeatDaysMap.get(item.habit_id)!.push(item.day);
+    allHabitRepeatDays?.forEach((r: any) => {
+        if (!habitRepeatDaysMap.has(r.habit_id))
+            habitRepeatDaysMap.set(r.habit_id, []);
+        habitRepeatDaysMap.get(r.habit_id)!.push(r.day);
     });
 
-    // Index task logs
-    allTaskLogs?.forEach((log: any) => {
-        if (!taskLogsMap.has(log.task_id)) {
-            taskLogsMap.set(log.task_id, []);
-        }
-        taskLogsMap.get(log.task_id)!.push(log);
+    allTaskLogs?.forEach((l: any) => {
+        if (!taskLogsMap.has(l.task_id)) taskLogsMap.set(l.task_id, []);
+        taskLogsMap.get(l.task_id)!.push(l);
     });
 
-    // Index habit logs
-    allHabitLogs?.forEach((log: any) => {
-        if (!habitLogsMap.has(log.habit_id)) {
-            habitLogsMap.set(log.habit_id, []);
-        }
-        habitLogsMap.get(log.habit_id)!.push(log);
+    allHabitLogs?.forEach((l: any) => {
+        if (!habitLogsMap.has(l.habit_id)) habitLogsMap.set(l.habit_id, []);
+        habitLogsMap.get(l.habit_id)!.push(l);
     });
 
-    // 5. Assemble goals with all data
     return goalsData.map((goal: any) => {
         const goalTasks = tasksByGoalId.get(goal.id) || [];
         const goalHabits = habitsByGoalId.get(goal.id) || [];
 
-        // Build tasks with repeat days and log dates
         const tasks: Task[] = goalTasks.map((task: any) => {
             const repeatDays = taskRepeatDaysMap.get(task.id) || [];
             let logDate = null;
-
-            // For one-time tasks, get the first log date
             if (!task.start_date && !task.end_date) {
                 const logs = taskLogsMap.get(task.id) || [];
                 logDate = logs.length > 0 ? logs[0].date : null;
             }
-
             return {
                 id: task.id,
                 name: task.name,
-                start_time: null, // Times are now stored in task_logs per occurrence
+                start_time: null,
                 start_date: task.start_date,
                 end_date: task.end_date,
                 repeat_days: repeatDays,
@@ -281,33 +160,29 @@ async function fetchAllGoalsDataOptimized(supabase: any, userId: string) {
             };
         });
 
-        // Build habits with repeat days
         const habits: Habit[] = goalHabits.map((habit: any) => ({
             id: habit.id,
             name: habit.name,
+            start_date: habit.start_date || "",
+            end_date: habit.end_date || "",
             repeat_days: habitRepeatDaysMap.get(habit.id) || [],
         }));
 
-        // Calculate progress efficiently from indexed data
-        // Count all logs (completed and incomplete) for this goal's tasks and habits
         let totalLogs = 0;
         let completedLogs = 0;
 
-        // Sum up task logs
         tasks.forEach((task) => {
             const logs = taskLogsMap.get(task.id) || [];
             totalLogs += logs.length;
-            completedLogs += logs.filter((log: any) => log.completed).length;
+            completedLogs += logs.filter((l: any) => l.completed).length;
         });
 
-        // Sum up habit logs
         habits.forEach((habit) => {
             const logs = habitLogsMap.get(habit.id) || [];
             totalLogs += logs.length;
-            completedLogs += logs.filter((log: any) => log.completed).length;
+            completedLogs += logs.filter((l: any) => l.completed).length;
         });
 
-        // Calculate progress percentage (0-100)
         const progress =
             totalLogs > 0 ? Math.round((completedLogs / totalLogs) * 100) : 0;
 
@@ -322,46 +197,44 @@ async function fetchAllGoalsDataOptimized(supabase: any, userId: string) {
             habits,
             progress,
             totalLogs,
+            taskLogsMap,
+            habitLogsMap,
         };
     });
 }
 
 /**
- * Calculate overall year progress as a weighted average of each goal's progress
- *
- * The weight is based on the number of logs each goal has, making the calculation
- * more realistic. A goal with 1 log won't affect the year progress as much as
- * a goal with 100 logs.
- *
- * @param goals - Array of goals with their progress and totalLogs
- * @returns Overall year progress percentage (0-100)
+ * Calculate overall year progress as a weighted average of each goal's progress.
+ * Weight is based on the number of logs, making goals with more activity
+ * have a proportionally larger impact on the overall percentage.
  */
-function calculateOverallYearProgressFromGoals(goals: Goal[]): number {
+function calculateYearProgress(goals: Goal[]): number {
     const currentYear = new Date().getFullYear();
-
-    // Filter goals by current year target_date
-    const currentYearGoals = goals.filter(
-        (goal) => new Date(goal.target_date).getFullYear() === currentYear,
+    const yearGoals = goals.filter(
+        (g) => new Date(g.target_date).getFullYear() === currentYear,
     );
 
-    // No goals for current year
-    if (currentYearGoals.length === 0) return 0;
+    if (yearGoals.length === 0) return 0;
 
-    // Calculate weighted sum: progress * totalLogs for each goal
     let weightedSum = 0;
     let totalWeight = 0;
 
-    currentYearGoals.forEach((goal) => {
-        // Only include goals that have logs (avoid division by zero)
+    yearGoals.forEach((goal) => {
         if (goal.totalLogs > 0) {
             weightedSum += goal.progress * goal.totalLogs;
             totalWeight += goal.totalLogs;
         }
     });
 
-    // Return weighted average (or 0 if no logs exist)
     return totalWeight > 0 ? Math.round(weightedSum / totalWeight) : 0;
 }
+
+// ===== FILTER OPTIONS =====
+const FILTERS = [
+    { id: "all" as const, label: "All" },
+    { id: "active" as const, label: "Active" },
+    { id: "completed" as const, label: "Completed" },
+] as const;
 
 // ===== COMPONENT =====
 export default function AnualGoalsPage() {
@@ -379,36 +252,20 @@ export default function AnualGoalsPage() {
     } | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
 
-    /**
-     * Fetches all goals data with associated tasks, habits, and logs
-     * Calculates progress for each goal and overall year progress
-     */
     const fetchGoalsData = useCallback(async () => {
         try {
             const supabase = createClient();
-
-            // Get current user
             const {
                 data: { user },
             } = await supabase.auth.getUser();
-
             if (!user) {
                 setLoading(false);
                 return;
             }
 
-            // Fetch all data in optimized batch queries
-            const goalsWithDetails = await fetchAllGoalsDataOptimized(
-                supabase,
-                user.id,
-            );
-
+            const goalsWithDetails = await fetchAllGoalsData(supabase, user.id);
             setGoals(goalsWithDetails);
-
-            // Calculate overall year progress as weighted average of goal progress
-            const yearProgress =
-                calculateOverallYearProgressFromGoals(goalsWithDetails);
-            setOverallProgress(yearProgress);
+            setOverallProgress(calculateYearProgress(goalsWithDetails));
         } catch (error) {
             console.error("Error fetching goals:", error);
         } finally {
@@ -420,6 +277,7 @@ export default function AnualGoalsPage() {
         fetchGoalsData();
     }, [fetchGoalsData]);
 
+    // ===== GOAL DELETION =====
     const handleDeleteClick = useCallback(
         (goalId: number, goalName: string) => {
             setGoalToDelete({ id: goalId, name: goalName });
@@ -430,7 +288,6 @@ export default function AnualGoalsPage() {
 
     const handleConfirmDelete = useCallback(async () => {
         if (!goalToDelete) return;
-
         setIsDeleting(true);
         const result = await deleteGoalWithRelatedData(goalToDelete.id);
         setIsDeleting(false);
@@ -449,22 +306,44 @@ export default function AnualGoalsPage() {
         setGoalToDelete(null);
     }, []);
 
-    // ===== FILTERS AND STATS (MEMOIZED) =====
-    const FILTERS = useMemo(
-        () => [
-            { id: "all" as const, label: "All" },
-            { id: "active" as const, label: "Active" },
-            { id: "completed" as const, label: "Completed" },
-        ],
-        [],
-    );
+    // ===== TASK/HABIT DELETION =====
+    const handleTaskDelete = async (goalIndex: number, taskIndex: number) => {
+        const goal = formattedGoals[goalIndex];
+        const taskId = goals.find((g) => g.id === goal.id)?.tasks[taskIndex]
+            ?.id;
+        if (!taskId) return;
 
+        const confirmed = window.confirm(
+            `Are you sure you want to delete "${goal.formattedTasks[taskIndex].title}"? This will delete the task and all its logs from today onwards.`,
+        );
+        if (!confirmed) return;
+
+        const result = await deleteTaskWithFutureLogs(taskId);
+        if (result.success) await fetchGoalsData();
+        else alert(`Failed to delete task: ${result.error}`);
+    };
+
+    const handleHabitDelete = async (goalIndex: number, habitIndex: number) => {
+        const goal = formattedGoals[goalIndex];
+        const habitId = goals.find((g) => g.id === goal.id)?.habits[habitIndex]
+            ?.id;
+        if (!habitId) return;
+
+        const confirmed = window.confirm(
+            `Are you sure you want to delete "${goal.formattedHabits[habitIndex].title}"? This will delete the habit and all its logs from today onwards.`,
+        );
+        if (!confirmed) return;
+
+        const result = await deleteHabitWithFutureLogs(habitId);
+        if (result.success) await fetchGoalsData();
+        else alert(`Failed to delete habit: ${result.error}`);
+    };
+
+    // ===== FILTERED & FORMATTED DATA =====
     const filteredGoals = useMemo(
         () =>
-            goals.filter((goal) =>
-                selectedFilter === "all"
-                    ? true
-                    : goal.status === selectedFilter,
+            goals.filter((g) =>
+                selectedFilter === "all" ? true : g.status === selectedFilter,
             ),
         [goals, selectedFilter],
     );
@@ -478,124 +357,89 @@ export default function AnualGoalsPage() {
         [goals],
     );
 
-    const handleNewGoal = useCallback(() => {
-        router.push("/new-goal");
-    }, [router]);
-
-    // Memoize formatted goals to avoid re-formatting on every render
     const formattedGoals = useMemo(
         () =>
             filteredGoals.map((goal) => {
-                // Format tasks for GoalCard
                 const formattedTasks = goal.tasks.map((task) => {
                     let days: string | undefined;
-
-                    // One-time task: no start_date and no end_date
                     if (!task.start_date && !task.end_date && task.log_date) {
-                        days = formatDate(task.log_date);
-                    }
-                    // Recurring task: has repeat days
-                    else if (task.repeat_days.length > 0) {
+                        days = formatDateShort(task.log_date);
+                    } else if (task.repeat_days.length > 0) {
                         days = formatRepeatDays(task.repeat_days);
                     }
+
+                    // Check if all logs are completed
+                    const taskLogs = goal.taskLogsMap.get(task.id) || [];
+                    const allCompleted =
+                        taskLogs.length > 0 &&
+                        taskLogs.every((l: any) => l.completed);
+
+                    const editData: TaskEditData = {
+                        id: task.id,
+                        goal_id: goal.id,
+                        name: task.name,
+                        start_date: task.start_date,
+                        end_date: task.end_date,
+                        start_time: null,
+                        end_time: null,
+                        repeat_days: task.repeat_days,
+                        is_repeating: task.repeat_days.length > 0,
+                        edit_date: task.log_date ?? undefined,
+                    };
 
                     return {
                         title: task.name,
                         days,
                         time: formatTime(task.start_time),
+                        completed: allCompleted,
+                        editData,
                     };
                 });
 
-                // Format habits for GoalCard
-                const formattedHabits = goal.habits.map((habit) => ({
-                    title: habit.name,
-                    days: formatRepeatDays(habit.repeat_days),
-                }));
+                const formattedHabits = goal.habits.map((habit) => {
+                    const habitLogs = goal.habitLogsMap.get(habit.id) || [];
+                    const allCompleted =
+                        habitLogs.length > 0 &&
+                        habitLogs.every((l: any) => l.completed);
 
-                const categoryName = capitalizeFirst(goal.category);
-                const formattedDate = formatTargetDate(goal.target_date);
+                    const editData: HabitEditData = {
+                        id: habit.id,
+                        goal_id: goal.id,
+                        name: habit.name,
+                        start_date: habit.start_date,
+                        end_date: habit.end_date,
+                        repeat_days: habit.repeat_days,
+                    };
+
+                    return {
+                        title: habit.name,
+                        days: formatRepeatDays(habit.repeat_days),
+                        completed: allCompleted,
+                        editData,
+                    };
+                });
 
                 return {
                     ...goal,
                     formattedTasks,
                     formattedHabits,
-                    categoryName,
-                    formattedDate,
+                    categoryName: capitalizeFirst(goal.category),
+                    formattedDate: formatTargetDate(goal.target_date),
                 };
             }),
         [filteredGoals],
     );
 
-    /**
-     * Handles deletion of a task from a goal
-     * Deletes the task, its repeat days, and all logs from today onwards
-     */
-    const handleTaskDelete = async (goalIndex: number, taskIndex: number) => {
-        const goal = formattedGoals[goalIndex];
-        const taskId = goals.find((g) => g.id === goal.id)?.tasks[taskIndex]
-            ?.id;
+    const handleNewGoal = useCallback(() => router.push("/new-goal"), [router]);
 
-        if (!taskId) {
-            console.error("Task ID not found");
-            return;
-        }
-
-        const confirmed = window.confirm(
-            `Are you sure you want to delete "${goal.formattedTasks[taskIndex].title}"? This will delete the task and all its logs from today onwards.`,
-        );
-
-        if (!confirmed) return;
-
-        const result = await deleteTaskWithFutureLogs(taskId);
-
-        if (result.success) {
-            await fetchGoalsData();
-        } else {
-            alert(`Failed to delete task: ${result.error}`);
-        }
-    };
-
-    /**
-     * Handles deletion of a habit from a goal
-     * Deletes the habit, its repeat days, and all logs from today onwards
-     */
-    const handleHabitDelete = async (goalIndex: number, habitIndex: number) => {
-        const goal = formattedGoals[goalIndex];
-        const habitId = goals.find((g) => g.id === goal.id)?.habits[habitIndex]
-            ?.id;
-
-        if (!habitId) {
-            console.error("Habit ID not found");
-            return;
-        }
-
-        const confirmed = window.confirm(
-            `Are you sure you want to delete "${goal.formattedHabits[habitIndex].title}"? This will delete the habit and all its logs from today onwards.`,
-        );
-
-        if (!confirmed) return;
-
-        const result = await deleteHabitWithFutureLogs(habitId);
-
-        if (result.success) {
-            await fetchGoalsData();
-        } else {
-            alert(`Failed to delete habit: ${result.error}`);
-        }
-    };
-
+    // ===== RENDER =====
     return (
         <div>
             <Navbar />
             <div className="ml-20 mr-7 p-6">
                 <Top
                     title="My Goals"
-                    buttons={[
-                        {
-                            text: "New Goal",
-                            onClick: handleNewGoal,
-                        },
-                    ]}
+                    buttons={[{ text: "New Goal", onClick: handleNewGoal }]}
                 />
 
                 {/* Statistics Bar */}
@@ -662,18 +506,8 @@ export default function AnualGoalsPage() {
                                 habits={goal.formattedHabits}
                                 onTaskAdd={() => fetchGoalsData()}
                                 onHabitAdd={() => fetchGoalsData()}
-                                onTaskEdit={(taskIndex) =>
-                                    console.log(
-                                        `Edit task ${taskIndex} from ${goal.name}`,
-                                    )
-                                }
                                 onTaskDelete={(taskIndex) =>
                                     handleTaskDelete(goalIndex, taskIndex)
-                                }
-                                onHabitEdit={(habitIndex) =>
-                                    console.log(
-                                        `Edit habit ${habitIndex} from ${goal.name}`,
-                                    )
                                 }
                                 onHabitDelete={(habitIndex) =>
                                     handleHabitDelete(goalIndex, habitIndex)
@@ -690,7 +524,6 @@ export default function AnualGoalsPage() {
                 </div>
             </div>
 
-            {/* Confirm Delete Modal */}
             <ConfirmModal
                 isOpen={isDeleteModalOpen}
                 title="Delete Goal?"

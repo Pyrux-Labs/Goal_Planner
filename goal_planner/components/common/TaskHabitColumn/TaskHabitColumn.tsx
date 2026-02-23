@@ -1,23 +1,25 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { IoMdTime } from "react-icons/io";
 import { BsStars } from "react-icons/bs";
-import TaskHabitSimpleView from "../TaskHabitSimpleView/TaskHabitSimpleView";
 import { FaPlus } from "react-icons/fa";
+import TaskHabitSimpleView from "../TaskHabitSimpleView/TaskHabitSimpleView";
 import AddTask from "../AddTask/AddTask";
 import AddHabit from "../AddHabit/AddHabit";
+import type { TaskEditData, HabitEditData } from "@/types/sidebar";
 
-interface Item {
+export interface TaskHabitItem {
     title: string;
     days?: string;
     time?: string;
+    completed?: boolean;
+    editData?: TaskEditData | HabitEditData;
 }
 
 interface TaskHabitColumnProps {
     type: "task" | "habit";
-    items?: Item[];
+    items?: TaskHabitItem[];
     goalId: number;
     onAdd?: () => void;
-    onEdit: (index: number) => void;
     onDelete: (index: number) => void;
 }
 
@@ -26,34 +28,72 @@ export default function TaskHabitColumn({
     items = [],
     goalId,
     onAdd,
-    onEdit,
     onDelete,
 }: TaskHabitColumnProps) {
     const isTask = type === "task";
+
+    // Form state: handles both add and edit modes
     const [isExpanded, setIsExpanded] = useState(false);
     const [showForm, setShowForm] = useState(false);
+    const [currentEditData, setCurrentEditData] = useState<
+        TaskEditData | HabitEditData | undefined
+    >(undefined);
+
+    // Sort items: incomplete first, completed last
+    const sortedItems = useMemo(() => {
+        const incomplete = items.filter((item) => !item.completed);
+        const completed = items.filter((item) => item.completed);
+        return [...incomplete, ...completed];
+    }, [items]);
+
+    // Map sorted indices back to original indices for delete callbacks
+    const sortedToOriginalIndex = useMemo(() => {
+        const incomplete = items
+            .map((item, i) => ({ item, originalIndex: i }))
+            .filter(({ item }) => !item.completed);
+        const completed = items
+            .map((item, i) => ({ item, originalIndex: i }))
+            .filter(({ item }) => item.completed);
+        return [...incomplete, ...completed].map(
+            ({ originalIndex }) => originalIndex,
+        );
+    }, [items]);
 
     const handleAddClick = () => {
+        setCurrentEditData(undefined);
         setIsExpanded(true);
-        // Delay para que la transición se vea
         setTimeout(() => setShowForm(true), 10);
+    };
+
+    const handleEditClick = (sortedIndex: number) => {
+        const item = sortedItems[sortedIndex];
+        if (item.editData) {
+            setCurrentEditData(item.editData);
+            setIsExpanded(true);
+            setTimeout(() => setShowForm(true), 10);
+        }
     };
 
     const handleClose = () => {
         setShowForm(false);
         setTimeout(() => {
             setIsExpanded(false);
-            if (onAdd) onAdd();
+            setCurrentEditData(undefined);
+            onAdd?.();
         }, 300);
     };
 
     const handleCancel = () => {
         setShowForm(false);
-        setTimeout(() => setIsExpanded(false), 300);
+        setTimeout(() => {
+            setIsExpanded(false);
+            setCurrentEditData(undefined);
+        }, 300);
     };
 
     return (
         <div className="flex flex-col items-center">
+            {/* Section Header */}
             <div className="flex items-center gap-2 my-6 w-[33rem]">
                 <div className="bg-input-bg rounded-3xl flex items-center justify-center w-10 h-10">
                     {isTask ? (
@@ -67,19 +107,23 @@ export default function TaskHabitColumn({
                 </h1>
             </div>
 
-            {items.map((item, index) => (
+            {/* Item List */}
+            {sortedItems.map((item, sortedIndex) => (
                 <TaskHabitSimpleView
-                    key={index}
+                    key={sortedIndex}
                     title={item.title}
                     days={item.days}
                     time={item.time}
                     type={type}
-                    onEdit={() => onEdit(index)}
-                    onDelete={() => onDelete(index)}
+                    completed={item.completed}
+                    onEdit={() => handleEditClick(sortedIndex)}
+                    onDelete={() =>
+                        onDelete(sortedToOriginalIndex[sortedIndex])
+                    }
                 />
             ))}
 
-            {/* Add Button or Expandable Form */}
+            {/* Add Button / Inline Form (Add or Edit) */}
             {!isExpanded ? (
                 <button
                     onClick={handleAddClick}
@@ -106,6 +150,9 @@ export default function TaskHabitColumn({
                             onClose={handleClose}
                             onCancel={handleCancel}
                             inline
+                            editData={
+                                currentEditData as TaskEditData | undefined
+                            }
                         />
                     ) : (
                         <AddHabit
@@ -113,6 +160,9 @@ export default function TaskHabitColumn({
                             onClose={handleClose}
                             onCancel={handleCancel}
                             inline
+                            editData={
+                                currentEditData as HabitEditData | undefined
+                            }
                         />
                     )}
                 </div>
