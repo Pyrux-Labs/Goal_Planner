@@ -6,10 +6,18 @@ import {
     useEffect,
 } from "react";
 import Image from "next/image";
+import ErrorMessage from "@/components/ui/ErrorMessage/ErrorMessage";
 import TaskHabitColumn from "../TaskHabitColumn/TaskHabitColumn";
 import InputField from "../../ui/InputField/InputField";
 import { categories, colors } from "@/lib/constants/categories";
 import { createClient } from "@/lib/supabase/client";
+import {
+    formatRepeatDays,
+    formatTime,
+    formatDateShort,
+} from "@/utils/formatUtils";
+import type { TaskEditData, HabitEditData } from "@/types/sidebar";
+import type { Task, Habit } from "@/types/goal";
 
 export interface GoalFormRef {
     saveGoal: () => Promise<number | null>;
@@ -18,22 +26,6 @@ export interface GoalFormRef {
 interface GoalFormProps {
     goalId?: number | null;
     onGoalCreated?: (goalId: number) => void;
-}
-
-interface Task {
-    id: number;
-    name: string;
-    start_time: string | null;
-    start_date: string | null;
-    end_date: string | null;
-    repeat_days: string[];
-    log_date: string | null;
-}
-
-interface Habit {
-    id: number;
-    name: string;
-    repeat_days: string[];
 }
 
 // Map hex colors to database color names
@@ -78,41 +70,6 @@ const REVERSE_CATEGORY_MAP: Record<string, string> = {
     social: "Social",
 };
 
-const DAY_MAP: { [key: string]: string } = {
-    monday: "Mon",
-    tuesday: "Tue",
-    wednesday: "Wed",
-    thursday: "Thu",
-    friday: "Fri",
-    saturday: "Sat",
-    sunday: "Sun",
-};
-
-const formatRepeatDays = (days: string[]): string | undefined => {
-    if (days.length === 7) return "Everyday";
-    if (days.length === 0) return undefined;
-    return days.map((day) => DAY_MAP[day.toLowerCase()] || day).join(", ");
-};
-
-const formatTime = (time: string | null): string | undefined => {
-    if (!time) return undefined;
-    const [hours, minutes] = time.split(":");
-    const hour = parseInt(hours, 10);
-    const ampm = hour >= 12 ? "PM" : "AM";
-    const displayHour = hour % 12 || 12;
-    return `${displayHour}:${minutes} ${ampm}`;
-};
-
-const formatDate = (date: string | null): string | undefined => {
-    if (!date) return undefined;
-    const d = new Date(date);
-    const day = d.getDate();
-    const month = d
-        .toLocaleDateString("en-US", { month: "short" })
-        .toUpperCase();
-    return `${day} ${month}`;
-};
-
 const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
     ({ goalId: initialGoalId, onGoalCreated }, ref) => {
         const [goalId, setGoalId] = useState<number | null>(
@@ -128,6 +85,14 @@ const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
         const [isLoading, setIsLoading] = useState(false);
         const [tasks, setTasks] = useState<Task[]>([]);
         const [habits, setHabits] = useState<Habit[]>([]);
+
+        // Error states
+        const [goalNameError, setGoalNameError] = useState("");
+        const [categoryError, setCategoryError] = useState("");
+        const [startDateError, setStartDateError] = useState("");
+        const [targetDateError, setTargetDateError] = useState("");
+        const [dateRangeError, setDateRangeError] = useState("");
+        const [generalError, setGeneralError] = useState("");
 
         const isEditMode = !!initialGoalId;
 
@@ -177,7 +142,7 @@ const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
                 await fetchTasksAndHabits(id);
             } catch (error: any) {
                 console.error("Error loading goal data:", error);
-                alert(error.message || "Failed to load goal data");
+                setGeneralError(error.message || "Failed to load goal data");
             } finally {
                 setIsLoading(false);
             }
@@ -255,7 +220,7 @@ const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
                     // Fetch habits with repeat days
                     const { data: habitsData } = await supabase
                         .from("habits")
-                        .select("id, name")
+                        .select("id, name, start_date, end_date")
                         .eq("goal_id", currentGoalId)
                         .is("deleted_at", null);
 
@@ -282,6 +247,8 @@ const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
                         (habit) => ({
                             id: habit.id,
                             name: habit.name,
+                            start_date: habit.start_date || "",
+                            end_date: habit.end_date || "",
                             repeat_days: habitRepeatDaysMap.get(habit.id) || [],
                         }),
                     );
@@ -297,31 +264,53 @@ const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
 
         useImperativeHandle(ref, () => ({
             saveGoal: async () => {
+                // Clear all errors
+                setGoalNameError("");
+                setCategoryError("");
+                setStartDateError("");
+                setTargetDateError("");
+                setDateRangeError("");
+                setGeneralError("");
+
+                let hasErrors = false;
+
                 // Validation
                 if (!goalName.trim()) {
-                    alert("Please enter a goal name");
-                    return null;
+                    setGoalNameError("Please enter a goal name");
+                    hasErrors = true;
                 }
 
                 if (!selectedCategory) {
-                    alert("Please select a category");
-                    return null;
+                    setCategoryError("Please select a category");
+                    hasErrors = true;
                 }
 
                 if (!startDate) {
-                    alert("Please select a start date");
-                    return null;
+                    setStartDateError("Please select a start date");
+                    hasErrors = true;
                 }
 
                 if (!targetDate) {
-                    alert("Please select a target date");
-                    return null;
+                    setTargetDateError("Please select a target date");
+                    hasErrors = true;
                 }
 
-                if (new Date(targetDate) <= new Date(startDate)) {
-                    alert("Target date must be after start date");
-                    return null;
+                // Validate start date is not in the past (only for new goals)
+                if (!isEditMode && startDate) {
+                    const todayStr = new Date().toISOString().split("T")[0];
+                    if (startDate < todayStr) {
+                        setStartDateError("Start date cannot be in the past");
+                        hasErrors = true;
+                    }
                 }
+
+                // Validate date range
+                if (startDate && targetDate && targetDate <= startDate) {
+                    setDateRangeError("Target date must be after start date");
+                    hasErrors = true;
+                }
+
+                if (hasErrors) return null;
 
                 setIsSaving(true);
 
@@ -332,7 +321,7 @@ const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
                     } = await supabase.auth.getUser();
 
                     if (!user) {
-                        alert("Please login to save the goal");
+                        setGeneralError("Please login to save the goal");
                         return null;
                     }
 
@@ -403,7 +392,7 @@ const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
                         `Error ${isEditMode ? "updating" : "creating"} goal:`,
                         error,
                     );
-                    alert(
+                    setGeneralError(
                         error.message ||
                             `Failed to ${isEditMode ? "update" : "create"} goal. Please try again.`,
                     );
@@ -440,9 +429,10 @@ const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
                             {categories.map((category) => (
                                 <button
                                     key={category.name}
-                                    onClick={() =>
-                                        setSelectedCategory(category.name)
-                                    }
+                                    onClick={() => {
+                                        setSelectedCategory(category.name);
+                                        if (categoryError) setCategoryError("");
+                                    }}
                                     disabled={formDisabled}
                                     className={`relative h-24 w-24 flex items-center justify-center rounded-3xl transition-all ${
                                         selectedCategory === category.name
@@ -470,16 +460,30 @@ const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
                                 </button>
                             ))}
                         </div>
+                        {categoryError && (
+                            <ErrorMessage
+                                message={categoryError}
+                                className="text-xs text-carmin flex items-center gap-1 mt-2"
+                            />
+                        )}
                     </div>
                     {/* Goal Name and Description */}
                     <div className="grid grid-cols-2 gap-9 mb-8">
-                        <InputField
-                            label="GOAL NAME"
-                            placeholder="Master UI Design"
-                            value={goalName}
-                            onChange={(e) => setGoalName(e.target.value)}
-                            disabled={formDisabled}
-                        />
+                        <div>
+                            <InputField
+                                label="GOAL NAME"
+                                placeholder="Master UI Design"
+                                value={goalName}
+                                onChange={(e) => {
+                                    setGoalName(e.target.value);
+                                    if (goalNameError) setGoalNameError("");
+                                }}
+                                disabled={formDisabled}
+                            />
+                            {goalNameError && (
+                                <ErrorMessage message={goalNameError} />
+                            )}
+                        </div>
                         <InputField
                             label="DESCRIPTION"
                             placeholder="Describe your goal"
@@ -490,20 +494,41 @@ const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
                     </div>
                     {/* Date and Color Selection */}
                     <div className="grid grid-cols-3 gap-9 mb-4">
-                        <InputField
-                            label="START DATE"
-                            type="date"
-                            value={startDate}
-                            onChange={(e) => setStartDate(e.target.value)}
-                            disabled={formDisabled}
-                        />
-                        <InputField
-                            label="TARGET DATE"
-                            type="date"
-                            value={targetDate}
-                            onChange={(e) => setTargetDate(e.target.value)}
-                            disabled={formDisabled}
-                        />
+                        <div>
+                            <InputField
+                                label="START DATE"
+                                type="date"
+                                value={startDate}
+                                onChange={(e) => {
+                                    setStartDate(e.target.value);
+                                    if (startDateError) setStartDateError("");
+                                    if (dateRangeError) setDateRangeError("");
+                                }}
+                                disabled={formDisabled}
+                            />
+                            {startDateError && (
+                                <ErrorMessage message={startDateError} />
+                            )}
+                        </div>
+                        <div>
+                            <InputField
+                                label="TARGET DATE"
+                                type="date"
+                                value={targetDate}
+                                onChange={(e) => {
+                                    setTargetDate(e.target.value);
+                                    if (targetDateError) setTargetDateError("");
+                                    if (dateRangeError) setDateRangeError("");
+                                }}
+                                disabled={formDisabled}
+                            />
+                            {targetDateError && (
+                                <ErrorMessage message={targetDateError} />
+                            )}
+                            {dateRangeError && (
+                                <ErrorMessage message={dateRangeError} />
+                            )}
+                        </div>
                         <div>
                             <label className="block text-white-pearl mb-4">
                                 COLOR TAG
@@ -531,6 +556,15 @@ const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
                             </div>
                         </div>
                     </div>
+
+                    {/* General Error */}
+                    {generalError && (
+                        <ErrorMessage
+                            message={generalError}
+                            variant="general"
+                            className="flex items-center gap-2 text-carmin text-sm mt-4"
+                        />
+                    )}
                 </div>
 
                 {/* Tasks and Daily Habits - Only show if goal is created or in edit mode */}
@@ -545,14 +579,27 @@ const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
                                     !task.end_date &&
                                     task.log_date
                                 ) {
-                                    days = formatDate(task.log_date);
+                                    days = formatDateShort(task.log_date);
                                 } else if (task.repeat_days.length > 0) {
                                     days = formatRepeatDays(task.repeat_days);
                                 }
+                                const editData: TaskEditData = {
+                                    id: task.id,
+                                    goal_id: goalId || initialGoalId || 0,
+                                    name: task.name,
+                                    start_date: task.start_date,
+                                    end_date: task.end_date,
+                                    start_time: null,
+                                    end_time: null,
+                                    repeat_days: task.repeat_days,
+                                    is_repeating: task.repeat_days.length > 0,
+                                    edit_date: task.log_date ?? undefined,
+                                };
                                 return {
                                     title: task.name,
                                     days,
                                     time: formatTime(task.start_time),
+                                    editData,
                                 };
                             })}
                             goalId={goalId || initialGoalId || 0}
@@ -561,7 +608,6 @@ const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
                                     goalId || initialGoalId || 0,
                                 )
                             }
-                            onEdit={() => {}}
                             onDelete={() =>
                                 fetchTasksAndHabits(
                                     goalId || initialGoalId || 0,
@@ -570,17 +616,27 @@ const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
                         />
                         <TaskHabitColumn
                             type="habit"
-                            items={habits.map((habit) => ({
-                                title: habit.name,
-                                days: formatRepeatDays(habit.repeat_days),
-                            }))}
+                            items={habits.map((habit) => {
+                                const editData: HabitEditData = {
+                                    id: habit.id,
+                                    goal_id: goalId || initialGoalId || 0,
+                                    name: habit.name,
+                                    start_date: habit.start_date,
+                                    end_date: habit.end_date,
+                                    repeat_days: habit.repeat_days,
+                                };
+                                return {
+                                    title: habit.name,
+                                    days: formatRepeatDays(habit.repeat_days),
+                                    editData,
+                                };
+                            })}
                             goalId={goalId || initialGoalId || 0}
                             onAdd={() =>
                                 fetchTasksAndHabits(
                                     goalId || initialGoalId || 0,
                                 )
                             }
-                            onEdit={() => {}}
                             onDelete={() =>
                                 fetchTasksAndHabits(
                                     goalId || initialGoalId || 0,

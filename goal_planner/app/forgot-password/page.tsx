@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { BiSolidError } from "react-icons/bi";
 import Modal from "@/components/ui/Modal/Modal";
@@ -10,141 +9,152 @@ import Button from "@/components/ui/Button/Button";
 import { createClient } from "@/lib/supabase/client";
 
 export default function ForgotPassword() {
-	const router = useRouter();
-	const [email, setEmail] = useState("");
-	const [error, setError] = useState("");
-	const [success, setSuccess] = useState(false);
-	const [isLoading, setIsLoading] = useState(false);
+    const [email, setEmail] = useState("");
+    const [error, setError] = useState("");
+    const [success, setSuccess] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
-	// Handle form submission
-	const handleSubmit = async () => {
-		// Validation
-		if (!email) {
-			setError("Email is required");
-			return;
-		}
+    // Handle form submission
+    const handleSubmit = async () => {
+        setError("");
+        let hasErrors = false;
 
-		if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-			setError("Please enter a valid email address");
-			return;
-		}
+        // Validation
+        if (!email) {
+            setError("Email is required");
+            hasErrors = true;
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            setError("Please enter a valid email address");
+            hasErrors = true;
+        }
 
-		setIsLoading(true);
-		setError("");
+        if (hasErrors) return;
 
-		try {
-			const supabase = createClient();
-			const { error } = await supabase.auth.resetPasswordForEmail(email, {
-				redirectTo: `${window.location.origin}/change-password`,
-			});
+        setIsLoading(true);
 
-			if (error) {
-				setError(
-					error.message || "Failed to send reset link. Please try again.",
-				);
-				return;
-			}
+        try {
+            const supabase = createClient();
+            const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: `${window.location.origin}/change-password`,
+            });
 
-			// Show success message
-			setSuccess(true);
-		} catch (err) {
-			setError("Failed to send reset link. Please try again.");
-		} finally {
-			setIsLoading(false);
-		}
-	};
+            if (error) {
+                setError(
+                    error.message ||
+                        "Failed to send reset link. Please try again.",
+                );
+                return;
+            }
 
-	// Handle input change
-	const handleInputChange = (value: string) => {
-		setEmail(value);
-		if (error) setError("");
-	};
+            // Show success message
+            setSuccess(true);
+        } catch (err) {
+            setError("Failed to send reset link. Please try again.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
-	return (
-		<div
-			className="min-h-screen flex bg-gradient-to-br from-landing-bg via-deep-bg via-55% to-vibrant-orange"
-			style={{ backgroundAttachment: "fixed" }}>
-			{/* Forgot Password Form (Modal Style) - Centered */}
-			<div className="w-full flex items-center justify-center p-8 lg:p-12">
-				<Modal
-					title="Forgot Password"
-					subtitle="Enter your email address and we'll send you a link to reset your password."
-					maxWidth="md">
-					{!success ? (
-						<>
-							{/* Email Input */}
-							<InputField
-								label="Email Address"
-								type="email"
-								placeholder="Enter your email address"
-								value={email}
-								onChange={(e) => handleInputChange(e.target.value)}
-								labelClassName="block text-white-pearl mb-2 text-sm font-medium"
-							/>
+    // Handle input change
+    const handleInputChange = (value: string) => {
+        setEmail(value);
+        if (error) setError("");
+    };
 
-							{/* Error message */}
-							{error && (
-								<div className="flex items-center gap-2 text-carmin text-sm">
-									<BiSolidError className="text-lg" />
-									<span>{error}</span>
-								</div>
-							)}
+    return (
+        <div
+            className="min-h-screen flex bg-gradient-to-br from-landing-bg via-deep-bg via-55% to-vibrant-orange"
+            style={{ backgroundAttachment: "fixed" }}
+        >
+            {/* Forgot Password Form (Modal Style) - Centered */}
+            <div className="w-full flex items-center justify-center p-8 lg:p-12">
+                <Modal
+                    title="Forgot Password"
+                    subtitle="Enter your email address and we'll send you a link to reset your password."
+                    maxWidth="md"
+                >
+                    {!success ? (
+                        <>
+                            {/* Email Input */}
+                            <InputField
+                                label="Email Address"
+                                type="email"
+                                placeholder="Enter your email address"
+                                value={email}
+                                onChange={(e) =>
+                                    handleInputChange(e.target.value)
+                                }
+                                labelClassName="block text-white-pearl mb-2 text-sm font-medium"
+                            />
 
-							{/* Send Reset Link Button */}
-							<Button
-								onClick={handleSubmit}
-								className="w-full h-11 rounded-xl text-sm font-semibold">
-								{isLoading ? "Sending..." : "Send Reset Link"}
-							</Button>
-						</>
-					) : (
-						/* Success State */
-						<div className="text-center space-y-4">
-							<div className="w-16 h-16 bg-sea-green/20 rounded-full flex items-center justify-center mx-auto mb-4">
-								<svg
-									className="w-8 h-8 text-sea-green"
-									fill="none"
-									stroke="currentColor"
-									viewBox="0 0 24 24">
-									<path
-										strokeLinecap="round"
-										strokeLinejoin="round"
-										strokeWidth={2}
-										d="M5 13l4 4L19 7"
-									/>
-								</svg>
-							</div>
-							<h3 className="text-white-pearl text-xl font-semibold">
-								Reset Link Sent!
-							</h3>
-							<p className="text-white-pearl/80 text-base">
-								We've sent a password reset link to{" "}
-								<span className="font-medium">{email}</span>. Check your inbox
-								and follow the instructions.
-							</p>
-							<p className="text-white-pearl/70 text-sm">
-								Didn't receive the email? Check your spam folder or{" "}
-								<button
-									onClick={() => {
-										setSuccess(false);
-										handleSubmit();
-									}}
-									disabled={isLoading}
-									className="text-vibrant-orange hover:text-vibrant-orange/80 font-medium disabled:opacity-50 transition-colors">
-									try again
-								</button>
-							</p>
-							<div className="pt-4 border-t border-input-bg">
-								<Link
-									href="/landing"
-									className="text-vibrant-orange hover:text-vibrant-orange/80 font-medium transition-colors">
-									Back to Sign In
-								</Link>
-							</div>
-						</div>
-					)}
-				</Modal>
-			</div>
-		</div>
-	);
+                            {/* Error message */}
+                            {error && (
+                                <div className="flex items-center gap-2 text-carmin text-sm">
+                                    <BiSolidError className="text-lg" />
+                                    <span>{error}</span>
+                                </div>
+                            )}
+
+                            {/* Send Reset Link Button */}
+                            <Button
+                                onClick={handleSubmit}
+                                className="w-full h-11 rounded-xl text-sm font-semibold"
+                            >
+                                {isLoading ? "Sending..." : "Send Reset Link"}
+                            </Button>
+                        </>
+                    ) : (
+                        /* Success State */
+                        <div className="text-center space-y-4">
+                            <div className="w-16 h-16 bg-sea-green/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <svg
+                                    className="w-8 h-8 text-sea-green"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M5 13l4 4L19 7"
+                                    />
+                                </svg>
+                            </div>
+                            <h3 className="text-white-pearl text-xl font-semibold">
+                                Reset Link Sent!
+                            </h3>
+                            <p className="text-white-pearl/80 text-base">
+                                We've sent a password reset link to{" "}
+                                <span className="font-medium">{email}</span>.
+                                Check your inbox and follow the instructions.
+                            </p>
+                            <p className="text-white-pearl/70 text-sm">
+                                Didn't receive the email? Check your spam folder
+                                or{" "}
+                                <button
+                                    onClick={() => {
+                                        setSuccess(false);
+                                        handleSubmit();
+                                    }}
+                                    disabled={isLoading}
+                                    className="text-vibrant-orange hover:text-vibrant-orange/80 font-medium disabled:opacity-50 transition-colors"
+                                >
+                                    try again
+                                </button>
+                            </p>
+                            <div className="pt-4 border-t border-input-bg">
+                                <Link
+                                    href="/landing"
+                                    className="text-vibrant-orange hover:text-vibrant-orange/80 font-medium transition-colors"
+                                >
+                                    Back to Sign In
+                                </Link>
+                            </div>
+                        </div>
+                    )}
+                </Modal>
+            </div>
+        </div>
+    );
 }

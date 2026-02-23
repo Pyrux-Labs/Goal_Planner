@@ -1,0 +1,78 @@
+/**
+ * Shared formatting utility functions for dates, times, and display values.
+ * Used across GoalCard, anual-goals, onboarding, and GoalForm components.
+ */
+
+/** Mapping of full day names to abbreviated forms */
+export const DAY_MAP: Record<string, string> = {
+    monday: "Mon",
+    tuesday: "Tue",
+    wednesday: "Wed",
+    thursday: "Thu",
+    friday: "Fri",
+    saturday: "Sat",
+    sunday: "Sun",
+};
+
+/**
+ * Formats an array of repeat days into a readable string.
+ * @param days - Array of day names (e.g., ["monday", "tuesday"])
+ * @returns Formatted string (e.g., "Mon, Tue") or "Everyday" if all 7 days
+ */
+export const formatRepeatDays = (days: string[]): string | undefined => {
+    if (days.length === 7) return "Everyday";
+    if (days.length === 0) return undefined;
+    return days.map((day) => DAY_MAP[day.toLowerCase()] || day).join(", ");
+};
+
+/**
+ * Formats a 24h time string to 12-hour format with AM/PM.
+ * @param time - Time string in 24-hour format (e.g., "14:30")
+ * @returns Formatted time (e.g., "2:30 PM") or undefined if null
+ */
+export const formatTime = (time: string | null): string | undefined => {
+    if (!time) return undefined;
+    const [hours, minutes] = time.split(":");
+    const hour = parseInt(hours, 10);
+    const ampm = hour >= 12 ? "PM" : "AM";
+    const displayHour = hour % 12 || 12;
+    return `${displayHour}:${minutes} ${ampm}`;
+};
+
+/**
+ * Formats a date string to short uppercase format (e.g., "15 JAN").
+ * @param date - ISO date string
+ * @returns Formatted date or undefined if null
+ */
+export const formatDateShort = (date: string | null): string | undefined => {
+    if (!date) return undefined;
+    const d = new Date(date);
+    const day = d.getDate();
+    const month = d
+        .toLocaleDateString("en-US", { month: "short" })
+        .toUpperCase();
+    return `${day} ${month}`;
+};
+
+/**
+ * Formats a date to long format (e.g., "Jan 15, 2026").
+ * @param date - ISO date string
+ * @returns Formatted date string
+ */
+export const formatTargetDate = (date: string): string => {
+    const d = new Date(date);
+    return d.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+    });
+};
+
+/**
+ * Capitalizes the first letter of a string.
+ * @param str - String to capitalize
+ * @returns Capitalized string
+ */
+export const capitalizeFirst = (str: string): string => {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+};
