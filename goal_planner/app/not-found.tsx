@@ -1,37 +1,46 @@
 "use client";
 
-import Link from "next/link";
-import Modal from "@/components/ui/Modal/Modal";
+import Image from "next/image";
 import Button from "@/components/ui/Button/Button";
 
 export default function NotFound() {
     return (
-        <div
-            className="min-h-screen flex bg-gradient-to-br from-landing-bg via-deep-bg via-55% to-vibrant-orange"
-            style={{ backgroundAttachment: "fixed" }}
-        >
-            {/* 404 Error Modal - Centered */}
-            <div className="w-full flex items-center justify-center flex-col p-8 lg:p-12">
-                <Modal
-                    title="Error 404"
-                    subtitle="The page you're looking for doesn't exist or has been moved."
-                    maxWidth="md"
-                >
-                    <div className="text-center space-y-6">
-                        {/* Error Message */}
-                        <p className="text-white-pearl/80 text-base">
-                            Sorry, the page you requested could not be found.
-                            Please check the URL or return to the homepage.
+        <div className="min-h-screen bg-gradient-to-b from-dark-brown to-charcoal flex items-center justify-center px-4">
+            <div className="max-w-4xl w-full">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+                    {/* Error Message */}
+                    <div className="flex-1 text-center md:text-left">
+                        <h1 className="text-4xl md:text-6xl font-title font-bold text-white-pearl mb-4">
+                            Page Not Found
+                        </h1>
+                        <p className="text-lg md:text-xl text-white-pearl mb-8">
+                            Sorry, the page you're looking for doesn't exist or
+                            has been moved.
                         </p>
 
-                        {/* Homepage Button */}
-                        <Link href="/landing">
-                            <Button className="h-11 rounded-xl text-sm font-semibold w-full sm:w-auto mt-4">
-                                Go to Homepage
-                            </Button>
-                        </Link>
+                        {/* Action Button */}
+                        <div className="flex justify-center md:justify-start">
+                            <Button
+                                href="/calendar"
+                                mobileText="Return home"
+                                desktopText="Return home"
+                                className="w-full sm:w-auto"
+                            />
+                        </div>
                     </div>
-                </Modal>
+
+                    {/* 404 SVG Illustration */}
+                    <div className="flex-shrink-0">
+                        <Image
+                            src="/404_not_found.svg"
+                            alt="404 Not Found"
+                            width={250}
+                            height={250}
+                            className="w-64 h-64"
+                            priority
+                        />
+                    </div>
+                </div>
             </div>
         </div>
     );
