@@ -28,6 +28,7 @@ export default function CalendarPage() {
     const [currentMonth, setCurrentMonth] = useState<number>(
         new Date().getMonth(),
     );
+    const [isLoading, setIsLoading] = useState<boolean>(true);
 
     // prevent concurrent fetches
     const isFetchingRef = useRef(false);
@@ -38,6 +39,7 @@ export default function CalendarPage() {
         // prevent concurrent calls
         if (isFetchingRef.current) return;
         isFetchingRef.current = true;
+        setIsLoading(true);
 
         const supabase = createClient();
         const startYear = centerYear - 1;
@@ -65,6 +67,7 @@ export default function CalendarPage() {
             console.error("Unexpected error in fetchThreeYears:", err);
         } finally {
             isFetchingRef.current = false;
+            setIsLoading(false);
         }
     }, []);
 
@@ -179,6 +182,7 @@ export default function CalendarPage() {
                 onAddTask={handleAddTask}
                 isModalOpen={isModalOpen}
                 onMonthChange={handleMonthChange}
+                isLoading={isLoading}
             />
 
             {isModalOpen && (

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Navbar from "@/components/Layout/Navbar/Navbar";
 import Top from "@/components/Layout/Top/Top";
 import GoalCard from "@/components/common/GoalCard/GoalCard";
+import GoalCardSkeleton from "@/components/common/GoalCard/GoalCardSkeleton";
 import Modal from "@/components/ui/Modal/Modal";
 import { createClient } from "@/lib/supabase/client";
 import { deleteGoalWithRelatedData } from "@/utils/deleteGoal";
@@ -489,9 +490,11 @@ export default function AnualGoalsPage() {
                 {/* Goals List */}
                 <div className="space-y-4">
                     {loading ? (
-                        <div className="text-white-pearl text-center py-8">
-                            Loading goals...
-                        </div>
+                        <>
+                            <GoalCardSkeleton />
+                            <GoalCardSkeleton />
+                            <GoalCardSkeleton />
+                        </>
                     ) : formattedGoals.length === 0 ? (
                         <div className="text-white-pearl text-center py-8">
                             No goals found. Create your first goal!
