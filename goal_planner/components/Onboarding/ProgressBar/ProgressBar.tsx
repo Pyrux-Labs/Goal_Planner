@@ -12,7 +12,7 @@ const ProgressBar = ({
     const progress = (currentStep / totalSteps) * 100;
 
     return (
-        <header className="px-24 pt-4">
+        <header className="px-6 md:px-24 pt-4">
             <div className="flex justify-between mb-1">
                 <div className="text-vibrant-orange text-xs font-bold tracking-wide">
                     STEP {currentStep} OF {totalSteps}

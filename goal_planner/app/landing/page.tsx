@@ -3,7 +3,6 @@ import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Feature from "@/components/LandingPage/Feature/Feature";
-import DownloadButton from "@/components/LandingPage/DownloadButton/DownloadButton";
 import Creator from "@/components/LandingPage/Creator/Creator";
 import Button from "@/components/ui/Button/Button";
 import SignIn from "@/components/auth/SignIn/SignIn";
@@ -100,22 +99,19 @@ function LandingContent() {
                                 </button>
                             </nav>
                         </div>
-                        <div className="flex gap-6 md:gap-8 items-center">
+                        <div className="flex gap-4 md:gap-8 items-center">
                             <button
                                 onClick={() =>
                                     user
                                         ? (window.location.href = "/calendar")
                                         : setShowSignIn(true)
                                 }
-                                className="hidden md:block hover:text-vibrant-orange transition cursor-pointer"
+                                className="hover:text-vibrant-orange transition cursor-pointer text-sm md:text-base"
                             >
                                 Sign In
                             </button>
                             <Link href={user ? "/calendar" : "/register"}>
-                                <Button
-                                    mobileText="Download App"
-                                    desktopText="Get Started"
-                                />
+                                <Button>Get Started</Button>
                             </Link>
                         </div>
                         {/*Header*/}
@@ -223,55 +219,22 @@ function LandingContent() {
                     </p>
                 </div>
             </div>
-            {/*Ready to Reach Potential - Desktop*/}
+            {/* Ready to Reach Potential — unified CTA for all screens */}
             <div
-                className="hidden md:flex mx-4 md:mx-12 rounded-xl py-8 md:py-5 items-center justify-between p-8 md:p-14 mt-16 md:mt-28 gap-6 md:gap-0"
+                className="flex flex-col md:flex-row mx-4 md:mx-12 rounded-xl py-8 md:py-5 items-center justify-between p-8 md:p-14 mt-16 md:mt-28 gap-6 md:gap-0"
                 style={{
                     background: "var(--main-gradient)",
                 }}
             >
                 <h2 className="font-title font-semibold text-2xl md:text-4xl text-deep-bg text-center md:text-left">
-                    <>
-                        Ready to reach your
-                        <br />
-                        potential?
-                    </>
+                    Ready to reach your
+                    <br className="hidden md:block" /> potential?
                 </h2>
                 <Link href={user ? "/calendar" : "/register"}>
-                    <button className="bg-sea-green text-white-pearl font-title font-semibold text-xl md:text-2xl px-8 md:px-10 py-2 md:py-3 rounded-full">
+                    <button className="bg-sea-green text-white-pearl font-title font-semibold text-lg md:text-2xl px-8 md:px-10 py-2 md:py-3 rounded-full mt-4 md:mt-0">
                         Get Started
                     </button>
                 </Link>
-            </div>
-            {/*Download App - Mobile*/}
-            <div
-                id="download-app"
-                className="md:hidden mx-4 rounded-xl py-8 px-6 mt-16 scroll-mt-20"
-                style={{
-                    background: "var(--main-gradient)",
-                }}
-            >
-                <h2 className="font-title font-semibold text-3xl text-deep-bg text-center mb-6">
-                    Download Our App
-                </h2>
-                <p className="font-text text-base text-deep-bg text-center mb-8">
-                    Get the Goal Planner app and start achieving your goals
-                    today!
-                </p>
-                <div className="flex flex-col gap-4">
-                    <DownloadButton
-                        icon="apple-icon.svg"
-                        topText="Download on the"
-                        bottomText="App Store"
-                        href="#"
-                    />
-                    <DownloadButton
-                        icon="google-play-icon.svg"
-                        topText="GET IT ON"
-                        bottomText="Google Play"
-                        href="#"
-                    />
-                </div>
             </div>
             {/*Footer*/}
             <footer

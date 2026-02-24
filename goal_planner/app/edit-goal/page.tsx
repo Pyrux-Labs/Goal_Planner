@@ -40,18 +40,10 @@ function EditGoalContent() {
         router.push("/anual-goals");
     };
 
-    if (!goalId) {
-        return (
-            <div className="min-h-screen bg-deep-bg flex flex-col items-center justify-center">
-                <p className="text-white-pearl">Loading...</p>
-            </div>
-        );
-    }
-
     return (
         <div className="min-h-screen bg-deep-bg flex flex-col">
             <Navbar />
-            <div className="ml-20 mr-7 p-6 pb-28">
+            <div className="ml-0 md:ml-14 lg:ml-14 xl:ml-16 2xl:ml-20 mr-4 md:mr-7 p-4 md:p-6 pb-44 md:pb-28">
                 <Top
                     title="Edit Goal"
                     buttons={[
@@ -62,9 +54,11 @@ function EditGoalContent() {
                         },
                     ]}
                 />
-                <div className="mt-6">
-                    <GoalForm ref={goalFormRef} goalId={goalId} />
-                </div>
+                {goalId && (
+                    <div className="mt-6">
+                        <GoalForm ref={goalFormRef} goalId={goalId} />
+                    </div>
+                )}
             </div>
 
             <NavigationButtons
@@ -72,6 +66,7 @@ function EditGoalContent() {
                 nextLabel={isSaving ? "Saving..." : "Save Changes"}
                 showPrevious={false}
                 containerClassName="pr-8 pl-4"
+                hasNavbar={true}
             />
         </div>
     );
@@ -79,13 +74,7 @@ function EditGoalContent() {
 
 export default function EditGoalPage() {
     return (
-        <Suspense
-            fallback={
-                <div className="min-h-screen bg-deep-bg flex flex-col items-center justify-center">
-                    <p className="text-white-pearl">Loading...</p>
-                </div>
-            }
-        >
+        <Suspense fallback={<div className="min-h-screen bg-deep-bg" />}>
             <EditGoalContent />
         </Suspense>
     );

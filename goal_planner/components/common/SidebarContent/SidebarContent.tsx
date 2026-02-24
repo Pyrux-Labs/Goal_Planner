@@ -39,10 +39,10 @@ export default function SidebarContent({
             );
 
         case "daily-analytics":
-            return;
+            return null;
 
         case "weekly-stats":
-            return;
+            return null;
 
         case "add-task":
             return (

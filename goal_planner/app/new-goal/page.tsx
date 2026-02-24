@@ -6,32 +6,13 @@ import Navbar from "@/components/Layout/Navbar/Navbar";
 import Top from "@/components/Layout/Top/Top";
 import GoalForm, { GoalFormRef } from "@/components/common/GoalForm/GoalForm";
 import NavigationButtons from "@/components/Onboarding/NavigationButtons/NavigationButtons";
-import { createClient } from "@/lib/supabase/client";
+import { deleteGoalWithRelatedData } from "@/utils/deleteGoal";
 
 export default function NewGoalPage() {
     const router = useRouter();
     const goalFormRef = useRef<GoalFormRef>(null);
     const [isSaving, setIsSaving] = useState(false);
     const [goalId, setGoalId] = useState<number | null>(null);
-
-    const deleteGoalAndRelated = async (currentGoalId: number) => {
-        try {
-            const supabase = createClient();
-
-            // Delete goal (cascade will handle related tables if configured,
-            // otherwise we delete explicitly)
-            const { error } = await supabase
-                .from("goals")
-                .delete()
-                .eq("id", currentGoalId);
-
-            if (error) {
-                console.error("Error deleting goal:", error);
-            }
-        } catch (error) {
-            console.error("Error in cleanup:", error);
-        }
-    };
 
     const handleNext = async () => {
         if (goalId) {
@@ -46,12 +27,16 @@ export default function NewGoalPage() {
 
         if (newGoalId) {
             setGoalId(newGoalId);
+            // Scroll to tasks and habits section after creating the goal
+            setTimeout(() => {
+                goalFormRef.current?.scrollToTasksHabits();
+            }, 100);
         }
     };
 
     const handleCancel = async () => {
         if (goalId) {
-            await deleteGoalAndRelated(goalId);
+            await deleteGoalWithRelatedData(goalId);
         }
         router.push("/anual-goals");
     };
@@ -59,7 +44,7 @@ export default function NewGoalPage() {
     return (
         <div className="min-h-screen bg-deep-bg flex flex-col">
             <Navbar />
-            <div className="ml-20 mr-7 p-6 pb-28">
+            <div className="ml-0 md:ml-14 lg:ml-14 xl:ml-16 2xl:ml-20 mr-4 md:mr-7 p-4 md:p-6 pb-44 md:pb-28">
                 <Top
                     title={goalId ? "Add Tasks & Habits" : "Create New Goal"}
                     buttons={[
@@ -82,6 +67,7 @@ export default function NewGoalPage() {
                 }
                 showPrevious={false}
                 containerClassName="pr-8 pl-4"
+                hasNavbar={true}
             />
         </div>
     );

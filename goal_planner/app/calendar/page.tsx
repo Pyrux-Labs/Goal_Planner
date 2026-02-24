@@ -30,45 +30,51 @@ export default function CalendarPage() {
 	const [currentMonth, setCurrentMonth] = useState<number>(
 		new Date().getMonth(),
 	);
+	const [isLoading, setIsLoading] = useState<boolean>(true);
 
 	// prevent concurrent fetches
 	const isFetchingRef = useRef(false);
 
 	// Fetch 3 years (previous, current, next)
 	// ~5MB payload is acceptable for instant navigation and edit optimization
-	const fetchThreeYears = useCallback(async (centerYear: number) => {
-		// prevent concurrent calls
-		if (isFetchingRef.current) return;
-		isFetchingRef.current = true;
+	const fetchThreeYears = useCallback(
+		async (centerYear: number, showLoading = true) => {
+			// prevent concurrent calls
+			if (isFetchingRef.current) return;
+			isFetchingRef.current = true;
+			if (showLoading) setIsLoading(true);
 
-		const supabase = createClient();
-		const startYear = centerYear - 1;
-		const endYear = centerYear + 1;
+			const supabase = createClient();
+			const startYear = centerYear - 1;
+			const endYear = centerYear + 1;
 
-		try {
-			const { data, error } = await supabase.rpc(
-				"get_user_events_current_month",
-				{
-					p_start: `${startYear}-01-01`,
-					p_end: `${endYear}-12-31`,
-				},
-			);
+			try {
+				const { data, error } = await supabase.rpc(
+					"get_user_events_current_month",
+					{
+						p_start: `${startYear}-01-01`,
+						p_end: `${endYear}-12-31`,
+					},
+				);
 
-			if (error) {
-				console.error("Error fetching events:", error);
-				return;
+				if (error) {
+					console.error("Error fetching events:", error);
+					return;
+				}
+
+				// The RPC function returns jsonb_agg which comes as an array
+				const eventsData = Array.isArray(data) ? data : data ? [data] : [];
+				setAllEvents(eventsData || []);
+				setLoadedYearRange({ start: startYear, end: endYear });
+			} catch (err) {
+				console.error("Unexpected error in fetchThreeYears:", err);
+			} finally {
+				isFetchingRef.current = false;
+				setIsLoading(false);
 			}
-
-			// The RPC function returns jsonb_agg which comes as an array
-			const eventsData = Array.isArray(data) ? data : data ? [data] : [];
-			setAllEvents(eventsData || []);
-			setLoadedYearRange({ start: startYear, end: endYear });
-		} catch (err) {
-			console.error("Unexpected error in fetchThreeYears:", err);
-		} finally {
-			isFetchingRef.current = false;
-		}
-	}, []);
+		},
+		[],
+	);
 
 	// Fetch goals once on mount
 	const fetchGoals = useCallback(async () => {
@@ -156,12 +162,12 @@ export default function CalendarPage() {
 	}, []);
 
 	const handleSuccess = useCallback(() => {
-		fetchThreeYears(currentYear);
+		fetchThreeYears(currentYear, false);
 		closeModal();
 	}, [currentYear, fetchThreeYears, closeModal]);
 	//Implement refresh data functionality
 	const handleRefresh = useCallback(() => {
-		fetchThreeYears(currentYear);
+		fetchThreeYears(currentYear, false);
 	}, [currentYear, fetchThreeYears]);
 
 	const handleToggleWeek = useCallback(() => {
@@ -195,6 +201,7 @@ export default function CalendarPage() {
 					onMonthChange={handleMonthChange}
 					onToggleWeek={handleToggleWeek}
 					isWeekView={isWeekView}
+					isLoading={isLoading}
 				/>
 			)}
 
@@ -215,7 +222,7 @@ export default function CalendarPage() {
 			{!isModalOpen && (
 				<Button
 					onClick={openAnalytics}
-					className="h-36 w-10 flex justify-center items-center fixed [writing-mode:vertical-lr] rotate-180 right-0 top-1/2 -translate-y-1/2 text-base gap-12 rounded-r-[13px] rounded-l-none">
+					className="hidden md:flex h-36 w-10 justify-center items-center fixed [writing-mode:vertical-lr] rotate-180 right-0 top-1/2 -translate-y-1/2 text-base gap-12 rounded-r-[13px] rounded-l-none">
 					STATS
 					<ChevronRight className="w-6 h-6" />
 				</Button>

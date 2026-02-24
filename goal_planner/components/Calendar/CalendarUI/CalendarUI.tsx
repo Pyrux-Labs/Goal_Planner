@@ -1,7 +1,8 @@
 import { useState, useMemo, useEffect } from "react";
 import CalendarGrid from "../CalendarGrid/CalendarGrid";
 import Top from "../../Layout/Top/Top";
-import { Plus } from "lucide-react";
+import { IoMdTime } from "react-icons/io";
+import { BsStars } from "react-icons/bs";
 import type { CalendarEventsMap } from "@/types/calendar";
 import { getDateKey } from "@/utils/dateUtils";
 
@@ -15,6 +16,7 @@ export interface CalendarProps {
 	onMonthChange?: (year: number, month: number) => void;
 	onToggleWeek?: () => void;
 	isWeekView?: boolean;
+	isLoading?: boolean;
 }
 
 export default function Calendar({
@@ -27,6 +29,7 @@ export default function Calendar({
 	onMonthChange,
 	onToggleWeek,
 	isWeekView = false,
+	isLoading = false,
 }: CalendarProps) {
 	const [currentDate, setCurrentDate] = useState(new Date());
 
@@ -125,9 +128,9 @@ export default function Calendar({
 
 	return (
 		<div
-			className={`flex-1 ml-20 lg:ml-12 xl:ml-16 2xl:ml-20 p-6 transition-all duration-300 ${isModalOpen ? "xl:mr-72 2xl:mr-80" : "xl:mr-12 2xl:mr-12"}`}>
+			className={`flex-1 ml-0 md:ml-14 lg:ml-14 xl:ml-16 2xl:ml-20 p-2 md:p-6 pb-20 md:pb-6 transition-all duration-300 ${isModalOpen ? "xl:mr-72 2xl:mr-80" : "xl:mr-12 2xl:mr-12"}`}>
 			<div
-				className={`w-full mx-auto max-w-[56.25rem]  scale-90 lg:scale-100 origin-top transition-all duration-300 ${isModalOpen ? "xl:max-w-[59.875rem] 2xl:max-w-[59.875rem]" : "xl:max-w-[75rem] 2xl:max-w-[85rem]"}`}>
+				className={`w-full mx-auto max-w-[56.25rem] origin-top transition-all duration-300 ${isModalOpen ? "xl:max-w-[59.875rem] 2xl:max-w-[59.875rem]" : "xl:max-w-[75rem] 2xl:max-w-[85rem]"}`}>
 				{/* Header */}
 				<Top
 					title={monthName}
@@ -135,13 +138,13 @@ export default function Calendar({
 					buttons={[
 						{
 							text: "New Habit",
-							onClick: onAddHabit || (() => console.log("Add Habit clicked")),
-							icon: <Plus className="w-4 h-4" />,
+							onClick: onAddHabit || (() => {}),
+							icon: <BsStars className="w-4 h-4" />,
 						},
 						{
 							text: "New Task",
-							onClick: onAddTask || (() => console.log("Add Task clicked")),
-							icon: <Plus className="w-4 h-4" />,
+							onClick: onAddTask || (() => {}),
+							icon: <IoMdTime className="w-4 h-4" />,
 						},
 					]}
 					onPrevMonth={handlePrevMonth}
@@ -161,6 +164,7 @@ export default function Calendar({
 					isSelected={isSelected}
 					getDateKey={getDateKey}
 					isModalOpen={isModalOpen}
+					isLoading={isLoading}
 				/>
 			</div>
 		</div>
