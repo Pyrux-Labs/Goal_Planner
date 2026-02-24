@@ -13,6 +13,8 @@ export interface CalendarProps {
 	onAddTask?: () => void;
 	isModalOpen?: boolean;
 	onMonthChange?: (year: number, month: number) => void;
+	onToggleWeek?: () => void;
+	isWeekView?: boolean;
 }
 
 export default function Calendar({
@@ -23,6 +25,8 @@ export default function Calendar({
 	onAddTask,
 	isModalOpen = true,
 	onMonthChange,
+	onToggleWeek,
+	isWeekView = false,
 }: CalendarProps) {
 	const [currentDate, setCurrentDate] = useState(new Date());
 
@@ -143,6 +147,8 @@ export default function Calendar({
 					onPrevMonth={handlePrevMonth}
 					onNextMonth={handleNextMonth}
 					onToday={handleToday}
+					onToggleWeek={onToggleWeek}
+					isWeekView={isWeekView}
 				/>
 
 				{/* Calendar Grid */}
