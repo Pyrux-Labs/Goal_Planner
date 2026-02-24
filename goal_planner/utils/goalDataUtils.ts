@@ -1,0 +1,365 @@
+/**
+ * Shared goal data fetching and formatting utilities.
+ * Extracted from anual-goals and onboarding to eliminate duplication.
+ * Uses optimized batch queries with O(1) lookup maps.
+ */
+
+import type { Task, Habit } from "@/types/goal";
+import type { TaskEditData, HabitEditData } from "@/types/sidebar";
+import {
+    formatRepeatDays,
+    formatTime,
+    formatDateShort,
+    formatTargetDate,
+    capitalizeFirst,
+} from "@/utils/formatUtils";
+
+// ===== TYPES =====
+
+/** Extended Goal with computed fields for UI display */
+export interface GoalWithDetails {
+    id: number;
+    name: string;
+    description: string | null;
+    category: string;
+    status?: string;
+    color?: string;
+    target_date: string;
+    start_date?: string;
+    created_at?: string;
+    tasks: Task[];
+    habits: Habit[];
+    progress: number;
+    totalLogs: number;
+    taskLogsMap: Map<number, any[]>;
+    habitLogsMap: Map<number, any[]>;
+}
+
+/** Formatted task for UI rendering */
+export interface FormattedTask {
+    title: string;
+    days?: string;
+    time?: string;
+    completed?: boolean;
+    editData: TaskEditData;
+}
+
+/** Formatted habit for UI rendering */
+export interface FormattedHabit {
+    title: string;
+    days?: string;
+    completed?: boolean;
+    editData: HabitEditData;
+}
+
+/** Formatted goal ready for rendering */
+export interface FormattedGoal extends GoalWithDetails {
+    formattedTasks: FormattedTask[];
+    formattedHabits: FormattedHabit[];
+    categoryName: string;
+    formattedDate: string;
+}
+
+// ===== LOOKUP MAP BUILDER =====
+
+/** Builds a Map grouping items by a key field for O(1) access */
+function buildLookupMap<T>(
+    items: T[] | null | undefined,
+    keyField: keyof T,
+): Map<number, T[]> {
+    const map = new Map<number, T[]>();
+    items?.forEach((item) => {
+        const key = item[keyField] as unknown as number;
+        if (!map.has(key)) map.set(key, []);
+        map.get(key)!.push(item);
+    });
+    return map;
+}
+
+/** Builds a Map grouping string values by a key field */
+function buildStringLookupMap(
+    items: any[] | null | undefined,
+    keyField: string,
+    valueField: string,
+): Map<number, string[]> {
+    const map = new Map<number, string[]>();
+    items?.forEach((item) => {
+        const key = item[keyField] as number;
+        if (!map.has(key)) map.set(key, []);
+        map.get(key)!.push(item[valueField]);
+    });
+    return map;
+}
+
+// ===== DATA FETCHING =====
+
+/**
+ * Fetches all goals with associated tasks, habits, and logs using optimized batch queries.
+ * Builds lookup maps for O(1) access and calculates progress per goal.
+ */
+export async function fetchAllGoalsData(
+    supabase: any,
+    userId: string,
+): Promise<GoalWithDetails[]> {
+    const { data: goalsData, error: goalsError } = await supabase
+        .from("goals")
+        .select("*")
+        .eq("user_id", userId)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false });
+
+    if (goalsError || !goalsData || goalsData.length === 0) return [];
+
+    const goalIds = goalsData.map((g: any) => g.id);
+
+    // Batch fetch tasks and habits
+    const [{ data: allTasks }, { data: allHabits }] = await Promise.all([
+        supabase
+            .from("tasks")
+            .select("id, goal_id, name, start_date, end_date")
+            .in("goal_id", goalIds)
+            .is("deleted_at", null),
+        supabase
+            .from("habits")
+            .select("id, goal_id, name, start_date, end_date")
+            .in("goal_id", goalIds)
+            .is("deleted_at", null),
+    ]);
+
+    const taskIds = allTasks?.map((t: any) => t.id) || [];
+    const habitIds = allHabits?.map((h: any) => h.id) || [];
+
+    // Batch fetch related data
+    const [
+        { data: allTaskRepeatDays },
+        { data: allHabitRepeatDays },
+        { data: allTaskLogs },
+        { data: allHabitLogs },
+    ] = await Promise.all([
+        taskIds.length > 0
+            ? supabase
+                  .from("task_repeat_days")
+                  .select("task_id, day")
+                  .in("task_id", taskIds)
+            : Promise.resolve({ data: [] }),
+        habitIds.length > 0
+            ? supabase
+                  .from("habit_repeat_days")
+                  .select("habit_id, day")
+                  .in("habit_id", habitIds)
+            : Promise.resolve({ data: [] }),
+        taskIds.length > 0
+            ? supabase
+                  .from("task_logs")
+                  .select("task_id, completed, date")
+                  .in("task_id", taskIds)
+            : Promise.resolve({ data: [] }),
+        habitIds.length > 0
+            ? supabase
+                  .from("habit_logs")
+                  .select("habit_id, completed, date")
+                  .in("habit_id", habitIds)
+            : Promise.resolve({ data: [] }),
+    ]);
+
+    // Build lookup maps
+    const tasksByGoalId = buildLookupMap(allTasks, "goal_id");
+    const habitsByGoalId = buildLookupMap(allHabits, "goal_id");
+    const taskRepeatDaysMap = buildStringLookupMap(
+        allTaskRepeatDays,
+        "task_id",
+        "day",
+    );
+    const habitRepeatDaysMap = buildStringLookupMap(
+        allHabitRepeatDays,
+        "habit_id",
+        "day",
+    );
+    const taskLogsMap = buildLookupMap(allTaskLogs as any[], "task_id");
+    const habitLogsMap = buildLookupMap(allHabitLogs as any[], "habit_id");
+
+    return goalsData.map((goal: any) => {
+        const goalTasks = tasksByGoalId.get(goal.id) || [];
+        const goalHabits = habitsByGoalId.get(goal.id) || [];
+
+        const tasks: Task[] = goalTasks.map((task: any) => {
+            const repeatDays = taskRepeatDaysMap.get(task.id) || [];
+            let logDate = null;
+            if (!task.start_date && !task.end_date) {
+                const logs = taskLogsMap.get(task.id) || [];
+                logDate = logs.length > 0 ? logs[0].date : null;
+            }
+            return {
+                id: task.id,
+                name: task.name,
+                start_time: null,
+                start_date: task.start_date,
+                end_date: task.end_date,
+                repeat_days: repeatDays,
+                log_date: logDate,
+            };
+        });
+
+        const habits: Habit[] = goalHabits.map((habit: any) => ({
+            id: habit.id,
+            name: habit.name,
+            start_date: habit.start_date || "",
+            end_date: habit.end_date || "",
+            repeat_days: habitRepeatDaysMap.get(habit.id) || [],
+        }));
+
+        let totalLogs = 0;
+        let completedLogs = 0;
+
+        tasks.forEach((task) => {
+            const logs = taskLogsMap.get(task.id) || [];
+            totalLogs += logs.length;
+            completedLogs += logs.filter((l: any) => l.completed).length;
+        });
+
+        habits.forEach((habit) => {
+            const logs = habitLogsMap.get(habit.id) || [];
+            totalLogs += logs.length;
+            completedLogs += logs.filter((l: any) => l.completed).length;
+        });
+
+        const progress =
+            totalLogs > 0 ? Math.round((completedLogs / totalLogs) * 100) : 0;
+
+        return {
+            id: goal.id,
+            name: goal.name,
+            description: goal.description,
+            category: goal.category,
+            status: goal.status,
+            color: goal.color,
+            target_date: goal.target_date,
+            start_date: goal.start_date,
+            created_at: goal.created_at,
+            tasks,
+            habits,
+            progress,
+            totalLogs,
+            taskLogsMap,
+            habitLogsMap,
+        };
+    });
+}
+
+// ===== PROGRESS CALCULATIONS =====
+
+/**
+ * Calculate overall year progress as a weighted average.
+ * Weight is based on log count, so goals with more activity
+ * have proportionally larger impact.
+ */
+export function calculateYearProgress(goals: GoalWithDetails[]): number {
+    const currentYear = new Date().getFullYear();
+    const yearGoals = goals.filter(
+        (g) => new Date(g.target_date).getFullYear() === currentYear,
+    );
+
+    if (yearGoals.length === 0) return 0;
+
+    let weightedSum = 0;
+    let totalWeight = 0;
+
+    yearGoals.forEach((goal) => {
+        if (goal.totalLogs > 0) {
+            weightedSum += goal.progress * goal.totalLogs;
+            totalWeight += goal.totalLogs;
+        }
+    });
+
+    return totalWeight > 0 ? Math.round(weightedSum / totalWeight) : 0;
+}
+
+// ===== FORMATTING =====
+
+/**
+ * Formats a task for display in GoalCard/summary views.
+ * Includes edit data for inline editing support.
+ */
+export function formatTaskForDisplay(
+    task: Task,
+    goalId: number,
+    taskLogsMap?: Map<number, any[]>,
+): FormattedTask {
+    let days: string | undefined;
+    if (!task.start_date && !task.end_date && task.log_date) {
+        days = formatDateShort(task.log_date);
+    } else if (task.repeat_days.length > 0) {
+        days = formatRepeatDays(task.repeat_days);
+    }
+
+    const taskLogs = taskLogsMap?.get(task.id) || [];
+    const allCompleted =
+        taskLogs.length > 0 && taskLogs.every((l: any) => l.completed);
+
+    const editData: TaskEditData = {
+        id: task.id,
+        goal_id: goalId,
+        name: task.name,
+        start_date: task.start_date,
+        end_date: task.end_date,
+        start_time: null,
+        end_time: null,
+        repeat_days: task.repeat_days,
+        is_repeating: task.repeat_days.length > 0,
+        edit_date: task.log_date ?? undefined,
+    };
+
+    return {
+        title: task.name,
+        days,
+        time: formatTime(task.start_time),
+        completed: allCompleted,
+        editData,
+    };
+}
+
+/**
+ * Formats a habit for display in GoalCard/summary views.
+ */
+export function formatHabitForDisplay(
+    habit: Habit,
+    goalId: number,
+    habitLogsMap?: Map<number, any[]>,
+): FormattedHabit {
+    const habitLogs = habitLogsMap?.get(habit.id) || [];
+    const allCompleted =
+        habitLogs.length > 0 && habitLogs.every((l: any) => l.completed);
+
+    const editData: HabitEditData = {
+        id: habit.id,
+        goal_id: goalId,
+        name: habit.name,
+        start_date: habit.start_date,
+        end_date: habit.end_date,
+        repeat_days: habit.repeat_days,
+    };
+
+    return {
+        title: habit.name,
+        days: formatRepeatDays(habit.repeat_days),
+        completed: allCompleted,
+        editData,
+    };
+}
+
+/**
+ * Formats a goal with all its tasks and habits for display.
+ */
+export function formatGoalForDisplay(goal: GoalWithDetails): FormattedGoal {
+    return {
+        ...goal,
+        formattedTasks: goal.tasks.map((task) =>
+            formatTaskForDisplay(task, goal.id, goal.taskLogsMap),
+        ),
+        formattedHabits: goal.habits.map((habit) =>
+            formatHabitForDisplay(habit, goal.id, goal.habitLogsMap),
+        ),
+        categoryName: capitalizeFirst(goal.category),
+        formattedDate: formatTargetDate(goal.target_date),
+    };
+}

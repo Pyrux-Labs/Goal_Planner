@@ -415,14 +415,14 @@ const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
         const formDisabled = isSaving || (!isEditMode && goalId !== null);
 
         return (
-            <div className="py-4 px-4">
-                <div className="bg-modal-bg p-8 border border-input-bg rounded-3xl shadow-[0px_0px_10px_2px_rgba(217,78,6,0.8)] mb-8">
+            <div className="py-4 px-2 md:px-4">
+                <div className="bg-modal-bg p-4 md:p-8 border border-input-bg rounded-3xl shadow-[0px_0px_10px_2px_rgba(217,78,6,0.8)] mb-8">
                     {/* Category Selection */}
                     <div className="mb-8">
                         <label className="block text-white-pearl mb-4">
                             SELECT CATEGORY
                         </label>
-                        <div className="grid grid-cols-8 justify-items-center">
+                        <div className="grid grid-cols-4 md:grid-cols-8 gap-2 md:gap-0 justify-items-center">
                             {categories.map((category) => (
                                 <button
                                     key={category.name}
@@ -465,7 +465,7 @@ const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
                         )}
                     </div>
                     {/* Goal Name and Description */}
-                    <div className="grid grid-cols-2 gap-9 mb-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-9 mb-8">
                         <div>
                             <InputField
                                 label="GOAL NAME"
@@ -490,7 +490,7 @@ const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
                         />
                     </div>
                     {/* Date and Color Selection */}
-                    <div className="grid grid-cols-3 gap-9 mb-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-9 mb-4">
                         <div>
                             <InputField
                                 label="START DATE"
@@ -568,7 +568,7 @@ const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
                 {(goalId || isEditMode) && (
                     <div
                         ref={tasksHabitsRef}
-                        className="grid grid-cols-2 gap-14"
+                        className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-14"
                     >
                         <TaskHabitColumn
                             type="task"

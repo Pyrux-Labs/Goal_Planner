@@ -66,11 +66,30 @@
 
 ### 📱 Responsive Design
 
-- [ ] **Mobile navbar** - Menú hamburguesa o navbar bottom adaptable [GINO]
-- [ ] **Calendario responsive** - Que funcione en pantallas pequeñas [GINO]
-- [ ] **GoalCards responsive** - Adaptables a diferentes tamaños [GINO]
-- [ ] **Sidebars responsive** - Fullscreen en mobile [GINO]
-      NOTA: Usar las vistas ya predeterminadas: lg, xxl, xl (pantallas desktop). Despues para telefono. Cambiar landing page para que te deje iniciar sesión en mobile web tambien
+- [x] **Mobile navbar** - Bottom navigation bar en mobile, sidebar desktop (`md:` breakpoint) [GINO]
+- [x] **Calendario responsive** - CalendarUI márgenes adaptativos, padding para mobile nav [GINO]
+- [x] **GoalCards responsive** - Layout flex-col/flex-row, tamaños adaptativos [GINO]
+- [x] **GoalCardSkeleton responsive** - Coincide con GoalCard responsive [GINO]
+- [x] **GoalForm responsive** - Grids adaptativos (4→8 cols categorías, 1→2/3 cols campos) [GINO]
+- [x] **Sidebars responsive** - Fullscreen en mobile, tamaños normales en desktop [GINO]
+- [x] **TaskHabitColumn responsive** - Anchos fluidos con max-width [GINO]
+- [x] **TaskHabitSimpleView responsive** - Anchos fluidos, alturas adaptativos [GINO]
+- [x] **Pages responsive** - Márgenes adaptativos en anual-goals, new-goal, edit-goal, onboarding [GINO]
+- [x] **StepHeader responsive** - Texto adaptativo (3xl→6xl) [GINO]
+- [x] **Landing page desktop-only logic removed** - CTA unificado, login visible en mobile [GINO]
+- [x] **Statistics bar responsive** - Layout flex-col en mobile, inline en desktop [GINO]
+
+### 🔧 Refactoring & Performance (Completado)
+
+- [x] **Extraer `goalDataUtils.ts`** - Shared data fetching/formatting (~150 líneas de duplicación eliminadas) [GINO]
+- [x] **Crear `useGoalsData` hook** - Hook reutilizable para fetching/estado de metas [GINO]
+- [x] **Crear `useGoalDeletion` hook** - Hook reutilizable para lógica de eliminación [GINO]
+- [x] **Refactorizar `anual-goals`** - Usa hooks compartidos, ~250 líneas eliminadas [GINO]
+- [x] **Refactorizar `onboarding`** - Usa hooks compartidos, ~200 líneas eliminadas [GINO]
+- [x] **Extraer `EventItem` component** - Componente memoizado fuera de CalendarInfo (performance) [GINO]
+- [x] **Fix SidebarContent** - Retornaba `undefined` en daily-analytics/weekly-stats, ahora retorna `null` [GINO]
+- [x] **Fix Settings component name** - `settings` → `Settings` (convención React) [GINO]
+- [x] **Memoizar category icon lookup** - `useMemo` en GoalCard para búsqueda O(1) [GINO]
 
 ### 🧪 Testing y QA
 

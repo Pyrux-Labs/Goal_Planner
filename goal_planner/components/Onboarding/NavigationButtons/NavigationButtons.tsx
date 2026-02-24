@@ -16,7 +16,7 @@ const NavigationButtons = ({
     nextLabel = "Continue",
     nextHref,
     showPrevious = true,
-    containerClassName = "mx-28 px-4",
+    containerClassName = "mx-4 md:mx-12 lg:mx-28 px-4",
 }: NavigationButtonsProps) => {
     return (
         <footer className="fixed bottom-0 left-0 right-0 z-10 border-input-bg border bg-deep-bg py-6">

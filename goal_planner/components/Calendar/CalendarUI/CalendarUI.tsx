@@ -123,7 +123,7 @@ export default function Calendar({
 
     return (
         <div
-            className={`flex-1 ml-20 lg:ml-12 xl:ml-16 2xl:ml-20 p-6 transition-all duration-300 ${isModalOpen ? "xl:mr-72 2xl:mr-80" : "xl:mr-12 2xl:mr-12"}`}
+            className={`flex-1 ml-0 md:ml-14 lg:ml-14 xl:ml-16 2xl:ml-20 p-3 md:p-6 pb-20 md:pb-6 transition-all duration-300 ${isModalOpen ? "xl:mr-72 2xl:mr-80" : "xl:mr-12 2xl:mr-12"}`}
         >
             <div
                 className={`w-full mx-auto max-w-[56.25rem]  scale-90 lg:scale-100 origin-top transition-all duration-300 ${isModalOpen ? "xl:max-w-[59.875rem] 2xl:max-w-[59.875rem]" : "xl:max-w-[75rem] 2xl:max-w-[85rem]"}`}

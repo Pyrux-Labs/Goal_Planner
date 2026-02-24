@@ -1,9 +1,104 @@
 import type { CalendarEvent } from "@/types/calendar";
 import type { TaskEditData, HabitEditData } from "@/types/sidebar";
 import { createClient } from "@/lib/supabase/client";
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, memo } from "react";
 import DropdownMenu from "@/components/common/DropdownMenu/DropdownMenu";
 import { deleteTaskLog, deleteHabitLog } from "@/utils/deleteTaskHabit";
+
+// ===== EXTRACTED EVENT ITEM COMPONENT =====
+interface EventItemProps {
+    event: CalendarEvent;
+    isHabit?: boolean;
+    isUpdating: boolean;
+    onToggle: (event: CalendarEvent) => void;
+    onEdit: (event: CalendarEvent) => void;
+    onDelete: (event: CalendarEvent, isHabit: boolean) => void;
+}
+
+const EventItem = memo(function EventItem({
+    event,
+    isHabit = false,
+    isUpdating,
+    onToggle,
+    onEdit,
+    onDelete,
+}: EventItemProps) {
+    const typeLabel = isHabit ? "Habit" : "Task";
+
+    return (
+        <div className="flex items-center gap-2 p-2 bg-input-bg rounded-lg min-h-12 w-full">
+            {!isHabit && (
+                <input
+                    type="checkbox"
+                    checked={event.completed}
+                    className="w-4 h-4 rounded border-gray-400 text-vibrant-orange"
+                    onChange={() => onToggle(event)}
+                    disabled={isUpdating}
+                    style={{ accentColor: "#d94e06" }}
+                />
+            )}
+
+            {isHabit && (
+                <DropdownMenu
+                    align="left"
+                    items={[
+                        {
+                            label: `Edit ${typeLabel}`,
+                            onClick: () => onEdit(event),
+                        },
+                        {
+                            label: `Delete ${typeLabel}`,
+                            onClick: () => onDelete(event, true),
+                            variant: "danger" as const,
+                        },
+                    ]}
+                />
+            )}
+
+            <div className={`flex-1 min-w-0 ${isHabit ? "text-right" : ""}`}>
+                <div
+                    className={`text-sm truncate ${event.completed ? "line-through text-white-pearl/25" : "text-white-pearl"}`}
+                >
+                    {event.title}
+                </div>
+                {event.time && (
+                    <div
+                        className={`text-xs ${event.completed ? "text-white-pearl/25" : "text-white-pearl"}`}
+                    >
+                        {event.time}
+                    </div>
+                )}
+            </div>
+
+            {!isHabit && (
+                <DropdownMenu
+                    items={[
+                        {
+                            label: `Edit ${typeLabel}`,
+                            onClick: () => onEdit(event),
+                        },
+                        {
+                            label: `Delete ${typeLabel}`,
+                            onClick: () => onDelete(event, false),
+                            variant: "danger" as const,
+                        },
+                    ]}
+                />
+            )}
+
+            {isHabit && (
+                <input
+                    type="checkbox"
+                    checked={event.completed}
+                    className="w-4 h-4 rounded border-gray-400 text-vibrant-orange"
+                    onChange={() => onToggle(event)}
+                    disabled={isUpdating}
+                    style={{ accentColor: "#d94e06" }}
+                />
+            )}
+        </div>
+    );
+});
 
 interface CalendarInfoProps {
     date: Date;
@@ -155,96 +250,13 @@ const CalendarInfo = ({
         [updatingIds, onRefresh],
     );
 
-    const EventItem = ({
-        event,
-        isHabit = false,
-    }: {
-        event: CalendarEvent;
-        isHabit?: boolean;
-    }) => {
-        const isUpdating = updatingIds.has(event.id);
-        const typeLabel = isHabit ? "Habit" : "Task";
-
-        return (
-            <div className="flex items-center gap-2 p-2 bg-input-bg rounded-lg min-h-12 w-full">
-                {!isHabit && (
-                    <input
-                        type="checkbox"
-                        checked={event.completed}
-                        className="w-4 h-4 rounded border-gray-400 text-vibrant-orange"
-                        onChange={() => handleToggle(event)}
-                        disabled={isUpdating}
-                        style={{
-                            accentColor: "#d94e06",
-                        }}
-                    />
-                )}
-
-                {isHabit && (
-                    <DropdownMenu
-                        align="left"
-                        items={[
-                            {
-                                label: `Edit ${typeLabel}`,
-                                onClick: () => handleEditHabit(event),
-                            },
-                            {
-                                label: `Delete ${typeLabel}`,
-                                onClick: () => handleDeleteLog(event, isHabit),
-                                variant: "danger" as const,
-                            },
-                        ]}
-                    />
-                )}
-
-                <div
-                    className={`flex-1 min-w-0 ${isHabit ? "text-right" : ""}`}
-                >
-                    <div
-                        className={`text-sm truncate ${event.completed ? "line-through text-white-pearl/25" : "text-white-pearl"}`}
-                    >
-                        {event.title}
-                    </div>
-                    {event.time && (
-                        <div
-                            className={`text-xs ${event.completed ? "text-white-pearl/25" : "text-white-pearl"}`}
-                        >
-                            {event.time}
-                        </div>
-                    )}
-                </div>
-
-                {!isHabit && (
-                    <DropdownMenu
-                        items={[
-                            {
-                                label: `Edit ${typeLabel}`,
-                                onClick: () => handleEditTask(event),
-                            },
-                            {
-                                label: `Delete ${typeLabel}`,
-                                onClick: () => handleDeleteLog(event, isHabit),
-                                variant: "danger" as const,
-                            },
-                        ]}
-                    />
-                )}
-
-                {isHabit && (
-                    <input
-                        type="checkbox"
-                        checked={event.completed}
-                        className="w-4 h-4 rounded border-gray-400 text-vibrant-orange"
-                        onChange={() => handleToggle(event)}
-                        disabled={isUpdating}
-                        style={{
-                            accentColor: "#d94e06",
-                        }}
-                    />
-                )}
-            </div>
-        );
-    };
+    const handleEdit = useCallback(
+        (event: CalendarEvent) => {
+            if (event.type === "habit") handleEditHabit(event);
+            else handleEditTask(event);
+        },
+        [handleEditTask, handleEditHabit],
+    );
 
     return (
         <div className="h-full overflow-y-auto p-4 space-y-4 scrollbar-custom">
@@ -278,6 +290,10 @@ const CalendarInfo = ({
                                 key={event.id}
                                 event={event}
                                 isHabit={false}
+                                isUpdating={updatingIds.has(event.id)}
+                                onToggle={handleToggle}
+                                onEdit={handleEdit}
+                                onDelete={handleDeleteLog}
                             />
                         ))}
                     </div>
@@ -296,6 +312,10 @@ const CalendarInfo = ({
                                 key={event.id}
                                 event={event}
                                 isHabit={true}
+                                isUpdating={updatingIds.has(event.id)}
+                                onToggle={handleToggle}
+                                onEdit={handleEdit}
+                                onDelete={handleDeleteLog}
                             />
                         ))}
                     </div>
