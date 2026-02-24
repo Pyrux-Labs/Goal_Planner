@@ -48,7 +48,7 @@ export default function GoalCard({
     );
 
     return (
-        <div className="max-w-[70rem] w-full rounded-3xl border border-input-bg bg-modal-bg my-2 mx-auto">
+        <div className="max-w-[70rem] w-full rounded-3xl border border-input-bg bg-modal-bg mx-auto">
             {/* Header Row */}
             <div
                 className="min-h-[4.5rem] md:h-24 flex flex-col md:flex-row items-start md:items-center gap-3 md:gap-6 p-4 md:p-6 cursor-pointer relative"
@@ -94,7 +94,7 @@ export default function GoalCard({
                 </div>
 
                 {/* Progress + Target + Dropdown (desktop) */}
-                <div className="flex items-center gap-4 md:gap-0 w-full md:flex-1">
+                <div className="flex items-center gap-4 md:gap-0 w-full md:flex-1 md:justify-end">
                     {/* Progress */}
                     <div className="flex-1 md:w-64 md:flex-none md:mr-8">
                         <div className="flex justify-between text-white-pearl text-xs md:text-sm mb-1 font-medium">

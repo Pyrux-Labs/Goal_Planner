@@ -118,7 +118,7 @@ export default function AnualGoalsPage() {
                 </div>
 
                 {/* Goals List */}
-                <div className="space-y-4 max-w-[70rem] mx-auto">
+                <div className="space-y-6 max-w-[70rem] mx-auto">
                     {loading ? (
                         <>
                             <GoalCardSkeleton />

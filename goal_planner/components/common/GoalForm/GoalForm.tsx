@@ -13,11 +13,9 @@ import InputField from "../../ui/InputField/InputField";
 import { categories, colors } from "@/lib/constants/categories";
 import { createClient } from "@/lib/supabase/client";
 import {
-    formatRepeatDays,
-    formatTime,
-    formatDateShort,
-} from "@/utils/formatUtils";
-import type { TaskEditData, HabitEditData } from "@/types/sidebar";
+    formatTaskForDisplay,
+    formatHabitForDisplay,
+} from "@/utils/goalDataUtils";
 import type { Task, Habit } from "@/types/goal";
 
 export interface GoalFormRef {
@@ -572,36 +570,12 @@ const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
                     >
                         <TaskHabitColumn
                             type="task"
-                            items={tasks.map((task) => {
-                                let days: string | undefined;
-                                if (
-                                    !task.start_date &&
-                                    !task.end_date &&
-                                    task.log_date
-                                ) {
-                                    days = formatDateShort(task.log_date);
-                                } else if (task.repeat_days.length > 0) {
-                                    days = formatRepeatDays(task.repeat_days);
-                                }
-                                const editData: TaskEditData = {
-                                    id: task.id,
-                                    goal_id: goalId || initialGoalId || 0,
-                                    name: task.name,
-                                    start_date: task.start_date,
-                                    end_date: task.end_date,
-                                    start_time: null,
-                                    end_time: null,
-                                    repeat_days: task.repeat_days,
-                                    is_repeating: task.repeat_days.length > 0,
-                                    edit_date: task.log_date ?? undefined,
-                                };
-                                return {
-                                    title: task.name,
-                                    days,
-                                    time: formatTime(task.start_time),
-                                    editData,
-                                };
-                            })}
+                            items={tasks.map((task) =>
+                                formatTaskForDisplay(
+                                    task,
+                                    goalId || initialGoalId || 0,
+                                ),
+                            )}
                             goalId={goalId || initialGoalId || 0}
                             onAdd={() =>
                                 fetchTasksAndHabits(
@@ -616,21 +590,12 @@ const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
                         />
                         <TaskHabitColumn
                             type="habit"
-                            items={habits.map((habit) => {
-                                const editData: HabitEditData = {
-                                    id: habit.id,
-                                    goal_id: goalId || initialGoalId || 0,
-                                    name: habit.name,
-                                    start_date: habit.start_date,
-                                    end_date: habit.end_date,
-                                    repeat_days: habit.repeat_days,
-                                };
-                                return {
-                                    title: habit.name,
-                                    days: formatRepeatDays(habit.repeat_days),
-                                    editData,
-                                };
-                            })}
+                            items={habits.map((habit) =>
+                                formatHabitForDisplay(
+                                    habit,
+                                    goalId || initialGoalId || 0,
+                                ),
+                            )}
                             goalId={goalId || initialGoalId || 0}
                             onAdd={() =>
                                 fetchTasksAndHabits(
