@@ -26,7 +26,7 @@
 - [x] Mostrar eventos del día con sidebar (CalendarInfo + CalendarCard)
 - [x] Editar eventos del día desde sidebar (CalendarInfoEdit → SidebarContent)
 - [x] Marcar tareas/hábitos como completados (checkbox en CalendarCard)
-- [ ] Vista semanal del calendario [JUANMA]
+- [x] Vista semanal del calendario [JUANMA]
 
 ### ✏️ Gestión de Tareas y Hábitos
 
@@ -41,7 +41,7 @@
 
 ### 🎨 UX/UI Esenciales
 
-- [ ] **Sistema de toasts** - Feedback visual para acciones exitosas y errores (actualmente usa `alert()` y `window.confirm()`) [GINO]
+- [x] **Sistema de toasts** - Feedback visual para acciones exitosas y errores (reemplazó `alert()` y `window.confirm()`) [GINO]
 - [x] **Estados de carga consistentes** - Skeletons/spinners en todas las páginas (anual-goals tiene spinner, pero otras no) [GINO]
 - [x] Estados vacíos con mensajes claros
 - [ ] **Validación de formularios** - Activar validación de password en register y change-password (código comentado en ambos) [JUANMA]
@@ -52,9 +52,9 @@
 - [x] Login / Register / Forgot Password / Change Password
 - [x] Verificación de email con OTP
 - [x] Protección de rutas (middleware en proxy.ts)
-- [ ] **Logout funcional** - Implementar en navbar o settings (solo existe en debug-auth) [JUANMA]
-- [ ] **Página de Settings** - Actualmente es un stub (`<div>settings</div>`) [JUANMA]
-- [ ] **Eliminar debug-auth page** - Es una herramienta de debug que no debe ir a producción [JUANMA]
+- [x] **Logout funcional** - Implementado en navbar con menú desplegable y confirmación modal [JUANMA]
+- [x] **Página de Settings** - Incluye Danger Zone con eliminación de cuenta y confirmación modal [JUANMA]
+- [x] **Eliminar debug-auth page** - Eliminada; funcionalidad de borrar cuenta movida a Settings [JUANMA]
 
 ### 🐛 Fixes Pendientes
 
@@ -117,9 +117,9 @@
 
 ### 👤 Perfil y Navegación
 
-- [ ] **Foto de perfil en navbar** - Reemplazar icono de settings
-- [ ] **Menú desplegable de perfil** - Ver perfil, settings, cerrar sesión
-- [ ] **Página de perfil** - Info del usuario, estadísticas personales
+- [x] **Foto de perfil en navbar** - Avatar con imagen o iniciales, reemplazó icono de settings
+- [x] **Menú desplegable de perfil** - Profile, Settings, Log Out con confirmación modal
+- [x] **Página de perfil** - Placeholder creado con estructura base
 
 ### 🚀 Despliegue
 
@@ -182,7 +182,7 @@
 
 ### ⚙️ Configuración Avanzada
 
-- [ ] **Borrar cuenta** - Con confirmación múltiple
+- [x] **Borrar cuenta** - Implementado en Settings con Modal de confirmación
 - [ ] **Exportar/importar datos** - Backup y migración
 - [ ] **Preferencias de privacidad**
 

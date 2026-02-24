@@ -1,18 +1,106 @@
 "use client";
-import { Home, Target, BarChart3, Settings } from "lucide-react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { Home, Target, BarChart3, LogOut, User, Settings } from "lucide-react";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import icon from "@/public/icon.svg";
-import { usePathname } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import Modal from "@/components/ui/Modal/Modal";
 
 const navItems = [
     { path: "/calendar", icon: Home, label: "Calendar" },
     { path: "/anual-goals", icon: Target, label: "Goals" },
     { path: "/stats", icon: BarChart3, label: "Stats" },
+];
+
+const profileMenuItems = [
+    { path: "/profile", icon: User, label: "Profile" },
     { path: "/settings", icon: Settings, label: "Settings" },
 ];
 
+function UserAvatar({ size = "md" }: { size?: "sm" | "md" }) {
+    const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+    const [initials, setInitials] = useState("U");
+
+    useEffect(() => {
+        const loadUser = async () => {
+            const supabase = createClient();
+            const {
+                data: { user },
+            } = await supabase.auth.getUser();
+            if (!user) return;
+
+            const fullName = user.user_metadata?.full_name || user.email || "";
+            const avatar = user.user_metadata?.avatar_url;
+
+            if (avatar) {
+                setAvatarUrl(avatar);
+            }
+
+            const parts = fullName.split(" ").filter(Boolean);
+            if (parts.length >= 2) {
+                setInitials(`${parts[0][0]}${parts[1][0]}`.toUpperCase());
+            } else if (parts.length === 1) {
+                setInitials(parts[0][0].toUpperCase());
+            }
+        };
+        loadUser();
+    }, []);
+
+    const sizeClasses = size === "sm" ? "w-7 h-7 text-xs" : "w-9 h-9 text-sm";
+
+    if (avatarUrl) {
+        return (
+            <img
+                src={avatarUrl}
+                alt="Profile"
+                className={`${sizeClasses} rounded-full object-cover border-2 border-vibrant-orange`}
+            />
+        );
+    }
+
+    return (
+        <div
+            className={`${sizeClasses} rounded-full bg-vibrant-orange flex items-center justify-center text-white-pearl font-semibold`}
+        >
+            {initials}
+        </div>
+    );
+}
+
 const Navbar = () => {
     const pathname = usePathname();
+    const router = useRouter();
+    const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+    const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
+    const menuRef = useRef<HTMLDivElement>(null);
+
+    // Close menu on click outside
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (
+                menuRef.current &&
+                !menuRef.current.contains(e.target as Node)
+            ) {
+                setIsProfileMenuOpen(false);
+            }
+        };
+        if (isProfileMenuOpen) {
+            document.addEventListener("mousedown", handleClickOutside);
+        }
+        return () =>
+            document.removeEventListener("mousedown", handleClickOutside);
+    }, [isProfileMenuOpen]);
+
+    const handleLogout = useCallback(async () => {
+        setIsLoggingOut(true);
+        const supabase = createClient();
+        await supabase.auth.signOut();
+        setIsLogoutModalOpen(false);
+        setIsLoggingOut(false);
+        router.push("/landing");
+    }, [router]);
 
     return (
         <>
@@ -52,6 +140,57 @@ const Navbar = () => {
                             );
                         })}
                     </nav>
+
+                    {/* Profile avatar at bottom */}
+                    <div className="relative" ref={menuRef}>
+                        <button
+                            onClick={() =>
+                                setIsProfileMenuOpen((prev) => !prev)
+                            }
+                            className="flex items-center justify-center w-10 h-10 rounded-full transition-colors hover:ring-2 hover:ring-vibrant-orange/50"
+                            aria-label="User menu"
+                        >
+                            <UserAvatar />
+                        </button>
+
+                        {/* Desktop dropdown menu */}
+                        <div
+                            className={`absolute bottom-0 left-full ml-2 w-48 bg-deep-bg border border-input-bg rounded-lg z-50 transition-all duration-300 ${
+                                isProfileMenuOpen
+                                    ? "opacity-100 translate-x-0 scale-100"
+                                    : "opacity-0 -translate-x-2 scale-95 pointer-events-none"
+                            }`}
+                        >
+                            <div className="py-2">
+                                {profileMenuItems.map((item) => {
+                                    const Icon = item.icon;
+                                    return (
+                                        <Link
+                                            key={item.path}
+                                            href={item.path}
+                                            onClick={() =>
+                                                setIsProfileMenuOpen(false)
+                                            }
+                                            className="flex items-center gap-3 w-full text-left px-4 py-2 hover:bg-[rgba(255,85,0,0.08)] transition-all duration-200 font-text text-sm text-white-pearl"
+                                        >
+                                            <Icon className="w-4 h-4" />
+                                            {item.label}
+                                        </Link>
+                                    );
+                                })}
+                                <button
+                                    onClick={() => {
+                                        setIsProfileMenuOpen(false);
+                                        setIsLogoutModalOpen(true);
+                                    }}
+                                    className="flex items-center gap-3 w-full text-left px-4 py-2 hover:bg-[rgba(255,85,0,0.08)] transition-all duration-200 font-text text-sm text-red-500"
+                                >
+                                    <LogOut className="w-4 h-4" />
+                                    Log Out
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </aside>
 
@@ -92,8 +231,70 @@ const Navbar = () => {
                             </Link>
                         );
                     })}
+
+                    {/* Mobile profile button */}
+                    <button
+                        onClick={() => setIsProfileMenuOpen((prev) => !prev)}
+                        className="flex flex-col items-center justify-center gap-1 flex-1 py-2 relative"
+                        aria-label="Profile"
+                    >
+                        <UserAvatar size="sm" />
+                        <span className="text-[10px] font-medium text-white-pearl/70">
+                            More
+                        </span>
+                    </button>
+                </div>
+
+                {/* Mobile profile dropdown (slides up) */}
+                <div
+                    className={`absolute bottom-full left-0 right-0 bg-deep-bg border-t border-input-bg transition-all duration-300 ${
+                        isProfileMenuOpen
+                            ? "opacity-100 translate-y-0"
+                            : "opacity-0 translate-y-4 pointer-events-none"
+                    }`}
+                >
+                    <div className="py-2 px-4">
+                        {profileMenuItems.map((item) => {
+                            const Icon = item.icon;
+                            return (
+                                <Link
+                                    key={item.path}
+                                    href={item.path}
+                                    onClick={() => setIsProfileMenuOpen(false)}
+                                    className="flex items-center gap-3 w-full text-left px-4 py-3 hover:bg-[rgba(255,85,0,0.08)] transition-all duration-200 font-text text-sm text-white-pearl rounded-lg"
+                                >
+                                    <Icon className="w-4 h-4" />
+                                    {item.label}
+                                </Link>
+                            );
+                        })}
+                        <button
+                            onClick={() => {
+                                setIsProfileMenuOpen(false);
+                                setIsLogoutModalOpen(true);
+                            }}
+                            className="flex items-center gap-3 w-full text-left px-4 py-3 hover:bg-[rgba(255,85,0,0.08)] transition-all duration-200 font-text text-sm text-red-500 rounded-lg"
+                        >
+                            <LogOut className="w-4 h-4" />
+                            Log Out
+                        </button>
+                    </div>
                 </div>
             </nav>
+
+            {/* Logout confirmation modal */}
+            <Modal
+                isOpen={isLogoutModalOpen}
+                title="Log Out?"
+                message="Are you sure you want to log out?"
+                confirmText="Log Out"
+                cancelText="Cancel"
+                onConfirm={handleLogout}
+                onCancel={() => setIsLogoutModalOpen(false)}
+                onClose={() => setIsLogoutModalOpen(false)}
+                isLoading={isLoggingOut}
+                maxWidth="sm"
+            />
         </>
     );
 };

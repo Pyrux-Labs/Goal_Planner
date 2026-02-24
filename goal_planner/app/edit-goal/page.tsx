@@ -6,6 +6,7 @@ import Navbar from "@/components/Layout/Navbar/Navbar";
 import Top from "@/components/Layout/Top/Top";
 import GoalForm, { GoalFormRef } from "@/components/common/GoalForm/GoalForm";
 import NavigationButtons from "@/components/Onboarding/NavigationButtons/NavigationButtons";
+import { useToast } from "@/components/ui/Toast/ToastContext";
 
 function EditGoalContent() {
     const router = useRouter();
@@ -13,16 +14,17 @@ function EditGoalContent() {
     const goalFormRef = useRef<GoalFormRef>(null);
     const [isSaving, setIsSaving] = useState(false);
     const [goalId, setGoalId] = useState<number | null>(null);
+    const { showToast } = useToast();
 
     useEffect(() => {
         const id = searchParams.get("id");
         if (!id || isNaN(parseInt(id, 10))) {
-            alert("Invalid or missing goal ID");
+            showToast("Invalid or missing goal ID", "error");
             router.push("/anual-goals");
             return;
         }
         setGoalId(parseInt(id, 10));
-    }, [searchParams, router]);
+    }, [searchParams, router, showToast]);
 
     const handleSave = async () => {
         if (!goalId) return;

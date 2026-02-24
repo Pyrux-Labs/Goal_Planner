@@ -9,6 +9,7 @@ import {
     deleteTaskWithFutureLogs,
     deleteHabitWithFutureLogs,
 } from "@/utils/deleteTaskHabit";
+import { useToast } from "@/components/ui/Toast/ToastContext";
 
 interface UseGoalDeletionReturn {
     isDeleteModalOpen: boolean;
@@ -30,6 +31,7 @@ export function useGoalDeletion(
         name: string;
     } | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
+    const { showToast, showConfirm } = useToast();
 
     const handleDeleteClick = useCallback(
         (goalId: number, goalName: string) => {
@@ -48,11 +50,12 @@ export function useGoalDeletion(
         if (result.success) {
             setIsDeleteModalOpen(false);
             setGoalToDelete(null);
+            showToast("Goal deleted successfully", "success");
             await onDeleteSuccess();
         } else {
-            alert(`Failed to delete goal: ${result.error}`);
+            showToast(`Failed to delete goal: ${result.error}`, "error");
         }
-    }, [goalToDelete, onDeleteSuccess]);
+    }, [goalToDelete, onDeleteSuccess, showToast]);
 
     const handleCancelDelete = useCallback(() => {
         setIsDeleteModalOpen(false);
@@ -61,38 +64,62 @@ export function useGoalDeletion(
 
     const handleTaskDelete = useCallback(
         async (taskId: number, taskName: string): Promise<boolean> => {
-            const confirmed = window.confirm(
-                `Are you sure you want to delete "${taskName}"? This will delete the task and all its logs from today onwards.`,
-            );
-            if (!confirmed) return false;
-
-            const result = await deleteTaskWithFutureLogs(taskId);
-            if (result.success) {
-                await onDeleteSuccess();
-                return true;
-            }
-            alert(`Failed to delete task: ${result.error}`);
-            return false;
+            return new Promise((resolve) => {
+                showConfirm(
+                    `Are you sure you want to delete "${taskName}"? This will delete the task and all its logs from today onwards.`,
+                    async () => {
+                        const result = await deleteTaskWithFutureLogs(taskId);
+                        if (result.success) {
+                            showToast("Task deleted successfully", "success");
+                            await onDeleteSuccess();
+                            resolve(true);
+                        } else {
+                            showToast(
+                                `Failed to delete task: ${result.error}`,
+                                "error",
+                            );
+                            resolve(false);
+                        }
+                    },
+                    {
+                        title: "Delete Task",
+                        confirmText: "Delete",
+                        cancelText: "Cancel",
+                    },
+                );
+            });
         },
-        [onDeleteSuccess],
+        [onDeleteSuccess, showConfirm, showToast],
     );
 
     const handleHabitDelete = useCallback(
         async (habitId: number, habitName: string): Promise<boolean> => {
-            const confirmed = window.confirm(
-                `Are you sure you want to delete "${habitName}"? This will delete the habit and all its logs from today onwards.`,
-            );
-            if (!confirmed) return false;
-
-            const result = await deleteHabitWithFutureLogs(habitId);
-            if (result.success) {
-                await onDeleteSuccess();
-                return true;
-            }
-            alert(`Failed to delete habit: ${result.error}`);
-            return false;
+            return new Promise((resolve) => {
+                showConfirm(
+                    `Are you sure you want to delete "${habitName}"? This will delete the habit and all its logs from today onwards.`,
+                    async () => {
+                        const result = await deleteHabitWithFutureLogs(habitId);
+                        if (result.success) {
+                            showToast("Habit deleted successfully", "success");
+                            await onDeleteSuccess();
+                            resolve(true);
+                        } else {
+                            showToast(
+                                `Failed to delete habit: ${result.error}`,
+                                "error",
+                            );
+                            resolve(false);
+                        }
+                    },
+                    {
+                        title: "Delete Habit",
+                        confirmText: "Delete",
+                        cancelText: "Cancel",
+                    },
+                );
+            });
         },
-        [onDeleteSuccess],
+        [onDeleteSuccess, showConfirm, showToast],
     );
 
     return {

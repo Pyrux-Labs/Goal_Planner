@@ -18,6 +18,17 @@ export default function CalendarPage() {
 		type: "closed",
 	});
 	const [isWeekView, setIsWeekView] = useState(false);
+	const [hasMounted, setHasMounted] = useState(false);
+
+	// Set weekly view as default on mobile after hydration
+	useEffect(() => {
+		if (!hasMounted) {
+			setHasMounted(true);
+			if (window.innerWidth < 768) {
+				setIsWeekView(true);
+			}
+		}
+	}, [hasMounted]);
 	const [allEvents, setAllEvents] = useState<CalendarEvent[]>([]);
 	const [goals, setGoals] = useState<{ id: number; name: string }[]>([]);
 	const [loadedYearRange, setLoadedYearRange] = useState<{
