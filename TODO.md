@@ -26,7 +26,7 @@
 - [x] Mostrar eventos del día con sidebar (CalendarInfo + CalendarCard)
 - [x] Editar eventos del día desde sidebar (CalendarInfoEdit → SidebarContent)
 - [x] Marcar tareas/hábitos como completados (checkbox en CalendarCard)
-- [ ] Vista semanal del calendario [JUANMA]
+- [x] Vista semanal del calendario [JUANMA]
 
 ### ✏️ Gestión de Tareas y Hábitos
 
@@ -41,8 +41,8 @@
 
 ### 🎨 UX/UI Esenciales
 
-- [ ] **Sistema de toasts** - Feedback visual para acciones exitosas y errores (actualmente usa `alert()` y `window.confirm()`) [JUANMA]
-- [ ] **Estados de carga consistentes** - Skeletons/spinners en todas las páginas (anual-goals tiene spinner, pero otras no) [GINO]
+- [x] **Sistema de toasts** - Feedback visual para acciones exitosas y errores (reemplazó `alert()` y `window.confirm()`) [GINO]
+- [x] **Estados de carga consistentes** - Skeletons/spinners en todas las páginas (anual-goals tiene spinner, pero otras no) [GINO]
 - [x] Estados vacíos con mensajes claros
 - [ ] **Validación de formularios** - Activar validación de password en register y change-password (código comentado en ambos) [JUANMA]
 - [x] Modal de confirmación reutilizable
@@ -52,25 +52,44 @@
 - [x] Login / Register / Forgot Password / Change Password
 - [x] Verificación de email con OTP
 - [x] Protección de rutas (middleware en proxy.ts)
-- [ ] **Logout funcional** - Implementar en navbar o settings (solo existe en debug-auth) [JUANMA]
-- [ ] **Página de Settings** - Actualmente es un stub (`<div>settings</div>`) [JUANMA]
-- [ ] **Eliminar debug-auth page** - Es una herramienta de debug que no debe ir a producción [JUANMA]
+- [x] **Logout funcional** - Implementado en navbar con menú desplegable y confirmación modal [JUANMA]
+- [x] **Página de Settings** - Incluye Danger Zone con eliminación de cuenta y confirmación modal [JUANMA]
+- [x] **Eliminar debug-auth page** - Eliminada; funcionalidad de borrar cuenta movida a Settings [JUANMA]
 
 ### 🐛 Fixes Pendientes
 
 - [x] Página 404 (not-found.tsx)
-- [ ] **new-goal usa delete simple** - `deleteGoalAndRelated()` en new-goal/page.tsx no usa `deleteGoalWithRelatedData` (puede dejar datos huérfanos) [GINO]
+- [x] **new-goal usa delete simple** - `deleteGoalAndRelated()` en new-goal/page.tsx no usa `deleteGoalWithRelatedData` (puede dejar datos huérfanos) [GINO]
 - [ ] **keepLoggedIn en SignIn** - El checkbox no afecta el comportamiento de la sesión de Supabase [JUANMA]
 - [ ] **Google Auth buttons** - Los botones de "Sign in/up with Google" existen pero no hacen nada (`onClick={() => {}}`) [JUANMA]
-- [ ] **Missing useEffect deps** - `fetchGoals` no está en dependency array en AddTask y onboarding [GINO]
+- [x] **Missing useEffect deps** - `fetchGoals` no está en dependency array en AddTask y onboarding [GINO]
 
 ### 📱 Responsive Design
 
-- [ ] **Mobile navbar** - Menú hamburguesa o navbar bottom adaptable [GINO]
-- [ ] **Calendario responsive** - Que funcione en pantallas pequeñas [GINO]
-- [ ] **GoalCards responsive** - Adaptables a diferentes tamaños [GINO]
-- [ ] **Sidebars responsive** - Fullscreen en mobile [GINO]
-      NOTA: Usar las vistas ya predeterminadas: lg, xxl, xl (pantallas desktop). Despues para telefono. Cambiar landing page para que te deje iniciar sesión en mobile web tambien
+- [x] **Mobile navbar** - Bottom navigation bar en mobile, sidebar desktop (`md:` breakpoint) [GINO]
+- [x] **Calendario responsive** - CalendarUI márgenes adaptativos, padding para mobile nav [GINO]
+- [x] **GoalCards responsive** - Layout flex-col/flex-row, tamaños adaptativos [GINO]
+- [x] **GoalCardSkeleton responsive** - Coincide con GoalCard responsive [GINO]
+- [x] **GoalForm responsive** - Grids adaptativos (4→8 cols categorías, 1→2/3 cols campos) [GINO]
+- [x] **Sidebars responsive** - Fullscreen en mobile, tamaños normales en desktop [GINO]
+- [x] **TaskHabitColumn responsive** - Anchos fluidos con max-width [GINO]
+- [x] **TaskHabitSimpleView responsive** - Anchos fluidos, alturas adaptativos [GINO]
+- [x] **Pages responsive** - Márgenes adaptativos en anual-goals, new-goal, edit-goal, onboarding [GINO]
+- [x] **StepHeader responsive** - Texto adaptativo (3xl→6xl) [GINO]
+- [x] **Landing page desktop-only logic removed** - CTA unificado, login visible en mobile [GINO]
+- [x] **Statistics bar responsive** - Layout flex-col en mobile, inline en desktop [GINO]
+
+### 🔧 Refactoring & Performance (Completado)
+
+- [x] **Extraer `goalDataUtils.ts`** - Shared data fetching/formatting (~150 líneas de duplicación eliminadas) [GINO]
+- [x] **Crear `useGoalsData` hook** - Hook reutilizable para fetching/estado de metas [GINO]
+- [x] **Crear `useGoalDeletion` hook** - Hook reutilizable para lógica de eliminación [GINO]
+- [x] **Refactorizar `anual-goals`** - Usa hooks compartidos, ~250 líneas eliminadas [GINO]
+- [x] **Refactorizar `onboarding`** - Usa hooks compartidos, ~200 líneas eliminadas [GINO]
+- [x] **Extraer `EventItem` component** - Componente memoizado fuera de CalendarInfo (performance) [GINO]
+- [x] **Fix SidebarContent** - Retornaba `undefined` en daily-analytics/weekly-stats, ahora retorna `null` [GINO]
+- [x] **Fix Settings component name** - `settings` → `Settings` (convención React) [GINO]
+- [x] **Memoizar category icon lookup** - `useMemo` en GoalCard para búsqueda O(1) [GINO]
 
 ### 🧪 Testing y QA
 
@@ -98,9 +117,9 @@
 
 ### 👤 Perfil y Navegación
 
-- [ ] **Foto de perfil en navbar** - Reemplazar icono de settings
-- [ ] **Menú desplegable de perfil** - Ver perfil, settings, cerrar sesión
-- [ ] **Página de perfil** - Info del usuario, estadísticas personales
+- [x] **Foto de perfil en navbar** - Avatar con imagen o iniciales, reemplazó icono de settings
+- [x] **Menú desplegable de perfil** - Profile, Settings, Log Out con confirmación modal
+- [x] **Página de perfil** - Placeholder creado con estructura base
 
 ### 🚀 Despliegue
 
@@ -163,7 +182,7 @@
 
 ### ⚙️ Configuración Avanzada
 
-- [ ] **Borrar cuenta** - Con confirmación múltiple
+- [x] **Borrar cuenta** - Implementado en Settings con Modal de confirmación
 - [ ] **Exportar/importar datos** - Backup y migración
 - [ ] **Preferencias de privacidad**
 

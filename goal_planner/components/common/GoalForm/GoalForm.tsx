@@ -4,6 +4,7 @@ import {
     useImperativeHandle,
     useCallback,
     useEffect,
+    useRef,
 } from "react";
 import Image from "next/image";
 import ErrorMessage from "@/components/ui/ErrorMessage/ErrorMessage";
@@ -12,15 +13,14 @@ import InputField from "../../ui/InputField/InputField";
 import { categories, colors } from "@/lib/constants/categories";
 import { createClient } from "@/lib/supabase/client";
 import {
-    formatRepeatDays,
-    formatTime,
-    formatDateShort,
-} from "@/utils/formatUtils";
-import type { TaskEditData, HabitEditData } from "@/types/sidebar";
+    formatTaskForDisplay,
+    formatHabitForDisplay,
+} from "@/utils/goalDataUtils";
 import type { Task, Habit } from "@/types/goal";
 
 export interface GoalFormRef {
     saveGoal: () => Promise<number | null>;
+    scrollToTasksHabits: () => void;
 }
 
 interface GoalFormProps {
@@ -82,9 +82,11 @@ const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
         const [startDate, setStartDate] = useState("");
         const [targetDate, setTargetDate] = useState("");
         const [isSaving, setIsSaving] = useState(false);
-        const [isLoading, setIsLoading] = useState(false);
         const [tasks, setTasks] = useState<Task[]>([]);
         const [habits, setHabits] = useState<Habit[]>([]);
+
+        // Ref for tasks and habits section
+        const tasksHabitsRef = useRef<HTMLDivElement>(null);
 
         // Error states
         const [goalNameError, setGoalNameError] = useState("");
@@ -105,7 +107,6 @@ const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
 
         const loadGoalData = async (id: number) => {
             try {
-                setIsLoading(true);
                 const supabase = createClient();
 
                 const { data: goalData, error: goalError } = await supabase
@@ -143,8 +144,6 @@ const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
             } catch (error: any) {
                 console.error("Error loading goal data:", error);
                 setGeneralError(error.message || "Failed to load goal data");
-            } finally {
-                setIsLoading(false);
             }
         };
 
@@ -401,31 +400,27 @@ const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
                     setIsSaving(false);
                 }
             },
+            scrollToTasksHabits: () => {
+                if (tasksHabitsRef.current) {
+                    tasksHabitsRef.current.scrollIntoView({
+                        behavior: "smooth",
+                        block: "start",
+                    });
+                }
+            },
         }));
-
-        if (isLoading) {
-            return (
-                <div className="py-4 px-4">
-                    <div className="bg-modal-bg p-8 border border-input-bg rounded-3xl shadow-[0px_0px_10px_2px_rgba(217,78,6,0.8)] mb-8">
-                        <div className="text-center py-8 text-white-pearl">
-                            <p className="text-lg">Loading goal data...</p>
-                        </div>
-                    </div>
-                </div>
-            );
-        }
 
         const formDisabled = isSaving || (!isEditMode && goalId !== null);
 
         return (
-            <div className="py-4 px-4">
-                <div className="bg-modal-bg p-8 border border-input-bg rounded-3xl shadow-[0px_0px_10px_2px_rgba(217,78,6,0.8)] mb-8">
+            <div className="py-4 px-2 md:px-4">
+                <div className="bg-modal-bg p-4 md:p-8 border border-input-bg rounded-3xl shadow-[0px_0px_10px_2px_rgba(217,78,6,0.8)] mb-8">
                     {/* Category Selection */}
                     <div className="mb-8">
                         <label className="block text-white-pearl mb-4">
                             SELECT CATEGORY
                         </label>
-                        <div className="grid grid-cols-8 justify-items-center">
+                        <div className="grid grid-cols-4 md:grid-cols-8 gap-2 md:gap-0 justify-items-center">
                             {categories.map((category) => (
                                 <button
                                     key={category.name}
@@ -434,7 +429,7 @@ const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
                                         if (categoryError) setCategoryError("");
                                     }}
                                     disabled={formDisabled}
-                                    className={`relative h-24 w-24 flex items-center justify-center rounded-3xl transition-all ${
+                                    className={`relative h-16 w-16 md:h-24 md:w-24 flex items-center justify-center rounded-2xl md:rounded-3xl transition-all ${
                                         selectedCategory === category.name
                                             ? "bg-vibrant-orange shadow-[0px_0px_10px_2px_rgba(217,78,6,0.8)]"
                                             : "bg-input-bg hover:shadow-[0px_0px_10px_2px_rgba(217,78,6,0.8)]"
@@ -446,7 +441,7 @@ const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
                                             alt={category.name}
                                             width={36}
                                             height={36}
-                                            className={`object-contain transition-colors ${
+                                            className={`w-5 h-5 md:w-9 md:h-9 object-contain transition-colors ${
                                                 selectedCategory ===
                                                 category.name
                                                     ? "filter brightness-0 invert"
@@ -454,7 +449,7 @@ const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
                                             }`}
                                         />
                                     </div>
-                                    <span className="absolute bottom-3 text-xs text-white-pearl">
+                                    <span className="absolute bottom-1 md:bottom-3 text-[10px] md:text-xs text-white-pearl">
                                         {category.name}
                                     </span>
                                 </button>
@@ -468,7 +463,7 @@ const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
                         )}
                     </div>
                     {/* Goal Name and Description */}
-                    <div className="grid grid-cols-2 gap-9 mb-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-9 mb-8">
                         <div>
                             <InputField
                                 label="GOAL NAME"
@@ -493,7 +488,7 @@ const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
                         />
                     </div>
                     {/* Date and Color Selection */}
-                    <div className="grid grid-cols-3 gap-9 mb-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-9 mb-4">
                         <div>
                             <InputField
                                 label="START DATE"
@@ -569,39 +564,18 @@ const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
 
                 {/* Tasks and Daily Habits - Only show if goal is created or in edit mode */}
                 {(goalId || isEditMode) && (
-                    <div className="grid grid-cols-2 gap-14">
+                    <div
+                        ref={tasksHabitsRef}
+                        className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-14"
+                    >
                         <TaskHabitColumn
                             type="task"
-                            items={tasks.map((task) => {
-                                let days: string | undefined;
-                                if (
-                                    !task.start_date &&
-                                    !task.end_date &&
-                                    task.log_date
-                                ) {
-                                    days = formatDateShort(task.log_date);
-                                } else if (task.repeat_days.length > 0) {
-                                    days = formatRepeatDays(task.repeat_days);
-                                }
-                                const editData: TaskEditData = {
-                                    id: task.id,
-                                    goal_id: goalId || initialGoalId || 0,
-                                    name: task.name,
-                                    start_date: task.start_date,
-                                    end_date: task.end_date,
-                                    start_time: null,
-                                    end_time: null,
-                                    repeat_days: task.repeat_days,
-                                    is_repeating: task.repeat_days.length > 0,
-                                    edit_date: task.log_date ?? undefined,
-                                };
-                                return {
-                                    title: task.name,
-                                    days,
-                                    time: formatTime(task.start_time),
-                                    editData,
-                                };
-                            })}
+                            items={tasks.map((task) =>
+                                formatTaskForDisplay(
+                                    task,
+                                    goalId || initialGoalId || 0,
+                                ),
+                            )}
                             goalId={goalId || initialGoalId || 0}
                             onAdd={() =>
                                 fetchTasksAndHabits(
@@ -616,21 +590,12 @@ const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
                         />
                         <TaskHabitColumn
                             type="habit"
-                            items={habits.map((habit) => {
-                                const editData: HabitEditData = {
-                                    id: habit.id,
-                                    goal_id: goalId || initialGoalId || 0,
-                                    name: habit.name,
-                                    start_date: habit.start_date,
-                                    end_date: habit.end_date,
-                                    repeat_days: habit.repeat_days,
-                                };
-                                return {
-                                    title: habit.name,
-                                    days: formatRepeatDays(habit.repeat_days),
-                                    editData,
-                                };
-                            })}
+                            items={habits.map((habit) =>
+                                formatHabitForDisplay(
+                                    habit,
+                                    goalId || initialGoalId || 0,
+                                ),
+                            )}
                             goalId={goalId || initialGoalId || 0}
                             onAdd={() =>
                                 fetchTasksAndHabits(

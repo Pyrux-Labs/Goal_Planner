@@ -1,9 +1,106 @@
 import type { CalendarEvent } from "@/types/calendar";
 import type { TaskEditData, HabitEditData } from "@/types/sidebar";
-import { createClient } from "@/lib/supabase/client";
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, memo } from "react";
 import DropdownMenu from "@/components/common/DropdownMenu/DropdownMenu";
 import { deleteTaskLog, deleteHabitLog } from "@/utils/deleteTaskHabit";
+import { useToggleEvent } from "@/utils/useToggleEvent";
+import { useToast } from "@/components/ui/Toast/ToastContext";
+import { sortEventsByTime } from "@/utils/dateUtils";
+
+// ===== EXTRACTED EVENT ITEM COMPONENT =====
+interface EventItemProps {
+    event: CalendarEvent;
+    isHabit?: boolean;
+    isUpdating: boolean;
+    onToggle: (event: CalendarEvent) => void;
+    onEdit: (event: CalendarEvent) => void;
+    onDelete: (event: CalendarEvent, isHabit: boolean) => void;
+}
+
+const EventItem = memo(function EventItem({
+    event,
+    isHabit = false,
+    isUpdating,
+    onToggle,
+    onEdit,
+    onDelete,
+}: EventItemProps) {
+    const typeLabel = isHabit ? "Habit" : "Task";
+
+    return (
+        <div className="flex items-center gap-2 p-2 bg-input-bg rounded-lg min-h-12 w-full">
+            {!isHabit && (
+                <input
+                    type="checkbox"
+                    checked={event.completed}
+                    className="w-4 h-4 rounded border-gray-400 text-vibrant-orange"
+                    onChange={() => onToggle(event)}
+                    disabled={isUpdating}
+                    style={{ accentColor: "#d94e06" }}
+                />
+            )}
+
+            {isHabit && (
+                <DropdownMenu
+                    align="left"
+                    items={[
+                        {
+                            label: `Edit ${typeLabel}`,
+                            onClick: () => onEdit(event),
+                        },
+                        {
+                            label: `Delete ${typeLabel}`,
+                            onClick: () => onDelete(event, true),
+                            variant: "danger" as const,
+                        },
+                    ]}
+                />
+            )}
+
+            <div className={`flex-1 min-w-0 ${isHabit ? "text-right" : ""}`}>
+                <div
+                    className={`text-sm truncate ${event.completed ? "line-through text-white-pearl/25" : "text-white-pearl"}`}
+                >
+                    {event.title}
+                </div>
+                {event.time && (
+                    <div
+                        className={`text-xs ${event.completed ? "text-white-pearl/25" : "text-white-pearl"}`}
+                    >
+                        {event.time}
+                    </div>
+                )}
+            </div>
+
+            {!isHabit && (
+                <DropdownMenu
+                    items={[
+                        {
+                            label: `Edit ${typeLabel}`,
+                            onClick: () => onEdit(event),
+                        },
+                        {
+                            label: `Delete ${typeLabel}`,
+                            onClick: () => onDelete(event, false),
+                            variant: "danger" as const,
+                        },
+                    ]}
+                />
+            )}
+
+            {isHabit && (
+                <input
+                    type="checkbox"
+                    checked={event.completed}
+                    className="w-4 h-4 rounded border-gray-400 text-vibrant-orange"
+                    onChange={() => onToggle(event)}
+                    disabled={isUpdating}
+                    style={{ accentColor: "#d94e06" }}
+                />
+            )}
+        </div>
+    );
+});
 
 interface CalendarInfoProps {
     date: Date;
@@ -20,27 +117,22 @@ const CalendarInfo = ({
     onEditTask,
     onEditHabit,
 }: CalendarInfoProps) => {
-    const [updatingIds, setUpdatingIds] = useState<Set<number>>(new Set());
+    const { toggleEvent, updatingIds } = useToggleEvent(onRefresh);
+    const [deleteUpdatingIds, setDeleteUpdatingIds] = useState<Set<number>>(
+        new Set(),
+    );
+    const { showToast } = useToast();
 
     // Filter and sort tasks and habits
     const { tasks, habits, sortedTasks, sortedHabits } = useMemo(() => {
         const taskEvents = events.filter((event) => event.type === "task");
         const habitEvents = events.filter((event) => event.type === "habit");
 
-        const sortByTime = (items: CalendarEvent[]) => {
-            return [...items].sort((a, b) => {
-                if (a.time && b.time) return a.time.localeCompare(b.time);
-                if (a.time && !b.time) return -1;
-                if (!a.time && b.time) return 1;
-                return 0;
-            });
-        };
-
         return {
             tasks: taskEvents,
             habits: habitEvents,
-            sortedTasks: sortByTime(taskEvents),
-            sortedHabits: sortByTime(habitEvents),
+            sortedTasks: sortEventsByTime(taskEvents),
+            sortedHabits: sortEventsByTime(habitEvents),
         };
     }, [events]);
 
@@ -99,8 +191,8 @@ const CalendarInfo = ({
 
     const handleDeleteLog = useCallback(
         async (event: CalendarEvent, isHabit: boolean) => {
-            if (updatingIds.has(event.id)) return;
-            setUpdatingIds((prev) => new Set(prev).add(event.id));
+            if (deleteUpdatingIds.has(event.id)) return;
+            setDeleteUpdatingIds((prev) => new Set(prev).add(event.id));
 
             const result = isHabit
                 ? await deleteHabitLog(event.id)
@@ -108,143 +200,41 @@ const CalendarInfo = ({
 
             if (!result.success) {
                 console.error("Error deleting log:", result.error);
-                alert(`Failed to delete ${isHabit ? "habit" : "task"} log`);
+                showToast(
+                    `Failed to delete ${isHabit ? "habit" : "task"} log`,
+                    "error",
+                );
             } else {
+                showToast(
+                    `${isHabit ? "Habit" : "Task"} log deleted`,
+                    "success",
+                );
                 onRefresh?.();
             }
 
-            setUpdatingIds((prev) => {
+            setDeleteUpdatingIds((prev) => {
                 const next = new Set(prev);
                 next.delete(event.id);
                 return next;
             });
         },
-        [updatingIds, onRefresh],
+        [deleteUpdatingIds, onRefresh],
     );
 
     const handleToggle = useCallback(
-        async (event: CalendarEvent) => {
-            if (updatingIds.has(event.id)) return;
-            setUpdatingIds((prev) => new Set(prev).add(event.id));
-
-            const supabase = createClient();
-            const table = event.type === "task" ? "task_logs" : "habit_logs";
-
-            const { error } = await supabase
-                .from(table)
-                .update({
-                    completed: !event.completed,
-                    completed_at: !event.completed
-                        ? new Date().toISOString()
-                        : null,
-                })
-                .eq("id", event.id);
-
-            if (error) {
-                console.error("Error updating:", error);
-            } else {
-                onRefresh?.();
-            }
-
-            setUpdatingIds((prev) => {
-                const next = new Set(prev);
-                next.delete(event.id);
-                return next;
-            });
+        (event: CalendarEvent) => {
+            toggleEvent(event);
         },
-        [updatingIds, onRefresh],
+        [toggleEvent],
     );
 
-    const EventItem = ({
-        event,
-        isHabit = false,
-    }: {
-        event: CalendarEvent;
-        isHabit?: boolean;
-    }) => {
-        const isUpdating = updatingIds.has(event.id);
-        const typeLabel = isHabit ? "Habit" : "Task";
-
-        return (
-            <div className="flex items-center gap-2 p-2 bg-input-bg rounded-lg min-h-12 w-full">
-                {!isHabit && (
-                    <input
-                        type="checkbox"
-                        checked={event.completed}
-                        className="w-4 h-4 rounded border-gray-400 text-vibrant-orange"
-                        onChange={() => handleToggle(event)}
-                        disabled={isUpdating}
-                        style={{
-                            accentColor: "#d94e06",
-                        }}
-                    />
-                )}
-
-                {isHabit && (
-                    <DropdownMenu
-                        align="left"
-                        items={[
-                            {
-                                label: `Edit ${typeLabel}`,
-                                onClick: () => handleEditHabit(event),
-                            },
-                            {
-                                label: `Delete ${typeLabel}`,
-                                onClick: () => handleDeleteLog(event, isHabit),
-                                variant: "danger" as const,
-                            },
-                        ]}
-                    />
-                )}
-
-                <div
-                    className={`flex-1 min-w-0 ${isHabit ? "text-right" : ""}`}
-                >
-                    <div
-                        className={`text-sm truncate ${event.completed ? "line-through text-white-pearl/25" : "text-white-pearl"}`}
-                    >
-                        {event.title}
-                    </div>
-                    {event.time && (
-                        <div
-                            className={`text-xs ${event.completed ? "text-white-pearl/25" : "text-white-pearl"}`}
-                        >
-                            {event.time}
-                        </div>
-                    )}
-                </div>
-
-                {!isHabit && (
-                    <DropdownMenu
-                        items={[
-                            {
-                                label: `Edit ${typeLabel}`,
-                                onClick: () => handleEditTask(event),
-                            },
-                            {
-                                label: `Delete ${typeLabel}`,
-                                onClick: () => handleDeleteLog(event, isHabit),
-                                variant: "danger" as const,
-                            },
-                        ]}
-                    />
-                )}
-
-                {isHabit && (
-                    <input
-                        type="checkbox"
-                        checked={event.completed}
-                        className="w-4 h-4 rounded border-gray-400 text-vibrant-orange"
-                        onChange={() => handleToggle(event)}
-                        disabled={isUpdating}
-                        style={{
-                            accentColor: "#d94e06",
-                        }}
-                    />
-                )}
-            </div>
-        );
-    };
+    const handleEdit = useCallback(
+        (event: CalendarEvent) => {
+            if (event.type === "habit") handleEditHabit(event);
+            else handleEditTask(event);
+        },
+        [handleEditTask, handleEditHabit],
+    );
 
     return (
         <div className="h-full overflow-y-auto p-4 space-y-4 scrollbar-custom">
@@ -278,6 +268,13 @@ const CalendarInfo = ({
                                 key={event.id}
                                 event={event}
                                 isHabit={false}
+                                isUpdating={
+                                    updatingIds.has(event.id) ||
+                                    deleteUpdatingIds.has(event.id)
+                                }
+                                onToggle={handleToggle}
+                                onEdit={handleEdit}
+                                onDelete={handleDeleteLog}
                             />
                         ))}
                     </div>
@@ -296,6 +293,13 @@ const CalendarInfo = ({
                                 key={event.id}
                                 event={event}
                                 isHabit={true}
+                                isUpdating={
+                                    updatingIds.has(event.id) ||
+                                    deleteUpdatingIds.has(event.id)
+                                }
+                                onToggle={handleToggle}
+                                onEdit={handleEdit}
+                                onDelete={handleDeleteLog}
                             />
                         ))}
                     </div>

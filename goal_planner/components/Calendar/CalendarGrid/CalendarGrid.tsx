@@ -1,4 +1,5 @@
 import CalendarCard from "../CalendarCard/CalendarCard";
+import CalendarCardSkeleton from "../CalendarCard/CalendarCardSkeleton";
 import type { CalendarEventsMap } from "@/types/calendar";
 
 interface CalendarDay {
@@ -16,6 +17,7 @@ interface CalendarGridProps {
     isSelected: (date: Date) => boolean;
     getDateKey: (date: Date) => string;
     isModalOpen?: boolean;
+    isLoading?: boolean;
 }
 
 export default function CalendarGrid({
@@ -27,6 +29,7 @@ export default function CalendarGrid({
     isSelected,
     getDateKey,
     isModalOpen = true,
+    isLoading = false,
 }: CalendarGridProps) {
     const weekDays = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 
@@ -39,7 +42,7 @@ export default function CalendarGrid({
                 {weekDays.map((day) => (
                     <div
                         key={day}
-                        className="text-center text-sm font-semibold text-white-pearl h-10 flex items-center justify-center"
+                        className="text-center text-[10px] md:text-sm font-semibold text-white-pearl h-6 md:h-10 flex items-center justify-center"
                     >
                         {day}
                     </div>
@@ -50,23 +53,30 @@ export default function CalendarGrid({
             <div
                 className={`grid grid-cols-7 gap-y-1 lg:gap-y-3 ${isModalOpen ? "xl:gap-y-3 2xl:gap-y-3" : "xl:gap-y-3 2xl:gap-y-3"} gap-x-1 lg:gap-x-3 ${isModalOpen ? "xl:gap-x-4 2xl:gap-x-4" : "xl:gap-x-6 2xl:gap-x-8"}`}
             >
-                {calendarDays.map((day, index) => {
-                    const dateKey = getDateKey(day.fullDate);
-                    const dayEvents = events[dateKey] || [];
+                {isLoading
+                    ? calendarDays.map((_, index) => (
+                          <CalendarCardSkeleton
+                              key={index}
+                              isModalOpen={isModalOpen}
+                          />
+                      ))
+                    : calendarDays.map((day, index) => {
+                          const dateKey = getDateKey(day.fullDate);
+                          const dayEvents = events[dateKey] || [];
 
-                    return (
-                        <CalendarCard
-                            key={index}
-                            date={day.date}
-                            isCurrentMonth={day.isCurrentMonth}
-                            isToday={isToday(day.fullDate)}
-                            isSelected={isSelected(day.fullDate)}
-                            events={dayEvents}
-                            onClick={() => onDateSelect?.(day.fullDate)}
-                            isModalOpen={isModalOpen}
-                        />
-                    );
-                })}
+                          return (
+                              <CalendarCard
+                                  key={index}
+                                  date={day.date}
+                                  isCurrentMonth={day.isCurrentMonth}
+                                  isToday={isToday(day.fullDate)}
+                                  isSelected={isSelected(day.fullDate)}
+                                  events={dayEvents}
+                                  onClick={() => onDateSelect?.(day.fullDate)}
+                                  isModalOpen={isModalOpen}
+                              />
+                          );
+                      })}
             </div>
         </>
     );

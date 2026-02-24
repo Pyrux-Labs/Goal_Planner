@@ -6,6 +6,7 @@ import Navbar from "@/components/Layout/Navbar/Navbar";
 import Top from "@/components/Layout/Top/Top";
 import GoalForm, { GoalFormRef } from "@/components/common/GoalForm/GoalForm";
 import NavigationButtons from "@/components/Onboarding/NavigationButtons/NavigationButtons";
+import { useToast } from "@/components/ui/Toast/ToastContext";
 
 function EditGoalContent() {
     const router = useRouter();
@@ -13,16 +14,17 @@ function EditGoalContent() {
     const goalFormRef = useRef<GoalFormRef>(null);
     const [isSaving, setIsSaving] = useState(false);
     const [goalId, setGoalId] = useState<number | null>(null);
+    const { showToast } = useToast();
 
     useEffect(() => {
         const id = searchParams.get("id");
         if (!id || isNaN(parseInt(id, 10))) {
-            alert("Invalid or missing goal ID");
+            showToast("Invalid or missing goal ID", "error");
             router.push("/anual-goals");
             return;
         }
         setGoalId(parseInt(id, 10));
-    }, [searchParams, router]);
+    }, [searchParams, router, showToast]);
 
     const handleSave = async () => {
         if (!goalId) return;
@@ -40,18 +42,10 @@ function EditGoalContent() {
         router.push("/anual-goals");
     };
 
-    if (!goalId) {
-        return (
-            <div className="min-h-screen bg-deep-bg flex flex-col items-center justify-center">
-                <p className="text-white-pearl">Loading...</p>
-            </div>
-        );
-    }
-
     return (
         <div className="min-h-screen bg-deep-bg flex flex-col">
             <Navbar />
-            <div className="ml-20 mr-7 p-6 pb-28">
+            <div className="ml-0 md:ml-14 lg:ml-14 xl:ml-16 2xl:ml-20 mr-4 md:mr-7 p-4 md:p-6 pb-44 md:pb-28">
                 <Top
                     title="Edit Goal"
                     buttons={[
@@ -62,9 +56,11 @@ function EditGoalContent() {
                         },
                     ]}
                 />
-                <div className="mt-6">
-                    <GoalForm ref={goalFormRef} goalId={goalId} />
-                </div>
+                {goalId && (
+                    <div className="mt-6">
+                        <GoalForm ref={goalFormRef} goalId={goalId} />
+                    </div>
+                )}
             </div>
 
             <NavigationButtons
@@ -72,6 +68,7 @@ function EditGoalContent() {
                 nextLabel={isSaving ? "Saving..." : "Save Changes"}
                 showPrevious={false}
                 containerClassName="pr-8 pl-4"
+                hasNavbar={true}
             />
         </div>
     );
@@ -79,13 +76,7 @@ function EditGoalContent() {
 
 export default function EditGoalPage() {
     return (
-        <Suspense
-            fallback={
-                <div className="min-h-screen bg-deep-bg flex flex-col items-center justify-center">
-                    <p className="text-white-pearl">Loading...</p>
-                </div>
-            }
-        >
+        <Suspense fallback={<div className="min-h-screen bg-deep-bg" />}>
             <EditGoalContent />
         </Suspense>
     );

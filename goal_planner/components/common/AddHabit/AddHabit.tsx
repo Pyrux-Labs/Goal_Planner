@@ -247,8 +247,8 @@ const AddHabit = ({
                                 className={`${
                                     inline
                                         ? "w-10 h-10"
-                                        : "w-[1.75rem] h-[1.75rem] text-sm"
-                                } rounded-full font-semibold transition ${
+                                        : "!w-7 !h-7 min-w-0 min-h-0 aspect-square text-[11px] p-0 leading-none"
+                                } rounded-full font-semibold transition flex items-center justify-center shrink-0 ${
                                     selectedDays.includes(day.id)
                                         ? "bg-vibrant-orange text-white-pearl"
                                         : "bg-input-bg text-input-text "
