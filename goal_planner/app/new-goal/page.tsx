@@ -67,6 +67,7 @@ export default function NewGoalPage() {
                 }
                 showPrevious={false}
                 containerClassName="pr-8 pl-4"
+                hasNavbar={true}
             />
         </div>
     );

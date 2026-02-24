@@ -85,7 +85,7 @@ const SignIn = ({ onClose }: SignInProps) => {
             onClick={onClose}
         >
             <div
-                className="w-full h-full max-h-[650px] max-w-[440px] bg-modal-bg rounded-[28px] border-[3px] border-vibrant-orange shadow-[0_0_13.3px_0_hsl(var(--vibrant-orange))] px-6 md:px-14 pt-8 md:pt-10"
+                className="w-full h-full md:max-h-[650px] md:max-w-[440px] bg-modal-bg md:rounded-[28px] md:border-[3px] md:border-vibrant-orange md:shadow-[0_0_13.3px_0_hsl(var(--vibrant-orange))] px-6 md:px-14 pt-8 md:pt-10"
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="flex flex-col items-center mb-6">

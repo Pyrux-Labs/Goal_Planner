@@ -154,7 +154,7 @@ function OnboardingContent() {
                 {currentStep === 1 && (
                     <>
                         <main className="flex-1 flex items-center pb-28 mx-4 md:mx-12 lg:mx-28">
-                            <div className="flex items-center gap-12 w-full">
+                            <div className="flex flex-col md:flex-row items-center gap-8 md:gap-12 w-full">
                                 <StepHeader
                                     title={
                                         <>
@@ -173,7 +173,7 @@ function OnboardingContent() {
                                     }
                                     description="GoalPlanner helps you organize your life, track your habits, and achieve your biggest dreams through a simple, visual, and rewarding experience."
                                 />
-                                <div className="w-5/12 flex-shrink-0">
+                                <div className="w-full md:w-5/12 flex-shrink-0 order-last md:order-none">
                                     <Image
                                         src={CalendarImg}
                                         alt="GoalPlanner Dashboard Preview"
@@ -182,10 +182,10 @@ function OnboardingContent() {
                                 </div>
                             </div>
                         </main>
-                        <footer className="fixed bottom-0 left-0 right-0 py-6 flex justify-center">
+                        <footer className="fixed bottom-0 left-0 right-0 py-6 flex justify-center px-6 md:px-0">
                             <Button
                                 onClick={handleNext}
-                                className="flex items-center justify-center w-96 h-16 gap-5 font-semibold"
+                                className="flex items-center justify-center w-full md:w-96 h-16 gap-5 font-semibold"
                             >
                                 Start Your Journey
                                 <TfiArrowRight />

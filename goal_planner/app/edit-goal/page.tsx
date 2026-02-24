@@ -66,6 +66,7 @@ function EditGoalContent() {
                 nextLabel={isSaving ? "Saving..." : "Save Changes"}
                 showPrevious={false}
                 containerClassName="pr-8 pl-4"
+                hasNavbar={true}
             />
         </div>
     );

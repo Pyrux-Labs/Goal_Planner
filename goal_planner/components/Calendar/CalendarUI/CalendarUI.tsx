@@ -1,7 +1,8 @@
 import { useState, useMemo, useEffect } from "react";
 import CalendarGrid from "../CalendarGrid/CalendarGrid";
 import Top from "../../Layout/Top/Top";
-import { Plus } from "lucide-react";
+import { IoMdTime } from "react-icons/io";
+import { BsStars } from "react-icons/bs";
 import type { CalendarEventsMap } from "@/types/calendar";
 import { getDateKey } from "@/utils/dateUtils";
 
@@ -136,12 +137,12 @@ export default function Calendar({
                         {
                             text: "New Habit",
                             onClick: onAddHabit || (() => {}),
-                            icon: <Plus className="w-4 h-4" />,
+                            icon: <BsStars className="w-4 h-4" />,
                         },
                         {
                             text: "New Task",
                             onClick: onAddTask || (() => {}),
-                            icon: <Plus className="w-4 h-4" />,
+                            icon: <IoMdTime className="w-4 h-4" />,
                         },
                     ]}
                     onPrevMonth={handlePrevMonth}

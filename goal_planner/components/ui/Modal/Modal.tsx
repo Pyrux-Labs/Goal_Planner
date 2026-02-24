@@ -49,7 +49,9 @@ const Modal = ({
 
     // Adjust padding for dialog mode (confirmation modal style)
     const padding =
-        isDialogMode && !children ? "px-6 md:px-8 py-6 md:py-8" : "px-6 md:px-14 pt-8 md:pt-10 pb-6 md:pb-8";
+        isDialogMode && !children
+            ? "px-6 md:px-8 py-6 md:py-8"
+            : "px-6 md:px-14 pt-8 md:pt-10 pb-6 md:pb-8";
     // Adjust title size for dialog mode
     const titleSize = isDialogMode && !children ? "text-2xl" : "text-4xl";
 

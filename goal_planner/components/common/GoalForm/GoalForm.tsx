@@ -431,7 +431,7 @@ const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
                                         if (categoryError) setCategoryError("");
                                     }}
                                     disabled={formDisabled}
-                                    className={`relative h-24 w-24 flex items-center justify-center rounded-3xl transition-all ${
+                                    className={`relative h-16 w-16 md:h-24 md:w-24 flex items-center justify-center rounded-2xl md:rounded-3xl transition-all ${
                                         selectedCategory === category.name
                                             ? "bg-vibrant-orange shadow-[0px_0px_10px_2px_rgba(217,78,6,0.8)]"
                                             : "bg-input-bg hover:shadow-[0px_0px_10px_2px_rgba(217,78,6,0.8)]"
@@ -443,7 +443,7 @@ const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
                                             alt={category.name}
                                             width={36}
                                             height={36}
-                                            className={`object-contain transition-colors ${
+                                            className={`w-5 h-5 md:w-9 md:h-9 object-contain transition-colors ${
                                                 selectedCategory ===
                                                 category.name
                                                     ? "filter brightness-0 invert"
@@ -451,7 +451,7 @@ const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
                                             }`}
                                         />
                                     </div>
-                                    <span className="absolute bottom-3 text-xs text-white-pearl">
+                                    <span className="absolute bottom-1 md:bottom-3 text-[10px] md:text-xs text-white-pearl">
                                         {category.name}
                                     </span>
                                 </button>
