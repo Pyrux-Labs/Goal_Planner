@@ -59,6 +59,11 @@ const Top = ({
 							className="px-2 py-1 md:px-4 md:py-2 text-xs md:text-sm">
 							Today
 						</Button>
+						<Button
+							onClick={onToggleWeek}
+							className="px-2 py-1 md:px-4 md:py-2 text-xs md:text-sm">
+							{isWeekView ? "Month" : "Week"}
+						</Button>
 					</div>
 				)}
 			</div>
