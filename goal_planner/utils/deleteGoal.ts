@@ -143,11 +143,11 @@ export async function deleteGoalWithRelatedData(goalId: number): Promise<{
         }
 
         return { success: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Error deleting goal with related data:", error);
         return {
             success: false,
-            error: error.message || "An unknown error occurred",
+            error: error instanceof Error ? error.message : "An unknown error occurred",
         };
     }
 }

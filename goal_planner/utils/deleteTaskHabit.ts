@@ -1,7 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
-
-// ===== CONSTANTS =====
-const LAST_LOG_COUNT = 1;
+import { getTodayDateString } from "@/lib/constants/validation";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 // ===== TYPE DEFINITIONS =====
 
@@ -13,23 +12,13 @@ export interface DeleteResult {
     error?: string;
 }
 
-// ===== UTILITY FUNCTIONS =====
-
-/**
- * Gets today's date in ISO format (YYYY-MM-DD)
- * @returns Today's date string
- */
-const getTodayDate = (): string => {
-    return new Date().toISOString().split("T")[0];
-};
-
 /**
  * Deletes task repeat days for a given task
  * @param supabase - Supabase client
  * @param taskId - Task ID
  */
 const deleteTaskRepeatDays = async (
-    supabase: any,
+    supabase: SupabaseClient,
     taskId: number,
 ): Promise<void> => {
     const { error } = await supabase
@@ -49,7 +38,7 @@ const deleteTaskRepeatDays = async (
  * @param habitId - Habit ID
  */
 const deleteHabitRepeatDays = async (
-    supabase: any,
+    supabase: SupabaseClient,
     habitId: number,
 ): Promise<void> => {
     const { error } = await supabase
@@ -81,7 +70,7 @@ export async function deleteTaskWithFutureLogs(
 ): Promise<DeleteResult> {
     try {
         const supabase = createClient();
-        const today = getTodayDate();
+        const today = getTodayDateString();
 
         // 1. Delete task_logs from today onwards (preserve historical data)
         const { error: taskLogsError } = await supabase
@@ -114,11 +103,11 @@ export async function deleteTaskWithFutureLogs(
         }
 
         return { success: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Error deleting task with future logs:", error);
         return {
             success: false,
-            error: error.message || "An unknown error occurred",
+            error: error instanceof Error ? error.message : "An unknown error occurred",
         };
     }
 }
@@ -139,7 +128,7 @@ export async function deleteHabitWithFutureLogs(
 ): Promise<DeleteResult> {
     try {
         const supabase = createClient();
-        const today = getTodayDate();
+        const today = getTodayDateString();
 
         // 1. Delete habit_logs from today onwards (preserve historical data)
         const { error: habitLogsError } = await supabase
@@ -172,11 +161,11 @@ export async function deleteHabitWithFutureLogs(
         }
 
         return { success: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Error deleting habit with future logs:", error);
         return {
             success: false,
-            error: error.message || "An unknown error occurred",
+            error: error instanceof Error ? error.message : "An unknown error occurred",
         };
     }
 }
@@ -234,7 +223,7 @@ export async function deleteTaskLog(logId: number): Promise<DeleteResult> {
         }
 
         // 4. If this was the last log, delete the entire task and its repeat days
-        if (count === LAST_LOG_COUNT) {
+        if (count === 1) {
             try {
                 await deleteTaskRepeatDays(supabase, taskId);
             } catch (error) {
@@ -261,11 +250,11 @@ export async function deleteTaskLog(logId: number): Promise<DeleteResult> {
         }
 
         return { success: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Error deleting task log:", error);
         return {
             success: false,
-            error: error.message || "An unknown error occurred",
+            error: error instanceof Error ? error.message : "An unknown error occurred",
         };
     }
 }
@@ -325,7 +314,7 @@ export async function deleteHabitLog(logId: number): Promise<DeleteResult> {
         }
 
         // 4. If this was the last log, delete the entire habit and its repeat days
-        if (count === LAST_LOG_COUNT) {
+        if (count === 1) {
             try {
                 await deleteHabitRepeatDays(supabase, habitId);
             } catch (error) {
@@ -352,11 +341,11 @@ export async function deleteHabitLog(logId: number): Promise<DeleteResult> {
         }
 
         return { success: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Error deleting habit log:", error);
         return {
             success: false,
-            error: error.message || "An unknown error occurred",
+            error: error instanceof Error ? error.message : "An unknown error occurred",
         };
     }
 }

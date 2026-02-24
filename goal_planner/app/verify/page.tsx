@@ -29,7 +29,7 @@ export default function VerifyEmail() {
 				router.push("/register");
 			}, 3000);
 		}
-	}, []);
+	}, [router]);
 
 	// Handle input change for each digit
 	const handleInputChange = (index: number, value: string) => {
@@ -119,8 +119,9 @@ export default function VerifyEmail() {
 				return;
 			}
 
-			// Success - clear sessionStorage and redirect to onboarding
+			// Success - clear stored email and redirect to onboarding
 			sessionStorage.removeItem("verifyEmail");
+			localStorage.removeItem("verifyEmail");
 			router.push("/onboarding");
 		} catch (err) {
 			setError("An unexpected error occurred. Please try again.");

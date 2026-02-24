@@ -47,23 +47,31 @@ export async function updateSession(request: NextRequest) {
   const { data } = await supabase.auth.getClaims();
   const user = data?.claims;
 
-  if (
-    request.nextUrl.pathname !== "/" &&
-    request.nextUrl.pathname !== "/landing" &&
-    request.nextUrl.pathname !== "/register" &&
-    request.nextUrl.pathname !== "/verify" &&
-    request.nextUrl.pathname !== "/forgot-password" &&
-    request.nextUrl.pathname !== "/change-password" &&
-    request.nextUrl.pathname !== "/calendar" &&
-    request.nextUrl.pathname !== "/anual-goals" &&
-    request.nextUrl.pathname !== "/stats" &&
-    request.nextUrl.pathname !== "/settings" &&
-    request.nextUrl.pathname !== "/not-found" &&
-    !user
-  ) {
-    // no user, redirect to 404 page
+  // Public routes that don't require authentication
+  const publicRoutes = [
+    "/",
+    "/landing",
+    "/register",
+    "/verify",
+    "/forgot-password",
+    "/change-password",
+    "/not-found",
+  ];
+
+  const isPublicRoute = publicRoutes.includes(request.nextUrl.pathname);
+
+  // Redirect unauthenticated users away from protected routes
+  if (!isPublicRoute && !user) {
     const url = request.nextUrl.clone();
-    url.pathname = "/not-found";
+    url.pathname = "/landing";
+    return NextResponse.redirect(url);
+  }
+
+  // Redirect authenticated users away from auth pages to calendar
+  const authOnlyRoutes = ["/landing", "/register", "/verify", "/forgot-password"];
+  if (user && authOnlyRoutes.includes(request.nextUrl.pathname)) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/calendar";
     return NextResponse.redirect(url);
   }
 
