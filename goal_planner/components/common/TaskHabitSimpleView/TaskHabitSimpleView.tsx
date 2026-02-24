@@ -23,7 +23,7 @@ export default function TaskHabitSimpleView({
 
     return (
         <div
-            className={`w-[33rem] rounded-3xl border border-input-bg bg-modal-bg flex items-center my-2 h-20 p-6 transition-opacity duration-300 ${
+            className={`w-full max-w-[33rem] rounded-3xl border border-input-bg bg-modal-bg flex items-center my-2 h-16 md:h-20 p-4 md:p-6 transition-opacity duration-300 ${
                 completed ? "opacity-50" : ""
             }`}
         >

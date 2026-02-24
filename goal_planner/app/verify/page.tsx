@@ -191,7 +191,7 @@ export default function VerifyEmail() {
             style={{ backgroundAttachment: "fixed" }}
         >
             {/* Verification Form (Modal Style) - Centered */}
-            <div className="w-full flex items-center justify-center p-8 lg:p-12">
+            <div className="w-full flex items-center justify-center p-4 md:p-8 lg:p-12">
                 <Modal
                     title="Verify your email"
                     subtitle="We've sent a verification code to your email. Please enter the 8-digit code below."
@@ -208,7 +208,7 @@ export default function VerifyEmail() {
                         </div>
                     )}
                     {/* 8-digit code inputs */}
-                    <div className="flex justify-center gap-2">
+                    <div className="flex justify-center gap-1.5 md:gap-2">
                         {code.map((digit, index) => (
                             <input
                                 key={index}
@@ -223,7 +223,7 @@ export default function VerifyEmail() {
                                 }
                                 onKeyDown={(e) => handleKeyDown(index, e)}
                                 onPaste={index === 0 ? handlePaste : undefined}
-                                className={`w-12 h-14 text-center text-2xl font-bold rounded-lg border-2 ${
+                                className={`w-9 h-11 md:w-12 md:h-14 text-center text-xl md:text-2xl font-bold rounded-lg border-2 ${
                                     error
                                         ? "border-carmin bg-carmin/10 text-carmin"
                                         : "border-white-pearl/30 bg-white-pearl/5 text-white-pearl focus:border-vibrant-orange"

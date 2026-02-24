@@ -61,24 +61,6 @@ const AddTask = ({
     const [endTimeError, setEndTimeError] = useState("");
     const [generalError, setGeneralError] = useState("");
 
-    useEffect(() => {
-        // Only fetch goals if not preloaded and showGoalSelect is true
-        if (showGoalSelect && !preloadedGoals) {
-            fetchGoals();
-        }
-    }, [showGoalSelect, preloadedGoals]);
-
-    useEffect(() => {
-        const handleEscape = (e: KeyboardEvent) => {
-            if (e.key === "Escape") {
-                onCancel();
-            }
-        };
-
-        window.addEventListener("keydown", handleEscape);
-        return () => window.removeEventListener("keydown", handleEscape);
-    }, [onCancel]);
-
     const fetchGoals = useCallback(async () => {
         const supabase = createClient();
         const {
@@ -96,6 +78,24 @@ const AddTask = ({
 
         if (data) setGoals(data);
     }, []);
+
+    useEffect(() => {
+        // Only fetch goals if not preloaded and showGoalSelect is true
+        if (showGoalSelect && !preloadedGoals) {
+            fetchGoals();
+        }
+    }, [showGoalSelect, preloadedGoals, fetchGoals]);
+
+    useEffect(() => {
+        const handleEscape = (e: KeyboardEvent) => {
+            if (e.key === "Escape") {
+                onCancel();
+            }
+        };
+
+        window.addEventListener("keydown", handleEscape);
+        return () => window.removeEventListener("keydown", handleEscape);
+    }, [onCancel]);
 
     const toggleDay = useCallback((dayId: string) => {
         setSelectedDays((prev) =>
@@ -354,8 +354,8 @@ const AddTask = ({
                                         className={`${
                                             inline
                                                 ? "w-10 h-10"
-                                                : "w-[1.75rem] h-[1.75rem] text-sm"
-                                        } rounded-full font-semibold transition ${
+                                                : "!w-7 !h-7 min-w-0 min-h-0 aspect-square text-[11px] p-0 leading-none"
+                                        } rounded-full font-semibold transition flex items-center justify-center shrink-0 ${
                                             selectedDays.includes(day.id)
                                                 ? "bg-vibrant-orange text-white-pearl"
                                                 : "bg-input-bg text-input-text"

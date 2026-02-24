@@ -8,6 +8,7 @@ interface NavigationButtonsProps {
     nextHref?: string;
     showPrevious?: boolean;
     containerClassName?: string;
+    hasNavbar?: boolean;
 }
 
 const NavigationButtons = ({
@@ -16,10 +17,13 @@ const NavigationButtons = ({
     nextLabel = "Continue",
     nextHref,
     showPrevious = true,
-    containerClassName = "mx-28 px-4",
+    containerClassName = "mx-4 md:mx-12 lg:mx-28 px-4",
+    hasNavbar = false,
 }: NavigationButtonsProps) => {
     return (
-        <footer className="fixed bottom-0 left-0 right-0 z-10 border-input-bg border bg-deep-bg py-6">
+        <footer
+            className={`fixed ${hasNavbar ? "bottom-16 md:bottom-0" : "bottom-0"} left-0 right-0 z-10 border-input-bg border bg-deep-bg py-4 md:py-6`}
+        >
             <div
                 className={`flex ${showPrevious && onPrevious ? "justify-between" : "justify-end"} items-center ${containerClassName}`}
             >

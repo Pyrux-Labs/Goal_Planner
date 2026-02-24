@@ -42,7 +42,7 @@ export default function CalendarGrid({
                 {weekDays.map((day) => (
                     <div
                         key={day}
-                        className="text-center text-sm font-semibold text-white-pearl h-10 flex items-center justify-center"
+                        className="text-center text-[10px] md:text-sm font-semibold text-white-pearl h-6 md:h-10 flex items-center justify-center"
                     >
                         {day}
                     </div>
