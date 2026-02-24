@@ -171,7 +171,7 @@ export default function Register() {
 
             {/* Right Column - Registration Form (Modal Style) */}
             <div className="w-full lg:w-1/2 flex items-center justify-center p-8 lg:p-12">
-                <div className="w-full max-w-[550px] bg-modal-bg rounded-3xl border-[3px] border-vibrant-orange shadow-lg shadow-vibrant-orange/50 px-14 pt-10 pb-8">
+                <div className="w-full max-w-[550px] bg-modal-bg rounded-3xl border-[3px] border-vibrant-orange shadow-lg shadow-vibrant-orange/50 px-6 md:px-14 pt-8 md:pt-10 pb-8">
                     {/* Header */}
                     <div className="flex flex-col mb-6">
                         <h1 className="text-white-pearl text-left font-title text-4xl font-semibold mb-4 leading-tight">

@@ -35,11 +35,11 @@ export default function CalendarPage() {
 
     // Fetch 3 years (previous, current, next)
     // ~5MB payload is acceptable for instant navigation and edit optimization
-    const fetchThreeYears = useCallback(async (centerYear: number) => {
+    const fetchThreeYears = useCallback(async (centerYear: number, showLoading = true) => {
         // prevent concurrent calls
         if (isFetchingRef.current) return;
         isFetchingRef.current = true;
-        setIsLoading(true);
+        if (showLoading) setIsLoading(true);
 
         const supabase = createClient();
         const startYear = centerYear - 1;
@@ -158,12 +158,12 @@ export default function CalendarPage() {
     }, []);
 
     const handleSuccess = useCallback(() => {
-        fetchThreeYears(currentYear);
+        fetchThreeYears(currentYear, false);
         closeModal();
     }, [currentYear, fetchThreeYears, closeModal]);
     //Implement refresh data functionality
     const handleRefresh = useCallback(() => {
-        fetchThreeYears(currentYear);
+        fetchThreeYears(currentYear, false);
     }, [currentYear, fetchThreeYears]);
     const isModalOpen = sidebarView.type !== "closed";
 
