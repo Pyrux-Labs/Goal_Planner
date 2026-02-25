@@ -63,6 +63,7 @@
 - [x] **keepLoggedIn en SignIn** - Eliminado (era no-op, Supabase maneja sesión automáticamente) [REFACTOR]
 - [x] **Google Auth buttons** - OAuth con Google funcional, redirige al calendario [REFACTOR]
 - [x] **Missing useEffect deps** - `fetchGoals` no está en dependency array en AddTask y onboarding [GINO]
+- [ ] **`change-password` refresh_token** - `setSession({ refresh_token: "" })` es frágil; debería usar `exchangeCodeForSession` o `getSession` para recuperar la sesión correctamente
 
 ### 📱 Responsive Design
 
@@ -100,6 +101,8 @@
 - [x] **Eliminar términos y condiciones** - Checkbox y lógica removidos de register [REFACTOR]
 - [x] **Landing page simplificada** - Eliminada lógica redundante de auth client-side (middleware se encarga) [REFACTOR]
 - [x] **"use client" limpio** - Eliminado de not-found.tsx y authenticated layout [REFACTOR]
+- [ ] **UserAvatar caching** - `supabase.auth.getUser()` se llama en cada mount del Navbar; considerar React Context o cache para evitar llamadas repetidas
+- [ ] **CalendarGrid memoización** - Cada celda podría beneficiarse de `React.memo` con comparador custom para reducir re-renders
 
 ### 🧪 Testing y QA
 
