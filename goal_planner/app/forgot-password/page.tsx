@@ -2,11 +2,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { BiSolidError } from "react-icons/bi";
+import { CheckCircle } from "lucide-react";
 import Modal from "@/components/ui/Modal/Modal";
 import InputField from "@/components/ui/InputField/InputField";
 import Button from "@/components/ui/Button/Button";
+import ErrorMessage from "@/components/ui/ErrorMessage/ErrorMessage";
 import { createClient } from "@/lib/supabase/client";
+import { validateEmail } from "@/lib/constants/validation";
+import { ROUTES } from "@/lib/constants/routes";
 
 export default function ForgotPassword() {
     const [email, setEmail] = useState("");
@@ -20,11 +23,9 @@ export default function ForgotPassword() {
         let hasErrors = false;
 
         // Validation
-        if (!email) {
-            setError("Email is required");
-            hasErrors = true;
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-            setError("Please enter a valid email address");
+        const emailErr = validateEmail(email);
+        if (emailErr) {
+            setError(emailErr);
             hasErrors = true;
         }
 
@@ -35,7 +36,7 @@ export default function ForgotPassword() {
         try {
             const supabase = createClient();
             const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                redirectTo: `${window.location.origin}/change-password`,
+                redirectTo: `${window.location.origin}${ROUTES.CHANGE_PASSWORD}`,
             });
 
             if (error) {
@@ -89,10 +90,10 @@ export default function ForgotPassword() {
 
                             {/* Error message */}
                             {error && (
-                                <div className="flex items-center gap-2 text-carmin text-sm">
-                                    <BiSolidError className="text-lg" />
-                                    <span>{error}</span>
-                                </div>
+                                <ErrorMessage
+                                    message={error}
+                                    variant="general"
+                                />
                             )}
 
                             {/* Send Reset Link Button */}
@@ -107,19 +108,7 @@ export default function ForgotPassword() {
                         /* Success State */
                         <div className="text-center space-y-4">
                             <div className="w-16 h-16 bg-sea-green/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <svg
-                                    className="w-8 h-8 text-sea-green"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M5 13l4 4L19 7"
-                                    />
-                                </svg>
+                                <CheckCircle className="w-8 h-8 text-sea-green" />
                             </div>
                             <h3 className="text-white-pearl text-xl font-semibold">
                                 Reset Link Sent!
@@ -145,7 +134,7 @@ export default function ForgotPassword() {
                             </p>
                             <div className="pt-4 border-t border-input-bg">
                                 <Link
-                                    href="/landing"
+                                    href={ROUTES.LANDING}
                                     className="text-vibrant-orange hover:text-vibrant-orange/80 font-medium transition-colors"
                                 >
                                     Back to Sign In

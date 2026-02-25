@@ -1,5 +1,3 @@
-"use client";
-
 import Navbar from "@/components/Layout/Navbar/Navbar";
 
 /**
@@ -8,16 +6,16 @@ import Navbar from "@/components/Layout/Navbar/Navbar";
  * to account for the sidebar navigation.
  */
 export default function AuthenticatedLayout({
-	children,
+    children,
 }: {
-	children: React.ReactNode;
+    children: React.ReactNode;
 }) {
-	return (
-		<div className="min-h-screen bg-deep-bg">
-			<Navbar />
-			<div className="ml-0 md:ml-14 lg:ml-14 xl:ml-16 2xl:ml-20 mr-4 md:mr-7 p-4 md:p-6 pb-20 md:pb-6">
-				{children}
-			</div>
-		</div>
-	);
+    return (
+        <div className="min-h-screen bg-deep-bg">
+            <Navbar />
+            <div className="ml-0 md:ml-14 lg:ml-14 xl:ml-16 2xl:ml-20 mr-4 md:mr-7 p-4 md:p-6 pb-20 md:pb-6">
+                {children}
+            </div>
+        </div>
+    );
 }

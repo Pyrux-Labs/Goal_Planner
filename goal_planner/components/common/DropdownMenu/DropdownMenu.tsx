@@ -71,7 +71,7 @@ export default function DropdownMenu({
                                 setIsMenuOpen(false);
                             }}
                             className={clsx(
-                                "w-full text-left px-4 py-2 hover:bg-[rgba(255,85,0,0.08)] transition-all duration-200 font-text text-sm",
+                                "w-full text-left px-4 py-2 hover:bg-orange-hover transition-all duration-200 font-text text-sm",
                                 item.variant === "danger"
                                     ? "text-red-500"
                                     : "text-white-pearl",

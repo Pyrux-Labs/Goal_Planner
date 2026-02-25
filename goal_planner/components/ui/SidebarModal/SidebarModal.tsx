@@ -24,7 +24,7 @@ export default function SidebarModal({
                         strokeWidth={2.5}
                     />
                 </div>
-                <h1 className="text-3xl font-semibold text-white flex-1">
+                <h1 className="text-3xl font-semibold text-white-pearl flex-1">
                     {title}
                 </h1>
             </div>

@@ -44,7 +44,7 @@
 - [x] **Sistema de toasts** - Feedback visual para acciones exitosas y errores (reemplazó `alert()` y `window.confirm()`) [GINO]
 - [x] **Estados de carga consistentes** - Skeletons/spinners en todas las páginas (anual-goals tiene spinner, pero otras no) [GINO]
 - [x] Estados vacíos con mensajes claros
-- [ ] **Validación de formularios** - Activar validación de password en register y change-password (código comentado en ambos) [JUANMA]
+- [x] **Validación de formularios** - Validación compartida desde `validation.ts` en register, change-password y SignIn [GINO/JUANMA]
 - [x] Modal de confirmación reutilizable
 
 ### 🔐 Autenticación y Usuario
@@ -60,8 +60,8 @@
 
 - [x] Página 404 (not-found.tsx)
 - [x] **new-goal usa delete simple** - `deleteGoalAndRelated()` en new-goal/page.tsx no usa `deleteGoalWithRelatedData` (puede dejar datos huérfanos) [GINO]
-- [ ] **keepLoggedIn en SignIn** - El checkbox no afecta el comportamiento de la sesión de Supabase [JUANMA]
-- [ ] **Google Auth buttons** - Los botones de "Sign in/up with Google" existen pero no hacen nada (`onClick={() => {}}`) [JUANMA]
+- [x] **keepLoggedIn en SignIn** - Eliminado (era no-op, Supabase maneja sesión automáticamente) [REFACTOR]
+- [x] **Google Auth buttons** - OAuth con Google funcional, redirige al calendario [REFACTOR]
 - [x] **Missing useEffect deps** - `fetchGoals` no está en dependency array en AddTask y onboarding [GINO]
 
 ### 📱 Responsive Design
@@ -90,13 +90,23 @@
 - [x] **Fix SidebarContent** - Retornaba `undefined` en daily-analytics/weekly-stats, ahora retorna `null` [GINO]
 - [x] **Fix Settings component name** - `settings` → `Settings` (convención React) [GINO]
 - [x] **Memoizar category icon lookup** - `useMemo` en GoalCard para búsqueda O(1) [GINO]
+- [x] **Centralizar rutas** - `routes.ts` con ROUTES, PUBLIC_ROUTES, AUTH_ONLY_ROUTES (elimina strings hardcodeados en 15+ archivos) [REFACTOR]
+- [x] **Validación compartida** - `validateEmail()`, `validatePassword()`, `validatePasswordMatch()` en `validation.ts` [REFACTOR]
+- [x] **ErrorMessage reutilizable** - Componente con 3 variantes (field/general/block), reemplaza ~12 inline error displays [REFACTOR]
+- [x] **Colores consolidados** - `GOAL_COLORS`, `DEFAULT_EVENT_COLOR` en `colors.ts`; `orange-hover` en Tailwind config [REFACTOR]
+- [x] **Performance CalendarCard** - `React.memo()` wrapper, `useRef` en useToggleEvent/CalendarInfo para evitar cascade re-renders [REFACTOR]
+- [x] **Fix CSS white-pearl** - Valor HSL inválido 189% → 89% [REFACTOR]
+- [x] **Fix sign-out on delete** - Se agrega `signOut()` antes de redirect en settings [REFACTOR]
+- [x] **Eliminar términos y condiciones** - Checkbox y lógica removidos de register [REFACTOR]
+- [x] **Landing page simplificada** - Eliminada lógica redundante de auth client-side (middleware se encarga) [REFACTOR]
+- [x] **"use client" limpio** - Eliminado de not-found.tsx y authenticated layout [REFACTOR]
 
 ### 🧪 Testing y QA
 
-- [ ] **Probar flujo completo** - Registro → Onboarding → Crear meta → Agregar tareas → Calendario → Completar
+- [x] **Probar flujo completo** - Registro → Onboarding → Crear meta → Agregar tareas → Calendario → Completar
 - [ ] **Verificar persistencia** - Que todos los datos se guarden y carguen correctamente
-- [ ] **Revisar consistencia visual** - Colores, tipografía, spacing
-- [ ] **Performance** - Revisar queries N+1 y re-renders innecesarios
+- [x] **Revisar consistencia visual** - Colores, tipografía, spacing (refactoring: colores unificados, ErrorMessage component, empty states)
+- [x] **Performance** - Re-render cascade fix (useRef pattern), CalendarCard memo, callback deps optimizadas
 
 ---
 

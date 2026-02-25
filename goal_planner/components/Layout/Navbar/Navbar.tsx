@@ -6,16 +6,17 @@ import { usePathname, useRouter } from "next/navigation";
 import icon from "@/public/icon.svg";
 import { createClient } from "@/lib/supabase/client";
 import Modal from "@/components/ui/Modal/Modal";
+import { ROUTES } from "@/lib/constants/routes";
 
 const navItems = [
-    { path: "/calendar", icon: Home, label: "Calendar" },
-    { path: "/anual-goals", icon: Target, label: "Goals" },
-    { path: "/stats", icon: BarChart3, label: "Stats" },
+    { path: ROUTES.CALENDAR, icon: Home, label: "Calendar" },
+    { path: ROUTES.GOALS, icon: Target, label: "Goals" },
+    { path: ROUTES.STATS, icon: BarChart3, label: "Stats" },
 ];
 
 const profileMenuItems = [
-    { path: "/profile", icon: User, label: "Profile" },
-    { path: "/settings", icon: Settings, label: "Settings" },
+    { path: ROUTES.PROFILE, icon: User, label: "Profile" },
+    { path: ROUTES.SETTINGS, icon: Settings, label: "Settings" },
 ];
 
 function UserAvatar({ size = "md" }: { size?: "sm" | "md" }) {
@@ -99,7 +100,7 @@ const Navbar = () => {
         await supabase.auth.signOut();
         setIsLogoutModalOpen(false);
         setIsLoggingOut(false);
-        router.push("/landing");
+        router.push(ROUTES.LANDING);
     }, [router]);
 
     return (
@@ -171,7 +172,7 @@ const Navbar = () => {
                                             onClick={() =>
                                                 setIsProfileMenuOpen(false)
                                             }
-                                            className="flex items-center gap-3 w-full text-left px-4 py-2 hover:bg-[rgba(255,85,0,0.08)] transition-all duration-200 font-text text-sm text-white-pearl"
+                                            className="flex items-center gap-3 w-full text-left px-4 py-2 hover:bg-orange-hover transition-all duration-200 font-text text-sm text-white-pearl"
                                         >
                                             <Icon className="w-4 h-4" />
                                             {item.label}
@@ -183,7 +184,7 @@ const Navbar = () => {
                                         setIsProfileMenuOpen(false);
                                         setIsLogoutModalOpen(true);
                                     }}
-                                    className="flex items-center gap-3 w-full text-left px-4 py-2 hover:bg-[rgba(255,85,0,0.08)] transition-all duration-200 font-text text-sm text-red-500"
+                                    className="flex items-center gap-3 w-full text-left px-4 py-2 hover:bg-orange-hover transition-all duration-200 font-text text-sm text-red-500"
                                 >
                                     <LogOut className="w-4 h-4" />
                                     Log Out
@@ -261,7 +262,7 @@ const Navbar = () => {
                                     key={item.path}
                                     href={item.path}
                                     onClick={() => setIsProfileMenuOpen(false)}
-                                    className="flex items-center gap-3 w-full text-left px-4 py-3 hover:bg-[rgba(255,85,0,0.08)] transition-all duration-200 font-text text-sm text-white-pearl rounded-lg"
+                                    className="flex items-center gap-3 w-full text-left px-4 py-3 hover:bg-orange-hover transition-all duration-200 font-text text-sm text-white-pearl rounded-lg"
                                 >
                                     <Icon className="w-4 h-4" />
                                     {item.label}
@@ -273,7 +274,7 @@ const Navbar = () => {
                                 setIsProfileMenuOpen(false);
                                 setIsLogoutModalOpen(true);
                             }}
-                            className="flex items-center gap-3 w-full text-left px-4 py-3 hover:bg-[rgba(255,85,0,0.08)] transition-all duration-200 font-text text-sm text-red-500 rounded-lg"
+                            className="flex items-center gap-3 w-full text-left px-4 py-3 hover:bg-orange-hover transition-all duration-200 font-text text-sm text-red-500 rounded-lg"
                         >
                             <LogOut className="w-4 h-4" />
                             Log Out

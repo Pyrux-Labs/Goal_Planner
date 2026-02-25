@@ -1,11 +1,10 @@
-"use client";
-
 import Image from "next/image";
 import Button from "@/components/ui/Button/Button";
+import { ROUTES } from "@/lib/constants/routes";
 
 export default function NotFound() {
     return (
-        <div className="min-h-screen bg-gradient-to-b from-dark-brown to-charcoal flex items-center justify-center px-4">
+        <div className="min-h-screen bg-gradient-to-b from-deep-bg to-modal-bg flex items-center justify-center px-4">
             <div className="max-w-4xl w-full">
                 <div className="flex flex-col md:flex-row items-center justify-between gap-8">
                     {/* Error Message */}
@@ -21,7 +20,7 @@ export default function NotFound() {
                         {/* Action Button */}
                         <div className="flex justify-center md:justify-start">
                             <Button
-                                href="/calendar"
+                                href={ROUTES.CALENDAR}
                                 mobileText="Return home"
                                 desktopText="Return home"
                                 className="w-full sm:w-auto"

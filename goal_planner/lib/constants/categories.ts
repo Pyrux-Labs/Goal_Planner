@@ -1,3 +1,5 @@
+import { GOAL_COLORS } from "./colors";
+
 export const categories = [
     { name: "Health", icon: "./Health.svg" },
     { name: "Career", icon: "./Career.svg" },
@@ -9,7 +11,8 @@ export const categories = [
     { name: "Social", icon: "./Social.svg" },
 ];
 
-export const colors = ["#D94E06", "#1F6AE1", "#2EBB57", "#8B5CF6", "#F0E23A"];
+/** @deprecated Use GOAL_COLORS from '@/lib/constants/colors' instead */
+export const colors = [...GOAL_COLORS];
 
 /** Map UI category display names to database enum values */
 export const CATEGORY_MAP: Record<string, string> = {

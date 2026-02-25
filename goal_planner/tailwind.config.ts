@@ -23,6 +23,7 @@ const config: Config = {
                 "input-text": "hsl(215, 20%, 65%)", // #94A3B8
                 carmin: "hsl(6, 63%, 46%)", // #C0392B
                 "line-gray": "hsl(0, 0%, 20%)", // #333333
+                "orange-hover": "rgba(255, 85, 0, 0.08)", // Menu item hover state
             },
             fontFamily: {
                 title: ["Montserrat", "sans-serif"],

@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
 import type { CalendarEvent } from "@/types/calendar";
+import { DEFAULT_EVENT_COLOR } from "@/lib/constants/colors";
 import { isSameDay } from "@/utils/dateUtils";
 import CalendarWeeklyGoalGroup from "../CalendarWeeklyGoalGroup/CalendarWeeklyGoalGroup";
 import { useMemo } from "react";
@@ -35,7 +36,7 @@ export default function CalendarWeeklyColumn({
                 // Find goal name from goals array
                 const goal = goals.find((g) => g.id === event.goal_id);
                 const goalName = goal ? goal.name : "";
-                const goalColor = event.color || "#6B7280";
+                const goalColor = event.color || DEFAULT_EVENT_COLOR;
 
                 groups[goalKey] = {
                     goalName,
@@ -107,7 +108,7 @@ export default function CalendarWeeklyColumn({
                         ))}
                     </div>
                 ) : (
-                    <div className="h-full flex items-center justify-left text-white-pearl/25">
+                    <div className="h-full flex items-center justify-left text-input-text">
                         <span className="text-sm">No tasks</span>
                     </div>
                 )}

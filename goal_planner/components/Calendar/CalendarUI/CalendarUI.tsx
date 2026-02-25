@@ -84,7 +84,8 @@ export default function Calendar({
         }
 
         // Next month days to fill the grid
-        const remainingDays = 42 - days.length; // 6 rows × 7 days
+        const CALENDAR_GRID_CELLS = 42; // 6 rows × 7 days
+        const remainingDays = CALENDAR_GRID_CELLS - days.length;
         for (let i = 1; i <= remainingDays; i++) {
             days.push({
                 date: i,

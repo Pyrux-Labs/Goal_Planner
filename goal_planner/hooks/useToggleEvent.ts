@@ -1,42 +1,43 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { CalendarEvent } from "@/types/calendar";
 
 export function useToggleEvent(onRefresh?: () => void) {
-	const [updatingIds, setUpdatingIds] = useState<Set<number>>(new Set());
+    // Use ref to track in-flight IDs without causing callback recreation
+    const updatingIdsRef = useRef<Set<number>>(new Set());
+    // Keep state for UI reactivity (marking items as updating)
+    const [updatingIds, setUpdatingIds] = useState<Set<number>>(new Set());
 
-	const toggleEvent = useCallback(
-		async (event: CalendarEvent) => {
-			if (updatingIds.has(event.id)) return;
-			setUpdatingIds((prev) => new Set(prev).add(event.id));
+    const toggleEvent = useCallback(
+        async (event: CalendarEvent) => {
+            if (updatingIdsRef.current.has(event.id)) return;
+            updatingIdsRef.current.add(event.id);
+            setUpdatingIds(new Set(updatingIdsRef.current));
 
-			const supabase = createClient();
-			const table = event.type === "task" ? "task_logs" : "habit_logs";
+            const supabase = createClient();
+            const table = event.type === "task" ? "task_logs" : "habit_logs";
 
-			const { error } = await supabase
-				.from(table)
-				.update({
-					completed: !event.completed,
-					completed_at: !event.completed
-						? new Date().toISOString()
-						: null,
-				})
-				.eq("id", event.id);
+            const { error } = await supabase
+                .from(table)
+                .update({
+                    completed: !event.completed,
+                    completed_at: !event.completed
+                        ? new Date().toISOString()
+                        : null,
+                })
+                .eq("id", event.id);
 
-			if (error) {
-				console.error("Error updating:", error);
-			} else {
-				onRefresh?.();
-			}
+            if (error) {
+                console.error("Error updating:", error);
+            } else {
+                onRefresh?.();
+            }
 
-			setUpdatingIds((prev) => {
-				const next = new Set(prev);
-				next.delete(event.id);
-				return next;
-			});
-		},
-		[updatingIds, onRefresh],
-	);
+            updatingIdsRef.current.delete(event.id);
+            setUpdatingIds(new Set(updatingIdsRef.current));
+        },
+        [onRefresh],
+    );
 
-	return { toggleEvent, updatingIds };
+    return { toggleEvent, updatingIds };
 }

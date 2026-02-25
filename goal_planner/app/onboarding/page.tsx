@@ -10,7 +10,7 @@ import {
 } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { BiSolidError } from "react-icons/bi";
+import ErrorMessage from "@/components/ui/ErrorMessage/ErrorMessage";
 import { TfiArrowRight } from "react-icons/tfi";
 
 import ProgressBar from "@/components/Onboarding/ProgressBar/ProgressBar";
@@ -25,6 +25,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useGoalsData } from "@/hooks/useGoalsData";
 import { useGoalDeletion } from "@/hooks/useGoalDeletion";
 import { formatGoalForDisplay } from "@/utils/goalDataUtils";
+import { ROUTES } from "@/lib/constants/routes";
 
 import CalendarImg from "../../public/CalendarScreenshot.png";
 
@@ -213,12 +214,11 @@ function OnboardingContent() {
                             <GoalForm ref={goalFormRef} />
 
                             {onboardingError && (
-                                <div
-                                    ref={errorRef}
-                                    className="flex items-center gap-2 text-carmin text-base mt-4 mb-6 bg-carmin/10 border border-carmin rounded-2xl p-4"
-                                >
-                                    <BiSolidError className="text-xl flex-shrink-0" />
-                                    <span>{onboardingError}</span>
+                                <div ref={errorRef} className="mt-4 mb-6">
+                                    <ErrorMessage
+                                        message={onboardingError}
+                                        variant="block"
+                                    />
                                 </div>
                             )}
                         </main>
@@ -305,7 +305,7 @@ function OnboardingContent() {
                         <NavigationButtons
                             onPrevious={handlePrevious}
                             nextLabel="Start My Journey"
-                            nextHref="/calendar"
+                            nextHref={ROUTES.CALENDAR}
                         />
                     </>
                 )}
