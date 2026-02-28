@@ -264,6 +264,7 @@ export default function AnualGoalsPage() {
                                             )}
                                             time={formatTime(item.start_time)}
                                             type="task"
+                                            onEdit={() => {}}
                                             onDelete={() =>
                                                 handleDeleteUnassigned(item)
                                             }
@@ -290,6 +291,7 @@ export default function AnualGoalsPage() {
                                                 item.repeat_days,
                                             )}
                                             type="habit"
+                                            onEdit={() => {}}
                                             onDelete={() =>
                                                 handleDeleteUnassigned(item)
                                             }
