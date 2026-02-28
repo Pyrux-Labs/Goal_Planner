@@ -63,7 +63,7 @@ export default function CalendarWeeklyColumn({
             className={cn(
                 "w-full h-full",
                 "border-l border-line-gray first:border-l-0",
-                isToday && "bg-vibrant-orange/5",
+                isToday && "bg-white/[0.03] ring-1 ring-white/10",
             )}
         >
             <div className={cn("p-3")}>

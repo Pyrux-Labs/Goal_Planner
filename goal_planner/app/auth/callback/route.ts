@@ -47,12 +47,27 @@ export async function GET(request: Request) {
         .eq("id", userId)
         .single();
 
+    const isNewUser = !existingUser;
+
+    // Create user row if it doesn't exist
+    if (isNewUser) {
+        await supabase.from("users").insert({
+            id: userId,
+            fullname:
+                data.user.user_metadata?.full_name ||
+                data.user.email ||
+                "",
+            email: data.user.email || "",
+            profile_picture: DEFAULT_PROFILE_PICTURE,
+        });
+    }
+
     // Upload Google avatar if user has default picture
     const googleAvatar =
         data.user.user_metadata?.avatar_url || data.user.user_metadata?.picture;
     const hasDefaultPicture =
-        !existingUser ||
-        existingUser.profile_picture === DEFAULT_PROFILE_PICTURE;
+        isNewUser ||
+        existingUser?.profile_picture === DEFAULT_PROFILE_PICTURE;
 
     if (hasDefaultPicture && googleAvatar) {
         try {
@@ -89,14 +104,8 @@ export async function GET(request: Request) {
         }
     }
 
-    // Determine redirect: users without goals → onboarding, otherwise → calendar
-    const { count } = await supabase
-        .from("goals")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", userId)
-        .is("deleted_at", null);
-
-    if (!count || count === 0) {
+    // New users → onboarding, existing users → calendar
+    if (isNewUser) {
         return NextResponse.redirect(`${origin}${ROUTES.ONBOARDING}`);
     }
 

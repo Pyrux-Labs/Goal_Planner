@@ -69,7 +69,7 @@ export default function Register() {
         try {
             const supabase = createClient();
 
-            const { error } = await supabase.auth.signUp({
+            const { data, error } = await supabase.auth.signUp({
                 email,
                 password,
                 options: {
@@ -84,9 +84,21 @@ export default function Register() {
                 setGeneralError(error.message);
                 return;
             }
-            // Save email and redirect to verify page
-            sessionStorage.setItem("verifyEmail", email);
-            router.push(ROUTES.VERIFY);
+
+            // If auto-confirmed (session exists), create user row and go to onboarding
+            if (data.session && data.user) {
+                await supabase.from("users").upsert({
+                    id: data.user.id,
+                    fullname: fullName,
+                    email: email,
+                    profile_picture: "https://jbfzvoxddrydtawekviz.supabase.co/storage/v1/object/public/profile_pictures/default.jpg",
+                }, { onConflict: "id", ignoreDuplicates: true });
+                router.push(ROUTES.ONBOARDING);
+            } else {
+                // Needs email verification
+                sessionStorage.setItem("verifyEmail", email);
+                router.push(ROUTES.VERIFY);
+            }
         } catch (error) {
             setGeneralError("An unexpected error occurred. Please try again.");
         } finally {

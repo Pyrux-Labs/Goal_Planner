@@ -28,11 +28,7 @@ function UserAvatar({ size = "md" }: { size?: "sm" | "md" }) {
 
     const sizeClasses = size === "sm" ? "w-7 h-7 text-xs" : "w-9 h-9 text-sm";
 
-    const avatarUrl =
-        user?.profile_picture &&
-        user.profile_picture !== DEFAULT_PROFILE_PICTURE
-            ? user.profile_picture
-            : null;
+    const avatarUrl = user?.profile_picture || null;
 
     const initials = (() => {
         const name = user?.fullname || user?.email || "U";

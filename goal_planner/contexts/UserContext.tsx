@@ -54,13 +54,21 @@ export function UserProvider({ children }: { children: ReactNode }) {
         if (data) {
             setUser(data);
         } else {
-            setUser({
+            // User row doesn't exist — create it so FK constraints work
+            const DEFAULT_PP =
+                "https://jbfzvoxddrydtawekviz.supabase.co/storage/v1/object/public/profile_pictures/default.jpg";
+            const newUser: UserData = {
                 id: authUser.id,
                 fullname:
                     authUser.user_metadata?.full_name || authUser.email || "",
                 email: authUser.email || "",
-                profile_picture: "",
+                profile_picture: DEFAULT_PP,
+            };
+            await supabase.from("users").upsert(newUser, {
+                onConflict: "id",
+                ignoreDuplicates: true,
             });
+            setUser(newUser);
         }
         setLoading(false);
     }, []);

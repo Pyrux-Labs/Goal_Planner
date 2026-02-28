@@ -50,7 +50,7 @@ function LandingContent() {
         <div className="bg-landing-bg min-h-screen w-full">
             <header
                 ref={headerRef}
-                className="relative bg-cover bg-center w-full bg-[url(/landing_bg.png)] -scroll-mt-16 min-[1440px]:min-h-screen"
+                className="relative bg-cover bg-center w-full bg-[url(/landing_bg.png)] -scroll-mt-16 min-[1440px]:pb-56"
             >
                 {/*Nav Bar*/}
                 <div
