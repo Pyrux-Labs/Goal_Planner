@@ -7,6 +7,7 @@ import icon from "@/public/icon.svg";
 import { createClient } from "@/lib/supabase/client";
 import Modal from "@/components/ui/Modal/Modal";
 import { ROUTES } from "@/lib/constants/routes";
+import { useUser } from "@/contexts/UserContext";
 
 const navItems = [
     { path: ROUTES.CALENDAR, icon: Home, label: "Calendar" },
@@ -19,36 +20,28 @@ const profileMenuItems = [
     { path: ROUTES.SETTINGS, icon: Settings, label: "Settings" },
 ];
 
+const DEFAULT_PROFILE_PICTURE =
+    "https://jbfzvoxddrydtawekviz.supabase.co/storage/v1/object/public/profile_pictures/default.jpg";
+
 function UserAvatar({ size = "md" }: { size?: "sm" | "md" }) {
-    const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-    const [initials, setInitials] = useState("U");
-
-    useEffect(() => {
-        const loadUser = async () => {
-            const supabase = createClient();
-            const {
-                data: { user },
-            } = await supabase.auth.getUser();
-            if (!user) return;
-
-            const fullName = user.user_metadata?.full_name || user.email || "";
-            const avatar = user.user_metadata?.avatar_url;
-
-            if (avatar) {
-                setAvatarUrl(avatar);
-            }
-
-            const parts = fullName.split(" ").filter(Boolean);
-            if (parts.length >= 2) {
-                setInitials(`${parts[0][0]}${parts[1][0]}`.toUpperCase());
-            } else if (parts.length === 1) {
-                setInitials(parts[0][0].toUpperCase());
-            }
-        };
-        loadUser();
-    }, []);
+    const { user } = useUser();
 
     const sizeClasses = size === "sm" ? "w-7 h-7 text-xs" : "w-9 h-9 text-sm";
+
+    const avatarUrl =
+        user?.profile_picture &&
+        user.profile_picture !== DEFAULT_PROFILE_PICTURE
+            ? user.profile_picture
+            : null;
+
+    const initials = (() => {
+        const name = user?.fullname || user?.email || "U";
+        const parts = name.split(" ").filter(Boolean);
+        if (parts.length >= 2)
+            return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+        if (parts.length === 1) return parts[0][0].toUpperCase();
+        return "U";
+    })();
 
     if (avatarUrl) {
         return (

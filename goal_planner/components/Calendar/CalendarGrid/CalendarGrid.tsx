@@ -1,3 +1,4 @@
+import { memo } from "react";
 import CalendarCard from "../CalendarCard/CalendarCard";
 import CalendarCardSkeleton from "../CalendarCard/CalendarCardSkeleton";
 import type { CalendarEventsMap } from "@/types/calendar";
@@ -20,7 +21,7 @@ interface CalendarGridProps {
     isLoading?: boolean;
 }
 
-export default function CalendarGrid({
+export default memo(function CalendarGrid({
     calendarDays,
     events = {},
     onDateSelect,
@@ -80,4 +81,4 @@ export default function CalendarGrid({
             </div>
         </>
     );
-}
+});

@@ -6,6 +6,7 @@ import { deleteTaskLog, deleteHabitLog } from "@/utils/deleteTaskHabit";
 import { useToggleEvent } from "@/hooks/useToggleEvent";
 import { useToast } from "@/components/ui/Toast/ToastContext";
 import { sortEventsByTime } from "@/utils/dateUtils";
+import { formatTimeRange } from "@/utils/formatUtils";
 
 // ===== EXTRACTED EVENT ITEM COMPONENT =====
 interface EventItemProps {
@@ -63,11 +64,12 @@ const EventItem = memo(function EventItem({
                 >
                     {event.title}
                 </div>
-                {event.time && (
+                {(event.start_time || event.time) && (
                     <div
                         className={`text-xs ${event.completed ? "text-white-pearl/25" : "text-white-pearl"}`}
                     >
-                        {event.time}
+                        {formatTimeRange(event.start_time, event.end_time) ||
+                            event.time}
                     </div>
                 )}
             </div>
@@ -183,6 +185,8 @@ const CalendarInfo = ({
                 start_date: event.start_date ?? "",
                 end_date: event.end_date ?? "",
                 repeat_days: event.repeat_days ?? [],
+                edit_date: event.date,
+                log_id: event.log_id ?? event.id,
             };
 
             onEditHabit(editData);

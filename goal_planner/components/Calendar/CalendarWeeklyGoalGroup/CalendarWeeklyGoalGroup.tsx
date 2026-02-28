@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import type { CalendarEvent } from "@/types/calendar";
 import { DEFAULT_EVENT_COLOR } from "@/lib/constants/colors";
+import { formatTimeRange } from "@/utils/formatUtils";
 
 interface CalendarWeeklyGoalGroupProps {
     goalName: string;
@@ -61,7 +62,7 @@ export default function CalendarWeeklyGoalGroup({
                             >
                                 {event.title}
                             </p>
-                            {event.time && (
+                            {(event.start_time || event.time) && (
                                 <span
                                     className={cn(
                                         "text-xs",
@@ -70,7 +71,10 @@ export default function CalendarWeeklyGoalGroup({
                                             : "text-white-pearl",
                                     )}
                                 >
-                                    {event.time}
+                                    {formatTimeRange(
+                                        event.start_time,
+                                        event.end_time,
+                                    ) || event.time}
                                 </span>
                             )}
                         </div>

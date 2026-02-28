@@ -63,7 +63,23 @@
 - [x] **keepLoggedIn en SignIn** - Eliminado (era no-op, Supabase maneja sesión automáticamente) [REFACTOR]
 - [x] **Google Auth buttons** - OAuth con Google funcional, redirige al calendario [REFACTOR]
 - [x] **Missing useEffect deps** - `fetchGoals` no está en dependency array en AddTask y onboarding [GINO]
-- [ ] **`change-password` refresh_token** - `setSession({ refresh_token: "" })` es frágil; debería usar `exchangeCodeForSession` o `getSession` para recuperar la sesión correctamente
+- [x] **`change-password` refresh_token** - Ahora usa `exchangeCodeForSession` con fallback a `setSession` y chequeo de sesión existente [REFACTOR]
+- [x] **Google OAuth routing** - Creada ruta `/auth/callback` para intercambio PKCE; register → onboarding, login → calendar; descarga avatar a Supabase Storage [REFACTOR]
+- [x] **Register → Onboarding** - Redirect corregido: chequea `data.session` después de signUp para determinar si ir a onboarding o verify [REFACTOR]
+
+### 🆕 Nuevas Features (Implementadas)
+
+- [x] **Landing hero fullscreen ≥1440px** - `min-[1440px]:min-h-screen` en header de landing page
+- [x] **Weekly view today highlight** - Background `bg-vibrant-orange/5` en columna del día actual
+- [x] **Disable out-of-month days** - CalendarCard deshabilitado con `cursor-default`, sin hover/click para días fuera del mes
+- [x] **No-goal grey color** - Eventos sin goal_id ahora usan color gris (#6b7280) en vez del color por defecto
+- [x] **Task time range HH:MM-HH:MM** - `formatTimeRange()` muestra rango de horas en CalendarInfo y CalendarWeeklyGoalGroup
+- [x] **Completed goal dark green** - GoalCard usa `COMPLETED_GOAL_COLOR` (#2d5a3d) en vez de `bg-green-500`
+- [x] **Edit log-only sidebar** - `EditTaskLog`/`EditHabitLog` para editar solo el log (fecha/hora) desde sidebar del calendario
+- [x] **Optional date for inline tasks** - AddTask inline (GoalCard) no requiere fecha para tareas one-time
+- [x] **Unassigned tab** - Nuevo filtro "Unassigned" en anual-goals que muestra tareas/hábitos sin goal en dos columnas
+- [x] **Bulk delete buttons** - Settings con 3 botones destructivos (Delete All Tasks, Habits, Goals) + confirmación
+- [x] **deleteTaskCompletely/deleteHabitCompletely** - Funciones que eliminan ALL logs + repeat_days + parent record
 
 ### 📱 Responsive Design
 
@@ -96,13 +112,15 @@
 - [x] **ErrorMessage reutilizable** - Componente con 3 variantes (field/general/block), reemplaza ~12 inline error displays [REFACTOR]
 - [x] **Colores consolidados** - `GOAL_COLORS`, `DEFAULT_EVENT_COLOR` en `colors.ts`; `orange-hover` en Tailwind config [REFACTOR]
 - [x] **Performance CalendarCard** - `React.memo()` wrapper, `useRef` en useToggleEvent/CalendarInfo para evitar cascade re-renders [REFACTOR]
+- [x] **CalendarGrid memoización** - Envuelto con `React.memo` para reducir re-renders [REFACTOR]
+- [x] **UserAvatar caching** - Creado `UserContext` con `UserProvider`; Navbar usa `useUser()` hook en vez de `getUser()` en cada mount [REFACTOR]
 - [x] **Fix CSS white-pearl** - Valor HSL inválido 189% → 89% [REFACTOR]
 - [x] **Fix sign-out on delete** - Se agrega `signOut()` antes de redirect en settings [REFACTOR]
 - [x] **Eliminar términos y condiciones** - Checkbox y lógica removidos de register [REFACTOR]
 - [x] **Landing page simplificada** - Eliminada lógica redundante de auth client-side (middleware se encarga) [REFACTOR]
 - [x] **"use client" limpio** - Eliminado de not-found.tsx y authenticated layout [REFACTOR]
-- [ ] **UserAvatar caching** - `supabase.auth.getUser()` se llama en cada mount del Navbar; considerar React Context o cache para evitar llamadas repetidas
-- [ ] **CalendarGrid memoización** - Cada celda podría beneficiarse de `React.memo` con comparador custom para reducir re-renders
+- [x] **UserAvatar caching** - Creado `UserContext` con `UserProvider`; Navbar usa `useUser()` hook — lee `profile_picture` y `fullname` de tabla `users` [REFACTOR]
+- [x] **CalendarGrid memoización** - Envuelto con `React.memo` para reducir re-renders de celdas [REFACTOR]
 
 ### 🧪 Testing y QA
 
@@ -153,7 +171,7 @@
 
 ### 🔐 Autenticación Avanzada
 
-- [ ] **OAuth con Google** - Integrar (buttons ya existen en UI)
+- [x] **OAuth con Google** - Auth callback route creada, PKCE exchange, avatar download, routing inteligente (nuevo → onboarding, existente → calendar)
 - [ ] **2FA** - Seguridad adicional (opcional)
 
 ### ✨ Pulido Final
@@ -196,6 +214,7 @@
 ### ⚙️ Configuración Avanzada
 
 - [x] **Borrar cuenta** - Implementado en Settings con Modal de confirmación
+- [x] **Bulk delete** - Botones para eliminar todas las tareas, hábitos, o metas con confirmación modal en Settings
 - [ ] **Exportar/importar datos** - Backup y migración
 - [ ] **Preferencias de privacidad**
 

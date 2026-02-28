@@ -76,3 +76,20 @@ export const formatTargetDate = (date: string): string => {
 export const capitalizeFirst = (str: string): string => {
     return str.charAt(0).toUpperCase() + str.slice(1);
 };
+
+/**
+ * Formats a time range as HH:MM-HH:MM.
+ * If only start_time is available, returns just HH:MM.
+ * @param startTime - Start time in HH:MM:SS or HH:MM format
+ * @param endTime - End time in HH:MM:SS or HH:MM format
+ * @returns Formatted time range or undefined if no start time
+ */
+export const formatTimeRange = (
+    startTime?: string | null,
+    endTime?: string | null,
+): string | undefined => {
+    if (!startTime) return undefined;
+    const start = startTime.slice(0, 5);
+    if (!endTime) return start;
+    return `${start}-${endTime.slice(0, 5)}`;
+};

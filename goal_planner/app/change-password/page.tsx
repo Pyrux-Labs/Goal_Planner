@@ -26,23 +26,50 @@ function ChangePasswordContent() {
     const [generalError, setGeneralError] = useState("");
     const [success, setSuccess] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [sessionReady, setSessionReady] = useState(false);
 
-    // Check for access_token in URL (from email link)
     useEffect(() => {
+        const code = searchParams.get("code");
         const access_token = searchParams.get("access_token");
         const type = searchParams.get("type");
 
-        if (access_token && type === "recovery") {
-            // Set the session with the recovery token
-            const setSession = async () => {
-                const supabase = createClient();
-                await supabase.auth.setSession({
+        const setupSession = async () => {
+            const supabase = createClient();
+            if (code) {
+                const { error } =
+                    await supabase.auth.exchangeCodeForSession(code);
+                if (error) {
+                    setGeneralError(
+                        "Reset link has expired or is invalid. Please request a new one.",
+                    );
+                } else {
+                    setSessionReady(true);
+                }
+            } else if (access_token && type === "recovery") {
+                const refresh_token = searchParams.get("refresh_token") || "";
+                const { error } = await supabase.auth.setSession({
                     access_token,
-                    refresh_token: "",
+                    refresh_token,
                 });
-            };
-            setSession();
-        }
+                if (error) {
+                    setGeneralError(
+                        "Reset link has expired or is invalid. Please request a new one.",
+                    );
+                } else {
+                    setSessionReady(true);
+                }
+            } else {
+                const { data } = await supabase.auth.getSession();
+                if (data.session) {
+                    setSessionReady(true);
+                } else {
+                    setGeneralError(
+                        "No active session. Please use the reset link from your email.",
+                    );
+                }
+            }
+        };
+        setupSession();
     }, [searchParams]);
 
     // Handle form submission

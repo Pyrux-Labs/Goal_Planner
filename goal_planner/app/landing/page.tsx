@@ -29,7 +29,7 @@ function LandingContent() {
     }, [searchParams]);
 
     // Smooth scroll functions
-    const scrollToSection = (ref: any) => {
+    const scrollToSection = (ref: React.RefObject<HTMLElement | null>) => {
         ref.current?.scrollIntoView({ behavior: "smooth" });
     };
 
@@ -50,7 +50,7 @@ function LandingContent() {
         <div className="bg-landing-bg min-h-screen w-full">
             <header
                 ref={headerRef}
-                className="relative bg-cover bg-center w-full bg-[url(/landing_bg.png)] -scroll-mt-16"
+                className="relative bg-cover bg-center w-full bg-[url(/landing_bg.png)] -scroll-mt-16 min-[1440px]:min-h-screen"
             >
                 {/*Nav Bar*/}
                 <div

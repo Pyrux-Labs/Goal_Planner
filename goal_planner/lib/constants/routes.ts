@@ -16,6 +16,7 @@ export const ROUTES = {
     FORGOT_PASSWORD: "/forgot-password",
     CHANGE_PASSWORD: "/change-password",
     ONBOARDING: "/onboarding",
+    AUTH_CALLBACK: "/auth/callback",
 } as const;
 
 /** Routes accessible without authentication */
@@ -26,6 +27,7 @@ export const PUBLIC_ROUTES = [
     ROUTES.VERIFY,
     ROUTES.FORGOT_PASSWORD,
     ROUTES.CHANGE_PASSWORD,
+    ROUTES.AUTH_CALLBACK,
 ] as const;
 
 /** Auth-only routes that authenticated users should be redirected away from */

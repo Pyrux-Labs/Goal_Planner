@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ToastProvider } from "@/components/ui/Toast/ToastContext";
+import { UserProvider } from "@/contexts/UserContext";
 
 const defaultUrl = process.env.VERCEL_URL
     ? `https://${process.env.VERCEL_URL}`
@@ -25,7 +26,9 @@ export default function RootLayout({
                 className="bg-[hsl(var(--deep-bg))] overflow-x-hidden"
                 suppressHydrationWarning
             >
-                <ToastProvider>{children}</ToastProvider>
+                <ToastProvider>
+                    <UserProvider>{children}</UserProvider>
+                </ToastProvider>
             </body>
         </html>
     );

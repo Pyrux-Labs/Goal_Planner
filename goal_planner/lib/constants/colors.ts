@@ -32,3 +32,5 @@ export const REVERSE_COLOR_MAP: Record<string, string> = {
 
 /** Default fallback color for events without a goal color */
 export const DEFAULT_EVENT_COLOR = "#94A3B8";
+
+export const COMPLETED_GOAL_COLOR = "#2d5a3d";

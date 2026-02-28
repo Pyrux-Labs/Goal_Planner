@@ -107,7 +107,10 @@ export async function deleteTaskWithFutureLogs(
         console.error("Error deleting task with future logs:", error);
         return {
             success: false,
-            error: error instanceof Error ? error.message : "An unknown error occurred",
+            error:
+                error instanceof Error
+                    ? error.message
+                    : "An unknown error occurred",
         };
     }
 }
@@ -165,7 +168,10 @@ export async function deleteHabitWithFutureLogs(
         console.error("Error deleting habit with future logs:", error);
         return {
             success: false,
-            error: error instanceof Error ? error.message : "An unknown error occurred",
+            error:
+                error instanceof Error
+                    ? error.message
+                    : "An unknown error occurred",
         };
     }
 }
@@ -254,7 +260,10 @@ export async function deleteTaskLog(logId: number): Promise<DeleteResult> {
         console.error("Error deleting task log:", error);
         return {
             success: false,
-            error: error instanceof Error ? error.message : "An unknown error occurred",
+            error:
+                error instanceof Error
+                    ? error.message
+                    : "An unknown error occurred",
         };
     }
 }
@@ -345,7 +354,69 @@ export async function deleteHabitLog(logId: number): Promise<DeleteResult> {
         console.error("Error deleting habit log:", error);
         return {
             success: false,
-            error: error instanceof Error ? error.message : "An unknown error occurred",
+            error:
+                error instanceof Error
+                    ? error.message
+                    : "An unknown error occurred",
+        };
+    }
+}
+
+/**
+ * Deletes a task and ALL its related data (all logs, repeat days).
+ * Used for unassigned task deletion where we want complete removal.
+ */
+export async function deleteTaskCompletely(
+    taskId: number,
+): Promise<DeleteResult> {
+    try {
+        const supabase = createClient();
+        await supabase.from("task_logs").delete().eq("task_id", taskId);
+        await supabase.from("task_repeat_days").delete().eq("task_id", taskId);
+        const { error } = await supabase
+            .from("tasks")
+            .delete()
+            .eq("id", taskId);
+        if (error) throw error;
+        return { success: true };
+    } catch (error: unknown) {
+        return {
+            success: false,
+            error:
+                error instanceof Error
+                    ? error.message
+                    : "An unknown error occurred",
+        };
+    }
+}
+
+/**
+ * Deletes a habit and ALL its related data (all logs, repeat days).
+ * Used for unassigned habit deletion where we want complete removal.
+ */
+export async function deleteHabitCompletely(
+    habitId: number,
+): Promise<DeleteResult> {
+    try {
+        const supabase = createClient();
+        await supabase.from("habit_logs").delete().eq("habit_id", habitId);
+        await supabase
+            .from("habit_repeat_days")
+            .delete()
+            .eq("habit_id", habitId);
+        const { error } = await supabase
+            .from("habits")
+            .delete()
+            .eq("id", habitId);
+        if (error) throw error;
+        return { success: true };
+    } catch (error: unknown) {
+        return {
+            success: false,
+            error:
+                error instanceof Error
+                    ? error.message
+                    : "An unknown error occurred",
         };
     }
 }

@@ -43,14 +43,17 @@ const CalendarCard = memo(function CalendarCard({
 
     return (
         <button
-            onClick={onClick}
+            onClick={isCurrentMonth ? onClick : undefined}
+            disabled={!isCurrentMonth}
             className={cn(
                 "w-full aspect-[1/2] md:aspect-[4/5] lg:w-32 lg:h-36 rounded-sm md:rounded-xl transition-all duration-200 flex flex-col p-1 md:p-2 gap-0.5 md:gap-1",
                 isModalOpen ? "xl:w-32 2xl:w-32" : "xl:w-40 2xl:w-44",
-                "bg-modal-bg hover:scale-105 hover:shadow-xl hover:border-vibrant-orange/50 border border-input-bg",
+                isCurrentMonth
+                    ? "bg-modal-bg hover:scale-105 hover:shadow-xl hover:border-vibrant-orange/50 border border-input-bg cursor-pointer"
+                    : "bg-modal-bg border border-input-bg opacity-30 cursor-default",
                 (isToday || isSelected) &&
+                    isCurrentMonth &&
                     "bg-input-bg border-vibrant-orange border-2 shadow-lg",
-                !isCurrentMonth && "opacity-30",
                 "group relative overflow-hidden flex-shrink-0",
             )}
         >

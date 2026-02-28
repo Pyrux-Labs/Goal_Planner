@@ -4,6 +4,10 @@ import type { CalendarEventsMap } from "@/types/calendar";
 import { getDateKey } from "@/utils/dateUtils";
 import AddHabit from "../AddHabit/AddHabit";
 import AddTask from "../AddTask/AddTask";
+import {
+    EditTaskLog,
+    EditHabitLog,
+} from "@/components/Calendar/EditLogForm/EditLogForm";
 
 interface SidebarContentProps {
     view: SidebarView;
@@ -69,6 +73,20 @@ export default function SidebarContent({
             );
 
         case "edit-task":
+            if (view.data.log_id && view.data.edit_date) {
+                return (
+                    <EditTaskLog
+                        logId={view.data.log_id}
+                        date={view.data.edit_date}
+                        startTime={view.data.start_time}
+                        endTime={view.data.end_time}
+                        taskName={view.data.name}
+                        onClose={() => {
+                            onSuccess?.();
+                        }}
+                    />
+                );
+            }
             return (
                 <AddTask
                     editData={view.data}
@@ -81,6 +99,18 @@ export default function SidebarContent({
             );
 
         case "edit-habit":
+            if (view.data.log_id && view.data.edit_date) {
+                return (
+                    <EditHabitLog
+                        logId={view.data.log_id}
+                        date={view.data.edit_date}
+                        habitName={view.data.name}
+                        onClose={() => {
+                            onSuccess?.();
+                        }}
+                    />
+                );
+            }
             return (
                 <AddHabit
                     editData={view.data}
