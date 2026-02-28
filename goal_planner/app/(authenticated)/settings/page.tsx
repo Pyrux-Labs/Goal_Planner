@@ -11,35 +11,24 @@ import { ROUTES } from "@/lib/constants/routes";
 
 type BulkDeleteTarget = "tasks" | "habits" | "goals" | "account";
 
-const BULK_DELETE_CONFIG: Record<
+const BULK_DELETE_LABELS: Record<
     Exclude<BulkDeleteTarget, "account">,
-    { label: string; message: string; tables: string[] }
+    { label: string; message: string }
 > = {
     tasks: {
         label: "Delete All Tasks",
         message:
             "Are you sure you want to delete ALL your tasks? This will permanently remove every task and its logs. This action cannot be undone.",
-        tables: ["task_repeat_days", "task_logs", "tasks"],
     },
     habits: {
         label: "Delete All Habits",
         message:
             "Are you sure you want to delete ALL your habits? This will permanently remove every habit and its logs. This action cannot be undone.",
-        tables: ["habit_repeat_days", "habit_logs", "habits"],
     },
     goals: {
         label: "Delete All Goals",
         message:
             "Are you sure you want to delete ALL your goals and their associated tasks and habits? This will permanently remove everything. This action cannot be undone.",
-        tables: [
-            "task_repeat_days",
-            "habit_repeat_days",
-            "task_logs",
-            "habit_logs",
-            "tasks",
-            "habits",
-            "goals",
-        ],
     },
 };
 
@@ -98,12 +87,65 @@ export default function SettingsPage() {
             } = await supabase.auth.getUser();
             if (!user) throw new Error("Not authenticated");
 
-            const config = BULK_DELETE_CONFIG[bulkDeleteTarget];
+            // Helper: get IDs then delete repeat_days via parent FK
+            const deleteRepeatDaysByParent = async (
+                parentTable: "tasks" | "habits",
+                repeatTable: "task_repeat_days" | "habit_repeat_days",
+                fkColumn: "task_id" | "habit_id",
+            ) => {
+                const { data: parents } = await supabase
+                    .from(parentTable)
+                    .select("id")
+                    .eq("user_id", user.id);
+                const ids = (parents || []).map((p: { id: number }) => p.id);
+                if (ids.length > 0) {
+                    const { error } = await supabase
+                        .from(repeatTable)
+                        .delete()
+                        .in(fkColumn, ids);
+                    if (error) throw error;
+                }
+            };
 
-            // Delete tables in order (children first)
-            for (const table of config.tables) {
+            if (bulkDeleteTarget === "tasks" || bulkDeleteTarget === "goals") {
+                await deleteRepeatDaysByParent(
+                    "tasks",
+                    "task_repeat_days",
+                    "task_id",
+                );
                 const { error } = await supabase
-                    .from(table)
+                    .from("task_logs")
+                    .delete()
+                    .eq("user_id", user.id);
+                if (error) throw error;
+                const { error: e2 } = await supabase
+                    .from("tasks")
+                    .delete()
+                    .eq("user_id", user.id);
+                if (e2) throw e2;
+            }
+
+            if (bulkDeleteTarget === "habits" || bulkDeleteTarget === "goals") {
+                await deleteRepeatDaysByParent(
+                    "habits",
+                    "habit_repeat_days",
+                    "habit_id",
+                );
+                const { error } = await supabase
+                    .from("habit_logs")
+                    .delete()
+                    .eq("user_id", user.id);
+                if (error) throw error;
+                const { error: e2 } = await supabase
+                    .from("habits")
+                    .delete()
+                    .eq("user_id", user.id);
+                if (e2) throw e2;
+            }
+
+            if (bulkDeleteTarget === "goals") {
+                const { error } = await supabase
+                    .from("goals")
                     .delete()
                     .eq("user_id", user.id);
                 if (error) throw error;
@@ -137,7 +179,7 @@ export default function SettingsPage() {
         bulkDeleteTarget === "account"
             ? "Are you sure you want to delete your account? All your goals, tasks, habits and progress will be permanently removed. This action cannot be undone."
             : bulkDeleteTarget
-              ? BULK_DELETE_CONFIG[bulkDeleteTarget].message
+              ? BULK_DELETE_LABELS[bulkDeleteTarget].message
               : "";
 
     const modalTitle =

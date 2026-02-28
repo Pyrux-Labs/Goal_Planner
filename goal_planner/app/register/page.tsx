@@ -87,13 +87,19 @@ export default function Register() {
 
             // If auto-confirmed (session exists), create user row and go to onboarding
             if (data.session && data.user) {
-                await supabase.from("users").upsert({
-                    id: data.user.id,
-                    fullname: fullName,
-                    email: email,
-                    profile_picture: "https://jbfzvoxddrydtawekviz.supabase.co/storage/v1/object/public/profile_pictures/default.jpg",
-                }, { onConflict: "id", ignoreDuplicates: true });
-                router.push(ROUTES.ONBOARDING);
+                await supabase.from("users").upsert(
+                    {
+                        id: data.user.id,
+                        fullname: fullName,
+                        email: email,
+                        profile_picture:
+                            "https://jbfzvoxddrydtawekviz.supabase.co/storage/v1/object/public/profile_pictures/default.jpg",
+                    },
+                    { onConflict: "id", ignoreDuplicates: true },
+                );
+                // Full page navigation to avoid middleware race condition
+                window.location.href = ROUTES.ONBOARDING;
+                return;
             } else {
                 // Needs email verification
                 sessionStorage.setItem("verifyEmail", email);

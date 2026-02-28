@@ -147,8 +147,10 @@ const CalendarCard = memo(function CalendarCard({
                         ))}
             </div>
 
-            {/* Hover effect overlay */}
-            <div className="absolute inset-0 bg-gradient-to-br from-vibrant-orange/0 to-vibrant-orange/0 group-hover:from-vibrant-orange/5 group-hover:to-vibrant-orange/10 transition-all duration-300 rounded-xl pointer-events-none" />
+            {/* Hover effect overlay — only for current month */}
+            {isCurrentMonth && (
+                <div className="absolute inset-0 bg-gradient-to-br from-vibrant-orange/0 to-vibrant-orange/0 group-hover:from-vibrant-orange/5 group-hover:to-vibrant-orange/10 transition-all duration-300 rounded-xl pointer-events-none" />
+            )}
         </button>
     );
 });

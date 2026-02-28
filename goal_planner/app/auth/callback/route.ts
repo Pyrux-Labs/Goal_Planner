@@ -54,9 +54,7 @@ export async function GET(request: Request) {
         await supabase.from("users").insert({
             id: userId,
             fullname:
-                data.user.user_metadata?.full_name ||
-                data.user.email ||
-                "",
+                data.user.user_metadata?.full_name || data.user.email || "",
             email: data.user.email || "",
             profile_picture: DEFAULT_PROFILE_PICTURE,
         });
@@ -66,10 +64,10 @@ export async function GET(request: Request) {
     const googleAvatar =
         data.user.user_metadata?.avatar_url || data.user.user_metadata?.picture;
     const hasDefaultPicture =
-        isNewUser ||
-        existingUser?.profile_picture === DEFAULT_PROFILE_PICTURE;
+        isNewUser || existingUser?.profile_picture === DEFAULT_PROFILE_PICTURE;
 
     if (hasDefaultPicture && googleAvatar) {
+        let profileUrl: string | null = null;
         try {
             const avatarResponse = await fetch(googleAvatar);
             if (avatarResponse.ok) {
@@ -87,20 +85,23 @@ export async function GET(request: Request) {
                     const { data: publicUrlData } = supabase.storage
                         .from("profile_pictures")
                         .getPublicUrl(fileName);
-
-                    if (publicUrlData?.publicUrl) {
-                        await supabase
-                            .from("users")
-                            .update({
-                                profile_picture: publicUrlData.publicUrl,
-                            })
-                            .eq("id", userId);
-                    }
+                    profileUrl = publicUrlData?.publicUrl || null;
                 }
             }
         } catch (err) {
-            // Non-critical: avatar upload failed, continue with redirect
             console.error("Error uploading Google avatar:", err);
+        }
+
+        // Fallback: use Google avatar URL directly if storage upload failed
+        if (!profileUrl) {
+            profileUrl = googleAvatar;
+        }
+
+        if (profileUrl) {
+            await supabase
+                .from("users")
+                .update({ profile_picture: profileUrl })
+                .eq("id", userId);
         }
     }
 

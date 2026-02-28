@@ -102,7 +102,7 @@ export default function GoalCard({
                     {/* Progress */}
                     <div className="flex-1 md:w-64 md:flex-none md:mr-8">
                         <div className="flex justify-between text-white-pearl text-xs md:text-sm mb-1 font-medium">
-                            <p>{isCompleted ? "Completed" : "Progress"}</p>
+                            <p>{isCompleted ? "COMPLETED" : "Progress"}</p>
                             <p>{progress}%</p>
                         </div>
                         <div className="h-1.5 md:h-2 bg-progress-empty rounded-full">

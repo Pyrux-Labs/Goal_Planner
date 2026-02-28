@@ -79,40 +79,91 @@ export default function AnualGoalsPage() {
             } = await supabase.auth.getUser();
             if (!user) return;
 
+            // Fetch tasks and habits without nested repeat_days to avoid FK detection issues
             const [{ data: tasks }, { data: habits }] = await Promise.all([
                 supabase
                     .from("tasks")
-                    .select(
-                        "id, name, start_time, end_time, task_repeat_days(day_of_week)",
-                    )
+                    .select("id, name, start_time, end_time")
                     .eq("user_id", user.id)
                     .is("goal_id", null)
                     .is("deleted_at", null),
                 supabase
                     .from("habits")
-                    .select("id, name, habit_repeat_days(day_of_week)")
+                    .select("id, name")
                     .eq("user_id", user.id)
                     .is("goal_id", null)
                     .is("deleted_at", null),
             ]);
 
+            const taskIds = (tasks || []).map((t: { id: number }) => t.id);
+            const habitIds = (habits || []).map((h: { id: number }) => h.id);
+
+            // Fetch repeat days separately
+            const [{ data: taskRepeatDays }, { data: habitRepeatDays }] =
+                await Promise.all([
+                    taskIds.length > 0
+                        ? supabase
+                              .from("task_repeat_days")
+                              .select("task_id, day_of_week")
+                              .in("task_id", taskIds)
+                        : Promise.resolve({
+                              data: [] as {
+                                  task_id: number;
+                                  day_of_week: string;
+                              }[],
+                          }),
+                    habitIds.length > 0
+                        ? supabase
+                              .from("habit_repeat_days")
+                              .select("habit_id, day_of_week")
+                              .in("habit_id", habitIds)
+                        : Promise.resolve({
+                              data: [] as {
+                                  habit_id: number;
+                                  day_of_week: string;
+                              }[],
+                          }),
+                ]);
+
+            // Group repeat days by parent ID
+            const taskDaysMap = new Map<number, string[]>();
+            (taskRepeatDays || []).forEach(
+                (d: { task_id: number; day_of_week: string }) => {
+                    const arr = taskDaysMap.get(d.task_id) || [];
+                    arr.push(d.day_of_week);
+                    taskDaysMap.set(d.task_id, arr);
+                },
+            );
+
+            const habitDaysMap = new Map<number, string[]>();
+            (habitRepeatDays || []).forEach(
+                (d: { habit_id: number; day_of_week: string }) => {
+                    const arr = habitDaysMap.get(d.habit_id) || [];
+                    arr.push(d.day_of_week);
+                    habitDaysMap.set(d.habit_id, arr);
+                },
+            );
+
             const items: UnassignedItem[] = [
-                ...(tasks || []).map((t: any) => ({
-                    id: t.id,
-                    name: t.name,
-                    repeat_days: (t.task_repeat_days || []).map(
-                        (d: any) => d.day_of_week,
-                    ),
-                    start_time: t.start_time,
-                    end_time: t.end_time,
-                    type: "task" as const,
-                })),
-                ...(habits || []).map((h: any) => ({
+                ...(tasks || []).map(
+                    (t: {
+                        id: number;
+                        name: string;
+                        start_time: string | null;
+                        end_time: string | null;
+                    }) => ({
+                        id: t.id,
+                        name: t.name,
+                        repeat_days: taskDaysMap.get(t.id) || [],
+                        start_time: t.start_time,
+                        end_time: t.end_time,
+                        type: "task" as const,
+                    }),
+                ),
+                ...(habits || []).map((h: { id: number; name: string }) => ({
                     id: h.id,
                     name: h.name,
-                    repeat_days: (h.habit_repeat_days || []).map(
-                        (d: any) => d.day_of_week,
-                    ),
+                    repeat_days: habitDaysMap.get(h.id) || [],
                     start_time: null,
                     end_time: null,
                     type: "habit" as const,
@@ -248,60 +299,64 @@ export default function AnualGoalsPage() {
                             No unassigned tasks or habits found.
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12">
-                            {/* Tasks Column */}
-                            <div>
-                                <h2 className="text-white-pearl font-title text-xl font-semibold mb-4">
-                                    Tasks ({unassignedTasks.length})
-                                </h2>
-                                <div className="space-y-2">
-                                    {unassignedTasks.map((item) => (
-                                        <TaskHabitSimpleView
-                                            key={`task-${item.id}`}
-                                            title={item.name}
-                                            days={formatRepeatDays(
-                                                item.repeat_days,
-                                            )}
-                                            time={formatTime(item.start_time)}
-                                            type="task"
-                                            onEdit={() => {}}
-                                            onDelete={() =>
-                                                handleDeleteUnassigned(item)
-                                            }
-                                        />
-                                    ))}
-                                    {unassignedTasks.length === 0 && (
-                                        <p className="text-input-text text-sm">
-                                            No unassigned tasks
-                                        </p>
-                                    )}
+                        <div className="rounded-3xl border border-input-bg bg-modal-bg p-4 md:p-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12">
+                                {/* Tasks Column */}
+                                <div>
+                                    <h2 className="text-white-pearl font-title text-xl font-semibold mb-4">
+                                        Tasks ({unassignedTasks.length})
+                                    </h2>
+                                    <div className="space-y-2">
+                                        {unassignedTasks.map((item) => (
+                                            <TaskHabitSimpleView
+                                                key={`task-${item.id}`}
+                                                title={item.name}
+                                                days={formatRepeatDays(
+                                                    item.repeat_days,
+                                                )}
+                                                time={formatTime(
+                                                    item.start_time,
+                                                )}
+                                                type="task"
+                                                onEdit={() => {}}
+                                                onDelete={() =>
+                                                    handleDeleteUnassigned(item)
+                                                }
+                                            />
+                                        ))}
+                                        {unassignedTasks.length === 0 && (
+                                            <p className="text-input-text text-sm">
+                                                No unassigned tasks
+                                            </p>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                            {/* Habits Column */}
-                            <div>
-                                <h2 className="text-white-pearl font-title text-xl font-semibold mb-4">
-                                    Habits ({unassignedHabits.length})
-                                </h2>
-                                <div className="space-y-2">
-                                    {unassignedHabits.map((item) => (
-                                        <TaskHabitSimpleView
-                                            key={`habit-${item.id}`}
-                                            title={item.name}
-                                            days={formatRepeatDays(
-                                                item.repeat_days,
-                                            )}
-                                            type="habit"
-                                            onEdit={() => {}}
-                                            onDelete={() =>
-                                                handleDeleteUnassigned(item)
-                                            }
-                                        />
-                                    ))}
-                                    {unassignedHabits.length === 0 && (
-                                        <p className="text-input-text text-sm">
-                                            No unassigned habits
-                                        </p>
-                                    )}
+                                {/* Habits Column */}
+                                <div>
+                                    <h2 className="text-white-pearl font-title text-xl font-semibold mb-4">
+                                        Habits ({unassignedHabits.length})
+                                    </h2>
+                                    <div className="space-y-2">
+                                        {unassignedHabits.map((item) => (
+                                            <TaskHabitSimpleView
+                                                key={`habit-${item.id}`}
+                                                title={item.name}
+                                                days={formatRepeatDays(
+                                                    item.repeat_days,
+                                                )}
+                                                type="habit"
+                                                onEdit={() => {}}
+                                                onDelete={() =>
+                                                    handleDeleteUnassigned(item)
+                                                }
+                                            />
+                                        ))}
+                                        {unassignedHabits.length === 0 && (
+                                            <p className="text-input-text text-sm">
+                                                No unassigned habits
+                                            </p>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </div>

@@ -4,6 +4,7 @@
  * Uses optimized batch queries with O(1) lookup maps.
  */
 
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Task, Habit } from "@/types/goal";
 import type { TaskEditData, HabitEditData } from "@/types/sidebar";
 import {
@@ -15,6 +16,48 @@ import {
 } from "@/utils/formatUtils";
 
 // ===== TYPES =====
+
+/** Log entry from task_logs / habit_logs */
+interface LogEntry {
+    completed: boolean;
+    date: string;
+}
+
+/** Raw goal row from Supabase */
+interface GoalRow {
+    id: number;
+    name: string;
+    description: string | null;
+    category: string;
+    status?: string;
+    color?: string;
+    target_date: string;
+    start_date?: string;
+    created_at?: string;
+}
+
+/** Raw task row from Supabase */
+interface TaskRow {
+    id: number;
+    goal_id: number;
+    name: string;
+    start_date: string | null;
+    end_date: string | null;
+}
+
+/** Raw habit row from Supabase */
+interface HabitRow {
+    id: number;
+    goal_id: number;
+    name: string;
+    start_date: string | null;
+    end_date: string | null;
+}
+
+/** Repeat day row */
+interface RepeatDayRow {
+    [key: string]: number | string;
+}
 
 /** Extended Goal with computed fields for UI display */
 export interface GoalWithDetails {
@@ -31,8 +74,8 @@ export interface GoalWithDetails {
     habits: Habit[];
     progress: number;
     totalLogs: number;
-    taskLogsMap: Map<number, any[]>;
-    habitLogsMap: Map<number, any[]>;
+    taskLogsMap: Map<number, LogEntry[]>;
+    habitLogsMap: Map<number, LogEntry[]>;
 }
 
 /** Formatted task for UI rendering */
@@ -78,7 +121,7 @@ function buildLookupMap<T>(
 
 /** Builds a Map grouping string values by a key field */
 function buildStringLookupMap(
-    items: any[] | null | undefined,
+    items: RepeatDayRow[] | null | undefined,
     keyField: string,
     valueField: string,
 ): Map<number, string[]> {
@@ -86,7 +129,7 @@ function buildStringLookupMap(
     items?.forEach((item) => {
         const key = item[keyField] as number;
         if (!map.has(key)) map.set(key, []);
-        map.get(key)!.push(item[valueField]);
+        map.get(key)!.push(item[valueField] as string);
     });
     return map;
 }
@@ -98,7 +141,7 @@ function buildStringLookupMap(
  * Builds lookup maps for O(1) access and calculates progress per goal.
  */
 export async function fetchAllGoalsData(
-    supabase: any,
+    supabase: SupabaseClient,
     userId: string,
 ): Promise<GoalWithDetails[]> {
     const { data: goalsData, error: goalsError } = await supabase
@@ -110,7 +153,7 @@ export async function fetchAllGoalsData(
 
     if (goalsError || !goalsData || goalsData.length === 0) return [];
 
-    const goalIds = goalsData.map((g: any) => g.id);
+    const goalIds = goalsData.map((g: GoalRow) => g.id);
 
     // Batch fetch tasks and habits
     const [{ data: allTasks }, { data: allHabits }] = await Promise.all([
@@ -126,8 +169,8 @@ export async function fetchAllGoalsData(
             .is("deleted_at", null),
     ]);
 
-    const taskIds = allTasks?.map((t: any) => t.id) || [];
-    const habitIds = allHabits?.map((h: any) => h.id) || [];
+    const taskIds = (allTasks as TaskRow[] | null)?.map((t) => t.id) || [];
+    const habitIds = (allHabits as HabitRow[] | null)?.map((h) => h.id) || [];
 
     // Batch fetch related data
     const [
@@ -163,30 +206,48 @@ export async function fetchAllGoalsData(
     ]);
 
     // Build lookup maps
-    const tasksByGoalId = buildLookupMap(allTasks, "goal_id");
-    const habitsByGoalId = buildLookupMap(allHabits, "goal_id");
+    const tasksByGoalId = buildLookupMap(
+        allTasks as TaskRow[] | null,
+        "goal_id",
+    );
+    const habitsByGoalId = buildLookupMap(
+        allHabits as HabitRow[] | null,
+        "goal_id",
+    );
     const taskRepeatDaysMap = buildStringLookupMap(
-        allTaskRepeatDays,
+        allTaskRepeatDays as RepeatDayRow[] | null,
         "task_id",
         "day",
     );
     const habitRepeatDaysMap = buildStringLookupMap(
-        allHabitRepeatDays,
+        allHabitRepeatDays as RepeatDayRow[] | null,
         "habit_id",
         "day",
     );
-    const taskLogsMap = buildLookupMap(allTaskLogs as any[], "task_id");
-    const habitLogsMap = buildLookupMap(allHabitLogs as any[], "habit_id");
+    const taskLogsMap = buildLookupMap(
+        allTaskLogs as (LogEntry & { task_id: number })[] | null,
+        "task_id",
+    );
+    const habitLogsMap = buildLookupMap(
+        allHabitLogs as (LogEntry & { habit_id: number })[] | null,
+        "habit_id",
+    );
 
-    return goalsData.map((goal: any) => {
+    return goalsData.map((goal: GoalRow) => {
         const goalTasks = tasksByGoalId.get(goal.id) || [];
         const goalHabits = habitsByGoalId.get(goal.id) || [];
 
-        const tasks: Task[] = goalTasks.map((task: any) => {
+        const tasks: Task[] = (goalTasks as TaskRow[]).map((task) => {
             const repeatDays = taskRepeatDaysMap.get(task.id) || [];
-            let logDate = null;
+            let logDate: string | null = null;
             if (!task.start_date && !task.end_date) {
-                const logs = taskLogsMap.get(task.id) || [];
+                const logs =
+                    (
+                        taskLogsMap as Map<
+                            number,
+                            (LogEntry & { task_id: number })[]
+                        >
+                    ).get(task.id) || [];
                 logDate = logs.length > 0 ? logs[0].date : null;
             }
             return {
@@ -200,7 +261,7 @@ export async function fetchAllGoalsData(
             };
         });
 
-        const habits: Habit[] = goalHabits.map((habit: any) => ({
+        const habits: Habit[] = (goalHabits as HabitRow[]).map((habit) => ({
             id: habit.id,
             name: habit.name,
             start_date: habit.start_date || "",
@@ -212,15 +273,17 @@ export async function fetchAllGoalsData(
         let completedLogs = 0;
 
         tasks.forEach((task) => {
-            const logs = taskLogsMap.get(task.id) || [];
+            const logs =
+                (taskLogsMap as Map<number, LogEntry[]>).get(task.id) || [];
             totalLogs += logs.length;
-            completedLogs += logs.filter((l: any) => l.completed).length;
+            completedLogs += logs.filter((l) => l.completed).length;
         });
 
         habits.forEach((habit) => {
-            const logs = habitLogsMap.get(habit.id) || [];
+            const logs =
+                (habitLogsMap as Map<number, LogEntry[]>).get(habit.id) || [];
             totalLogs += logs.length;
-            completedLogs += logs.filter((l: any) => l.completed).length;
+            completedLogs += logs.filter((l) => l.completed).length;
         });
 
         const progress =
@@ -240,8 +303,8 @@ export async function fetchAllGoalsData(
             habits,
             progress,
             totalLogs,
-            taskLogsMap,
-            habitLogsMap,
+            taskLogsMap: taskLogsMap as Map<number, LogEntry[]>,
+            habitLogsMap: habitLogsMap as Map<number, LogEntry[]>,
         };
     });
 }
@@ -283,7 +346,7 @@ export function calculateYearProgress(goals: GoalWithDetails[]): number {
 export function formatTaskForDisplay(
     task: Task,
     goalId: number,
-    taskLogsMap?: Map<number, any[]>,
+    taskLogsMap?: Map<number, LogEntry[]>,
 ): FormattedTask {
     let days: string | undefined;
     if (!task.start_date && !task.end_date && task.log_date) {
@@ -294,7 +357,7 @@ export function formatTaskForDisplay(
 
     const taskLogs = taskLogsMap?.get(task.id) || [];
     const allCompleted =
-        taskLogs.length > 0 && taskLogs.every((l: any) => l.completed);
+        taskLogs.length > 0 && taskLogs.every((l) => l.completed);
 
     const editData: TaskEditData = {
         id: task.id,
@@ -324,11 +387,11 @@ export function formatTaskForDisplay(
 export function formatHabitForDisplay(
     habit: Habit,
     goalId: number,
-    habitLogsMap?: Map<number, any[]>,
+    habitLogsMap?: Map<number, LogEntry[]>,
 ): FormattedHabit {
     const habitLogs = habitLogsMap?.get(habit.id) || [];
     const allCompleted =
-        habitLogs.length > 0 && habitLogs.every((l: any) => l.completed);
+        habitLogs.length > 0 && habitLogs.every((l) => l.completed);
 
     const editData: HabitEditData = {
         id: habit.id,

@@ -25,7 +25,6 @@ export default memo(function CalendarGrid({
     calendarDays,
     events = {},
     onDateSelect,
-    selectedDate,
     isToday,
     isSelected,
     getDateKey,

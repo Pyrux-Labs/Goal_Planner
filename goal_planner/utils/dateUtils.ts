@@ -17,11 +17,6 @@ export const getDateKey = (date: Date): string => {
 };
 
 /**
- * Alternative name for consistency with existing code
- */
-export const formatDateKey = getDateKey;
-
-/**
  * Checks if two dates represent the same calendar day.
  */
 export const isSameDay = (a: Date, b: Date): boolean => {

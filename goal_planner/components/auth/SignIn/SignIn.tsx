@@ -71,8 +71,19 @@ const SignIn = ({ onClose }: SignInProps) => {
                 return;
             }
 
-            // Success - redirect to dashboard
-            router.push(ROUTES.CALENDAR);
+            // Check if user has any goals — first-time users go to onboarding
+            const { count } = await supabase
+                .from("goals")
+                .select("id", { count: "exact", head: true })
+                .limit(1);
+
+            if (count === 0) {
+                window.location.href = ROUTES.ONBOARDING;
+                return;
+            }
+
+            // Returning user — go to calendar
+            window.location.href = ROUTES.CALENDAR;
         } catch (err) {
             setGeneralError("An unexpected error occurred. Please try again.");
         } finally {
