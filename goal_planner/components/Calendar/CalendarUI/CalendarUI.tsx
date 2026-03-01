@@ -37,10 +37,18 @@ export default function Calendar({
     const month = currentDate.getMonth();
 
     const monthName = useMemo(() => {
-        return new Date(year, month).toLocaleDateString("en-US", {
+        const d = new Date(year, month);
+        const monthOnly = d.toLocaleDateString("en-US", { month: "long" });
+        const monthYear = d.toLocaleDateString("en-US", {
             month: "long",
             year: "numeric",
         });
+        return (
+            <>
+                <span className="md:hidden">{monthOnly}</span>
+                <span className="hidden md:inline">{monthYear}</span>
+            </>
+        );
     }, [year, month]);
 
     // Navigate and notify parent in a single callback — no useEffect needed

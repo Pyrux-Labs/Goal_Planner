@@ -66,11 +66,13 @@ function LandingContent() {
                 <div className="relative z-10">
                     <div className="flex items-center justify-between px-4 md:px-8 py-4 text-white-pearl font-text">
                         <div className="flex items-center gap-8">
-                            <img
-                                src="icon.svg"
-                                alt="logo"
-                                className="w-8 h-8 md:w-auto md:h-auto"
-                            />
+                            <div className="w-8 h-8 md:w-10 md:h-10 flex-shrink-0">
+                                <img
+                                    src="icon.svg"
+                                    alt="logo"
+                                    className="w-full h-full"
+                                />
+                            </div>
                             <nav className="hidden md:flex gap-8 ml-12">
                                 <button
                                     onClick={() => scrollToSection(headerRef)}

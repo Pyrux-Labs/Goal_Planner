@@ -83,7 +83,8 @@ export default function CalendarWeeklyView({
         setMobileDay(next);
     }, [mobileDay]);
 
-    const monthTitle = currentDate.toLocaleDateString("en-US", {
+    // Month title based on today's date (not first visible day)
+    const monthTitle = new Date().toLocaleDateString("en-US", {
         month: "long",
         year: "numeric",
     });
@@ -94,7 +95,7 @@ export default function CalendarWeeklyView({
 
     return (
         <div
-            className={`flex-1 ml-0 md:ml-14 lg:ml-14 xl:ml-16 2xl:ml-20 mr-4 md:mr-7 p-2 md:p-6 pb-20 md:pb-6 transition-all duration-300 ${isModalOpen ? "xl:mr-72 2xl:mr-80" : ""}`}
+            className={`flex-1 ml-0 md:ml-14 lg:ml-14 xl:ml-16 2xl:ml-20 md:mr-7 p-2 md:p-6 pb-20 md:pb-6 transition-all duration-300 ${isModalOpen ? "xl:mr-72 2xl:mr-80" : ""}`}
         >
             <div className="w-full">
                 {/* Header - hidden on mobile, shown on md+ */}
@@ -127,12 +128,11 @@ export default function CalendarWeeklyView({
                     {/* Mobile header */}
                     <div className="flex items-center justify-between mb-4">
                         <h2
-                            className="text-lg font-bold font-title text-white-pearl flex-1 min-w-0 whitespace-nowrap overflow-hidden text-ellipsis mr-2"
+                            className="text-lg font-bold font-title text-white-pearl w-[6.5rem] flex-shrink-0 whitespace-nowrap overflow-hidden text-ellipsis mr-2"
                             suppressHydrationWarning
                         >
                             {mobileDay.toLocaleDateString("en-US", {
                                 month: "long",
-                                year: "numeric",
                             })}
                         </h2>
                         <div className="flex items-center gap-1 flex-shrink-0">

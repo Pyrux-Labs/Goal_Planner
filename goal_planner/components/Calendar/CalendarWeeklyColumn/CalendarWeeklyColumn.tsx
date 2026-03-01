@@ -63,7 +63,7 @@ export default memo(function CalendarWeeklyColumn({
             className={cn(
                 "w-full min-h-full",
                 "border-l border-line-gray first:border-l-0",
-                isToday && "bg-white/[0.03] ring-1 ring-white/10",
+                isToday && "bg-white/[0.03] ring-1 ring-white/10 rounded-lg",
             )}
         >
             <div className={cn("p-3")}>

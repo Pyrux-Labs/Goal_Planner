@@ -10,7 +10,7 @@ interface TopButton {
 }
 
 interface TopProps {
-    title?: string;
+    title?: React.ReactNode;
     buttons?: TopButton[];
     onPrevMonth?: () => void;
     onNextMonth?: () => void;
@@ -36,7 +36,7 @@ const Top = ({
             <div className="flex items-center gap-1 md:gap-4 min-w-0 flex-1">
                 {title && (
                     <h2
-                        className="text-lg md:text-3xl min-w-0 md:min-w-[17rem] font-bold font-title text-white-pearl whitespace-nowrap overflow-hidden text-ellipsis"
+                        className="text-lg md:text-3xl w-[6.5rem] md:w-auto md:min-w-[17rem] font-bold font-title text-white-pearl whitespace-nowrap overflow-hidden text-ellipsis flex-shrink-0"
                         suppressHydrationWarning
                     >
                         {title}
@@ -44,7 +44,7 @@ const Top = ({
                 )}
 
                 {showNavigation && (
-                    <div className="flex items-center gap-0.5 md:gap-2">
+                    <div className="flex items-center gap-0.5 md:gap-2 flex-shrink-0">
                         <button
                             onClick={onPrevMonth}
                             className="w-7 h-7 md:w-10 md:h-10 rounded-full hover:bg-input-bg/50 flex items-center justify-center transition-colors text-white-pearl"

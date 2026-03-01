@@ -64,13 +64,17 @@ const Navbar = () => {
     const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
     const [isLoggingOut, setIsLoggingOut] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
+    const mobileMenuRef = useRef<HTMLElement>(null);
 
     // Close menu on click outside
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
+            const target = e.target as Node;
             if (
                 menuRef.current &&
-                !menuRef.current.contains(e.target as Node)
+                !menuRef.current.contains(target) &&
+                (!mobileMenuRef.current ||
+                    !mobileMenuRef.current.contains(target))
             ) {
                 setIsProfileMenuOpen(false);
             }
@@ -184,7 +188,10 @@ const Navbar = () => {
             </aside>
 
             {/* Mobile bottom navigation */}
-            <nav className="fixed bottom-0 left-0 right-0 z-50 bg-deep-bg border-t border-input-bg md:hidden">
+            <nav
+                ref={mobileMenuRef}
+                className="fixed bottom-0 left-0 right-0 z-50 bg-deep-bg border-t border-input-bg md:hidden"
+            >
                 <div className="flex items-center justify-around h-16 px-2">
                     {navItems.map((item) => {
                         const isActive = pathname === item.path;

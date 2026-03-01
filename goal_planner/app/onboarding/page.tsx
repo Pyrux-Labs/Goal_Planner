@@ -1,13 +1,6 @@
 "use client";
 
-import {
-    useState,
-    useRef,
-    useEffect,
-    useCallback,
-    useMemo,
-    Suspense,
-} from "react";
+import { useState, useRef, useEffect, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import ErrorMessage from "@/components/ui/ErrorMessage/ErrorMessage";

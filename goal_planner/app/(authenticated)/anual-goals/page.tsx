@@ -11,7 +11,7 @@ import { useGoalDeletion } from "@/hooks/useGoalDeletion";
 import { formatGoalForDisplay } from "@/utils/goalDataUtils";
 import { ROUTES } from "@/lib/constants/routes";
 import { createClient } from "@/lib/supabase/client";
-import { formatRepeatDays, formatTime } from "@/utils/formatUtils";
+import { formatRepeatDays } from "@/utils/formatUtils";
 import TaskHabitColumn from "@/components/common/TaskHabitColumn/TaskHabitColumn";
 import type { TaskHabitItem } from "@/components/common/TaskHabitColumn/TaskHabitColumn";
 import {
@@ -34,8 +34,6 @@ interface UnassignedItem {
     id: number;
     name: string;
     repeat_days: string[];
-    start_time: string | null;
-    end_time: string | null;
     start_date: string | null;
     end_date: string | null;
     type: "task" | "habit";
@@ -84,12 +82,13 @@ export default function AnualGoalsPage() {
             if (!user) return;
 
             // Fetch tasks and habits without nested repeat_days to avoid FK detection issues
-            const [{ data: tasks }, { data: habits }] = await Promise.all([
+            const [
+                { data: tasks, error: tasksError },
+                { data: habits, error: habitsError },
+            ] = await Promise.all([
                 supabase
                     .from("tasks")
-                    .select(
-                        "id, name, start_time, end_time, start_date, end_date",
-                    )
+                    .select("id, name, start_date, end_date")
                     .eq("user_id", user.id)
                     .is("goal_id", null)
                     .is("deleted_at", null),
@@ -101,6 +100,11 @@ export default function AnualGoalsPage() {
                     .is("deleted_at", null),
             ]);
 
+            if (tasksError)
+                console.error("Error fetching unassigned tasks:", tasksError);
+            if (habitsError)
+                console.error("Error fetching unassigned habits:", habitsError);
+
             const taskIds = (tasks || []).map((t: { id: number }) => t.id);
             const habitIds = (habits || []).map((h: { id: number }) => h.id);
 
@@ -110,23 +114,23 @@ export default function AnualGoalsPage() {
                     taskIds.length > 0
                         ? supabase
                               .from("task_repeat_days")
-                              .select("task_id, day_of_week")
+                              .select("task_id, day")
                               .in("task_id", taskIds)
                         : Promise.resolve({
                               data: [] as {
                                   task_id: number;
-                                  day_of_week: string;
+                                  day: string;
                               }[],
                           }),
                     habitIds.length > 0
                         ? supabase
                               .from("habit_repeat_days")
-                              .select("habit_id, day_of_week")
+                              .select("habit_id, day")
                               .in("habit_id", habitIds)
                         : Promise.resolve({
                               data: [] as {
                                   habit_id: number;
-                                  day_of_week: string;
+                                  day: string;
                               }[],
                           }),
                 ]);
@@ -134,18 +138,18 @@ export default function AnualGoalsPage() {
             // Group repeat days by parent ID
             const taskDaysMap = new Map<number, string[]>();
             (taskRepeatDays || []).forEach(
-                (d: { task_id: number; day_of_week: string }) => {
+                (d: { task_id: number; day: string }) => {
                     const arr = taskDaysMap.get(d.task_id) || [];
-                    arr.push(d.day_of_week);
+                    arr.push(d.day);
                     taskDaysMap.set(d.task_id, arr);
                 },
             );
 
             const habitDaysMap = new Map<number, string[]>();
             (habitRepeatDays || []).forEach(
-                (d: { habit_id: number; day_of_week: string }) => {
+                (d: { habit_id: number; day: string }) => {
                     const arr = habitDaysMap.get(d.habit_id) || [];
-                    arr.push(d.day_of_week);
+                    arr.push(d.day);
                     habitDaysMap.set(d.habit_id, arr);
                 },
             );
@@ -155,8 +159,6 @@ export default function AnualGoalsPage() {
                     (t: {
                         id: number;
                         name: string;
-                        start_time: string | null;
-                        end_time: string | null;
                         start_date: string | null;
                         end_date: string | null;
                     }) => {
@@ -165,8 +167,6 @@ export default function AnualGoalsPage() {
                             id: t.id,
                             name: t.name,
                             repeat_days: repeatDays,
-                            start_time: t.start_time,
-                            end_time: t.end_time,
                             start_date: t.start_date,
                             end_date: t.end_date,
                             type: "task" as const,
@@ -186,8 +186,6 @@ export default function AnualGoalsPage() {
                             id: h.id,
                             name: h.name,
                             repeat_days: repeatDays,
-                            start_time: null,
-                            end_time: null,
                             start_date: h.start_date,
                             end_date: h.end_date,
                             type: "habit" as const,
@@ -257,15 +255,14 @@ export default function AnualGoalsPage() {
                 .map((item) => ({
                     title: item.name,
                     days: formatRepeatDays(item.repeat_days),
-                    time: formatTime(item.start_time),
                     editData: {
                         id: item.id,
                         goal_id: null,
                         name: item.name,
                         start_date: item.start_date,
                         end_date: item.end_date,
-                        start_time: item.start_time,
-                        end_time: item.end_time,
+                        start_time: null,
+                        end_time: null,
                         repeat_days: item.repeat_days,
                         is_repeating: item.is_repeating,
                     },
@@ -358,33 +355,31 @@ export default function AnualGoalsPage() {
                             No unassigned tasks or habits found.
                         </div>
                     ) : (
-                        <div className="rounded-3xl border border-input-bg bg-modal-bg p-4 md:p-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12">
-                                {/* Tasks Column */}
-                                <TaskHabitColumn
-                                    type="task"
-                                    items={unassignedTaskItems}
-                                    onAdd={fetchUnassigned}
-                                    onDelete={(index) => {
-                                        const item = unassignedItems.filter(
-                                            (i) => i.type === "task",
-                                        )[index];
-                                        if (item) handleDeleteUnassigned(item);
-                                    }}
-                                />
-                                {/* Habits Column */}
-                                <TaskHabitColumn
-                                    type="habit"
-                                    items={unassignedHabitItems}
-                                    onAdd={fetchUnassigned}
-                                    onDelete={(index) => {
-                                        const item = unassignedItems.filter(
-                                            (i) => i.type === "habit",
-                                        )[index];
-                                        if (item) handleDeleteUnassigned(item);
-                                    }}
-                                />
-                            </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12">
+                            {/* Tasks Column */}
+                            <TaskHabitColumn
+                                type="task"
+                                items={unassignedTaskItems}
+                                onAdd={fetchUnassigned}
+                                onDelete={(index) => {
+                                    const item = unassignedItems.filter(
+                                        (i) => i.type === "task",
+                                    )[index];
+                                    if (item) handleDeleteUnassigned(item);
+                                }}
+                            />
+                            {/* Habits Column */}
+                            <TaskHabitColumn
+                                type="habit"
+                                items={unassignedHabitItems}
+                                onAdd={fetchUnassigned}
+                                onDelete={(index) => {
+                                    const item = unassignedItems.filter(
+                                        (i) => i.type === "habit",
+                                    )[index];
+                                    if (item) handleDeleteUnassigned(item);
+                                }}
+                            />
                         </div>
                     )}
                 </div>
