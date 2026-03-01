@@ -4,7 +4,10 @@ import { createClient } from "@/lib/supabase/client";
 import InputField from "@/components/ui/InputField/InputField";
 import ErrorMessage from "@/components/ui/ErrorMessage/ErrorMessage";
 import { useFetchGoals } from "@/hooks/useFetchGoals";
-import { getTodayDateString } from "@/lib/constants/validation";
+import {
+    getTodayDateString,
+    validateRepeatDaysInRange,
+} from "@/lib/constants/validation";
 import type { TaskEditData } from "@/types/sidebar";
 import { DAYS } from "@/lib/constants/days";
 
@@ -116,6 +119,24 @@ const AddTask = ({
         ) {
             setDateRangeError("End date must be after start date");
             hasErrors = true;
+        }
+
+        if (
+            taskType === "repeating" &&
+            startDate &&
+            endDate &&
+            selectedDays.length > 0 &&
+            endDate >= startDate
+        ) {
+            const rangeError = validateRepeatDaysInRange(
+                startDate,
+                endDate,
+                selectedDays,
+            );
+            if (rangeError) {
+                setDateRangeError(rangeError);
+                hasErrors = true;
+            }
         }
 
         if (taskType === "one-time" && !selectedDate && !inline) {

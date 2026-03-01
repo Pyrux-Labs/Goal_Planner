@@ -3,7 +3,7 @@ import type { CalendarEvent } from "@/types/calendar";
 import { DEFAULT_EVENT_COLOR } from "@/lib/constants/colors";
 import { isSameDay } from "@/utils/dateUtils";
 import CalendarWeeklyGoalGroup from "../CalendarWeeklyGoalGroup/CalendarWeeklyGoalGroup";
-import { useMemo } from "react";
+import { useMemo, memo } from "react";
 
 interface CalendarWeeklyColumnProps {
     day: Date;
@@ -13,7 +13,7 @@ interface CalendarWeeklyColumnProps {
     goals?: { id: number; name: string }[];
 }
 
-export default function CalendarWeeklyColumn({
+export default memo(function CalendarWeeklyColumn({
     day,
     dayName,
     events,
@@ -61,7 +61,7 @@ export default function CalendarWeeklyColumn({
     return (
         <div
             className={cn(
-                "w-full h-full",
+                "w-full min-h-full",
                 "border-l border-line-gray first:border-l-0",
                 isToday && "bg-white/[0.03] ring-1 ring-white/10",
             )}
@@ -116,4 +116,4 @@ export default function CalendarWeeklyColumn({
             </div>
         </div>
     );
-}
+});

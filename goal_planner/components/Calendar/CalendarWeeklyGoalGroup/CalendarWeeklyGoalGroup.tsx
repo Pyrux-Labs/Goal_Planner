@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { memo } from "react";
 import type { CalendarEvent } from "@/types/calendar";
 import { DEFAULT_EVENT_COLOR } from "@/lib/constants/colors";
 import { formatTimeRange } from "@/utils/formatUtils";
@@ -10,7 +11,7 @@ interface CalendarWeeklyGoalGroupProps {
     onToggle?: (event: CalendarEvent) => void;
 }
 
-export default function CalendarWeeklyGoalGroup({
+export default memo(function CalendarWeeklyGoalGroup({
     goalName,
     goalColor,
     events,
@@ -83,4 +84,4 @@ export default function CalendarWeeklyGoalGroup({
             </div>
         </div>
     );
-}
+});

@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Home, Target, BarChart3, LogOut, User, Settings } from "lucide-react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import icon from "@/public/icon.svg";
 import { createClient } from "@/lib/supabase/client";
 import Modal from "@/components/ui/Modal/Modal";
@@ -60,7 +60,6 @@ function UserAvatar({ size = "md" }: { size?: "sm" | "md" }) {
 
 const Navbar = () => {
     const pathname = usePathname();
-    const router = useRouter();
     const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
     const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
     const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -89,8 +88,8 @@ const Navbar = () => {
         await supabase.auth.signOut();
         setIsLogoutModalOpen(false);
         setIsLoggingOut(false);
-        router.push(ROUTES.LANDING);
-    }, [router]);
+        window.location.href = ROUTES.LANDING;
+    }, []);
 
     return (
         <>

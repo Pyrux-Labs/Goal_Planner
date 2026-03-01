@@ -3,6 +3,16 @@
  * Used across GoalCard, anual-goals, onboarding, and GoalForm components.
  */
 
+/**
+ * Parses a date string (YYYY-MM-DD) as local time to avoid UTC offset issues.
+ * Using `new Date("2026-03-07")` parses as UTC midnight, which shifts days
+ * in non-UTC timezones. This helper avoids that.
+ */
+export const parseLocalDate = (dateStr: string): Date => {
+    const [y, m, d] = dateStr.split("-").map(Number);
+    return new Date(y, m - 1, d);
+};
+
 /** Mapping of full day names to abbreviated forms */
 export const DAY_MAP: Record<string, string> = {
     monday: "Mon",
@@ -41,12 +51,13 @@ export const formatTime = (time: string | null): string | undefined => {
 
 /**
  * Formats a date string to short uppercase format (e.g., "15 JAN").
- * @param date - ISO date string
+ * Uses local date parsing to avoid UTC timezone offset issues.
+ * @param date - ISO date string (YYYY-MM-DD)
  * @returns Formatted date or undefined if null
  */
 export const formatDateShort = (date: string | null): string | undefined => {
     if (!date) return undefined;
-    const d = new Date(date);
+    const d = parseLocalDate(date);
     const day = d.getDate();
     const month = d
         .toLocaleDateString("en-US", { month: "short" })
@@ -56,11 +67,12 @@ export const formatDateShort = (date: string | null): string | undefined => {
 
 /**
  * Formats a date to long format (e.g., "Jan 15, 2026").
- * @param date - ISO date string
+ * Uses local date parsing to avoid UTC timezone offset issues.
+ * @param date - ISO date string (YYYY-MM-DD)
  * @returns Formatted date string
  */
 export const formatTargetDate = (date: string): string => {
-    const d = new Date(date);
+    const d = parseLocalDate(date);
     return d.toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",

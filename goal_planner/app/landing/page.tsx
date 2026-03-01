@@ -8,25 +8,28 @@ import Button from "@/components/ui/Button/Button";
 import SignIn from "@/components/auth/SignIn/SignIn";
 import { ROUTES } from "@/lib/constants/routes";
 
+/**
+ * Tiny Suspense-wrapped component that reads searchParams.
+ * Keeps the Suspense boundary minimal so the rest of the page
+ * never flashes a fallback on F5 / hard refresh.
+ */
+function SignInAutoOpener({ onOpen }: { onOpen: () => void }) {
+    const searchParams = useSearchParams();
+    useEffect(() => {
+        if (searchParams.get("signin") === "true") {
+            onOpen();
+        }
+    }, [searchParams, onOpen]);
+    return null;
+}
+
 function LandingContent() {
     const [showSignIn, setShowSignIn] = useState(false);
-    const searchParams = useSearchParams();
 
     // Refs for smooth scrolling
     const headerRef = useRef(null);
     const featuresRef = useRef(null);
     const footerRef = useRef(null);
-
-    // Note: Middleware already handles redirecting authenticated users to /calendar,
-    // so no client-side auth check is needed here.
-
-    // Check if should auto-open sign in modal
-    useEffect(() => {
-        const shouldShowSignIn = searchParams.get("signin") === "true";
-        if (shouldShowSignIn) {
-            setShowSignIn(true);
-        }
-    }, [searchParams]);
 
     // Smooth scroll functions
     const scrollToSection = (ref: React.RefObject<HTMLElement | null>) => {
@@ -249,21 +252,30 @@ function LandingContent() {
                 {/* Copyright */}
                 <div className="mt-6 text-center">
                     <p className="font-text text-sm text-white-pearl">
-                        © 2026 GoalPlanner. All rights reserved.
+                        © 2026 GoalPlanner. All rights reserved. Designed by{" "}
+                        <a
+                            href="https://pyrux.com.ar"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="underline hover:text-deep-bg transition-colors"
+                        >
+                            Pyrux
+                        </a>
                     </p>
                 </div>
             </footer>
 
             {/* SignIn Modal */}
             {showSignIn && <SignIn onClose={() => setShowSignIn(false)} />}
+
+            {/* Suspense only around searchParams reader — no flash */}
+            <Suspense fallback={null}>
+                <SignInAutoOpener onOpen={() => setShowSignIn(true)} />
+            </Suspense>
         </div>
     );
 }
 
 export default function Landing() {
-    return (
-        <Suspense fallback={<div className="min-h-screen bg-deep-bg" />}>
-            <LandingContent />
-        </Suspense>
-    );
+    return <LandingContent />;
 }

@@ -33,9 +33,11 @@ export default function CalendarPage() {
     }, [hasMounted]);
     const [allEvents, setAllEvents] = useState<CalendarEvent[]>([]);
     const [goals, setGoals] = useState<{ id: number; name: string }[]>([]);
-    const [loadedYearRange, setLoadedYearRange] = useState<{
-        start: number;
-        end: number;
+    const [loadedRange, setLoadedRange] = useState<{
+        startYear: number;
+        startMonth: number;
+        endYear: number;
+        endMonth: number;
     } | null>(null);
     const [currentYear, setCurrentYear] = useState<number>(
         new Date().getFullYear(),
@@ -48,26 +50,27 @@ export default function CalendarPage() {
     // prevent concurrent fetches
     const isFetchingRef = useRef(false);
 
-    // Fetch 3 years (previous, current, next)
-    // ~5MB payload is acceptable for instant navigation and edit optimization
-    const fetchThreeYears = useCallback(
-        async (centerYear: number, showLoading = true) => {
+    // Fetch ±1 month around center (3 months total, ~90 days vs ~1095 with 3 years)
+    const fetchEvents = useCallback(
+        async (centerYear: number, centerMonth: number, showLoading = true) => {
             // prevent concurrent calls
             if (isFetchingRef.current) return;
             isFetchingRef.current = true;
             if (showLoading) setIsLoading(true);
 
             const supabase = createClient();
-            const startYear = centerYear - 1;
-            const endYear = centerYear + 1;
+
+            // ±1 month: prev month 1st → next month last day
+            const startDate = new Date(centerYear, centerMonth - 1, 1);
+            const endDate = new Date(centerYear, centerMonth + 2, 0); // day 0 of month+2 = last day of month+1
+
+            const p_start = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, "0")}-01`;
+            const p_end = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, "0")}-${String(endDate.getDate()).padStart(2, "0")}`;
 
             try {
                 const { data, error } = await supabase.rpc(
                     "get_user_events_current_month",
-                    {
-                        p_start: `${startYear}-01-01`,
-                        p_end: `${endYear}-12-31`,
-                    },
+                    { p_start, p_end },
                 );
 
                 if (error) {
@@ -82,9 +85,14 @@ export default function CalendarPage() {
                       ? [data]
                       : [];
                 setAllEvents(eventsData || []);
-                setLoadedYearRange({ start: startYear, end: endYear });
+                setLoadedRange({
+                    startYear: startDate.getFullYear(),
+                    startMonth: startDate.getMonth(),
+                    endYear: endDate.getFullYear(),
+                    endMonth: endDate.getMonth(),
+                });
             } catch (err) {
-                console.error("Unexpected error in fetchThreeYears:", err);
+                console.error("Unexpected error in fetchEvents:", err);
             } finally {
                 isFetchingRef.current = false;
                 setIsLoading(false);
@@ -113,20 +121,22 @@ export default function CalendarPage() {
 
     // Initial fetch on mount
     useEffect(() => {
-        fetchThreeYears(new Date().getFullYear());
+        const now = new Date();
+        fetchEvents(now.getFullYear(), now.getMonth());
         fetchGoals();
-    }, [fetchThreeYears, fetchGoals]);
+    }, [fetchEvents, fetchGoals]);
 
-    // Re-fetch when year is out of range
+    // Re-fetch when month navigates outside loaded range
     useEffect(() => {
-        if (
-            loadedYearRange &&
-            (currentYear < loadedYearRange.start ||
-                currentYear > loadedYearRange.end)
-        ) {
-            fetchThreeYears(currentYear);
+        if (loadedRange) {
+            const current = currentYear * 12 + currentMonth;
+            const start = loadedRange.startYear * 12 + loadedRange.startMonth;
+            const end = loadedRange.endYear * 12 + loadedRange.endMonth;
+            if (current < start || current > end) {
+                fetchEvents(currentYear, currentMonth);
+            }
         }
-    }, [currentYear, loadedYearRange, fetchThreeYears]);
+    }, [currentYear, currentMonth, loadedRange, fetchEvents]);
 
     // Normalize colors: grey for events without a goal
     const normalizedAllEvents = useMemo(
@@ -189,13 +199,13 @@ export default function CalendarPage() {
     }, []);
 
     const handleSuccess = useCallback(() => {
-        fetchThreeYears(currentYear, false);
+        fetchEvents(currentYear, currentMonth, false);
         closeModal();
-    }, [currentYear, fetchThreeYears, closeModal]);
+    }, [currentYear, currentMonth, fetchEvents, closeModal]);
     //Implement refresh data functionality
     const handleRefresh = useCallback(() => {
-        fetchThreeYears(currentYear, false);
-    }, [currentYear, fetchThreeYears]);
+        fetchEvents(currentYear, currentMonth, false);
+    }, [currentYear, currentMonth, fetchEvents]);
 
     const handleToggleWeek = useCallback(() => {
         setIsWeekView((prev) => !prev);

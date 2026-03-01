@@ -10,126 +10,45 @@
 
 ---
 
-## 🎯 Goal Planner Alpha 1.0
+### 💾 Sugerencias de Optimización de Base de Datos
 
-### ✅ Funcionalidad de Metas
+Las siguientes queries se ejecutan con frecuencia y se beneficiarían de índices compuestos:
 
-- [x] Crear nueva meta (GoalForm + new-goal page)
-- [x] Editar meta (edit-goal page con GoalForm precargado)
-- [x] Eliminar meta con cascading deletes (deleteGoalWithRelatedData)
-- [x] Visualización de metas en anual-goals con filtros y stats
-- [x] Modal de confirmación para acciones destructivas (ConfirmModal)
+```sql
+-- Índice para buscar tareas sin goal (pestaña Unassigned)
+CREATE INDEX IF NOT EXISTS idx_tasks_user_no_goal
+ON tasks (user_id) WHERE goal_id IS NULL AND deleted_at IS NULL;
 
-### 📅 Funcionalidad del Calendario
+-- Índice para buscar hábitos sin goal (pestaña Unassigned)
+CREATE INDEX IF NOT EXISTS idx_habits_user_no_goal
+ON habits (user_id) WHERE goal_id IS NULL AND deleted_at IS NULL;
 
-- [x] Vista mensual con navegación (CalendarGrid + CalendarUI)
-- [x] Mostrar eventos del día con sidebar (CalendarInfo + CalendarCard)
-- [x] Editar eventos del día desde sidebar (CalendarInfoEdit → SidebarContent)
-- [x] Marcar tareas/hábitos como completados (checkbox en CalendarCard)
-- [x] Vista semanal del calendario [JUANMA]
+-- Índice para buscar goals activos de un usuario
+CREATE INDEX IF NOT EXISTS idx_goals_user_active
+ON goals (user_id) WHERE deleted_at IS NULL;
 
-### ✏️ Gestión de Tareas y Hábitos
+-- Índice para conteo rápido de goals (usado en OAuth callback)
+CREATE INDEX IF NOT EXISTS idx_goals_user_id
+ON goals (user_id);
 
-- [x] Agregar tarea con repeat days, fecha específica o rango (AddTask)
-- [x] Editar tarea desde sidebar y desde GoalCard inline
-- [x] Eliminar tarea con logs futuros (deleteTaskWithFutureLogs)
-- [x] Agregar hábito con repeat days y rango de fechas (AddHabit)
-- [x] Editar hábito desde sidebar y desde GoalCard inline
-- [x] Eliminar hábito con logs futuros (deleteHabitWithFutureLogs)
-- [x] Tareas/hábitos completados aparecen tachados y al final de la lista
-- [x] Editar tarea/hábito desde GoalCard con modal pre-cargado (misma animación que "Add")
+-- Índice para task_repeat_days por task_id (join frecuente)
+CREATE INDEX IF NOT EXISTS idx_task_repeat_days_task_id
+ON task_repeat_days (task_id);
 
-### 🎨 UX/UI Esenciales
+-- Índice para habit_repeat_days por habit_id (join frecuente)
+CREATE INDEX IF NOT EXISTS idx_habit_repeat_days_habit_id
+ON habit_repeat_days (habit_id);
 
-- [x] **Sistema de toasts** - Feedback visual para acciones exitosas y errores (reemplazó `alert()` y `window.confirm()`) [GINO]
-- [x] **Estados de carga consistentes** - Skeletons/spinners en todas las páginas (anual-goals tiene spinner, pero otras no) [GINO]
-- [x] Estados vacíos con mensajes claros
-- [x] **Validación de formularios** - Validación compartida desde `validation.ts` en register, change-password y SignIn [GINO/JUANMA]
-- [x] Modal de confirmación reutilizable
+-- Índice para task_logs por rango de fecha (calendar view)
+CREATE INDEX IF NOT EXISTS idx_task_logs_date
+ON task_logs (date);
 
-### 🔐 Autenticación y Usuario
+-- Índice para habit_logs por rango de fecha (calendar view)
+CREATE INDEX IF NOT EXISTS idx_habit_logs_date
+ON habit_logs (date);
+```
 
-- [x] Login / Register / Forgot Password / Change Password
-- [x] Verificación de email con OTP
-- [x] Protección de rutas (middleware en proxy.ts)
-- [x] **Logout funcional** - Implementado en navbar con menú desplegable y confirmación modal [JUANMA]
-- [x] **Página de Settings** - Incluye Danger Zone con eliminación de cuenta y confirmación modal [JUANMA]
-- [x] **Eliminar debug-auth page** - Eliminada; funcionalidad de borrar cuenta movida a Settings [JUANMA]
-
-### 🐛 Fixes Pendientes
-
-- [x] Página 404 (not-found.tsx)
-- [x] **new-goal usa delete simple** - `deleteGoalAndRelated()` en new-goal/page.tsx no usa `deleteGoalWithRelatedData` (puede dejar datos huérfanos) [GINO]
-- [x] **keepLoggedIn en SignIn** - Eliminado (era no-op, Supabase maneja sesión automáticamente) [REFACTOR]
-- [x] **Google Auth buttons** - OAuth con Google funcional, redirige al calendario [REFACTOR]
-- [x] **Missing useEffect deps** - `fetchGoals` no está en dependency array en AddTask y onboarding [GINO]
-- [x] **`change-password` refresh_token** - Ahora usa `exchangeCodeForSession` con fallback a `setSession` y chequeo de sesión existente [REFACTOR]
-- [x] **Google OAuth routing** - Creada ruta `/auth/callback` para intercambio PKCE; register → onboarding, login → calendar; descarga avatar a Supabase Storage [REFACTOR]
-- [x] **Register → Onboarding** - Redirect corregido: chequea `data.session` después de signUp para determinar si ir a onboarding o verify [REFACTOR]
-
-### 🆕 Nuevas Features (Implementadas)
-
-- [x] **Landing hero fullscreen ≥1440px** - `min-[1440px]:min-h-screen` en header de landing page
-- [x] **Weekly view today highlight** - Background `bg-vibrant-orange/5` en columna del día actual
-- [x] **Disable out-of-month days** - CalendarCard deshabilitado con `cursor-default`, sin hover/click para días fuera del mes
-- [x] **No-goal grey color** - Eventos sin goal_id ahora usan color gris (#6b7280) en vez del color por defecto
-- [x] **Task time range HH:MM-HH:MM** - `formatTimeRange()` muestra rango de horas en CalendarInfo y CalendarWeeklyGoalGroup
-- [x] **Completed goal dark green** - GoalCard usa `COMPLETED_GOAL_COLOR` (#2d5a3d) en vez de `bg-green-500`
-- [x] **Edit log-only sidebar** - `EditTaskLog`/`EditHabitLog` para editar solo el log (fecha/hora) desde sidebar del calendario
-- [x] **Optional date for inline tasks** - AddTask inline (GoalCard) no requiere fecha para tareas one-time
-- [x] **Unassigned tab** - Nuevo filtro "Unassigned" en anual-goals que muestra tareas/hábitos sin goal en dos columnas
-- [x] **Bulk delete buttons** - Settings con 3 botones destructivos (Delete All Tasks, Habits, Goals) + confirmación
-- [x] **deleteTaskCompletely/deleteHabitCompletely** - Funciones que eliminan ALL logs + repeat_days + parent record
-
-### 📱 Responsive Design
-
-- [x] **Mobile navbar** - Bottom navigation bar en mobile, sidebar desktop (`md:` breakpoint) [GINO]
-- [x] **Calendario responsive** - CalendarUI márgenes adaptativos, padding para mobile nav [GINO]
-- [x] **GoalCards responsive** - Layout flex-col/flex-row, tamaños adaptativos [GINO]
-- [x] **GoalCardSkeleton responsive** - Coincide con GoalCard responsive [GINO]
-- [x] **GoalForm responsive** - Grids adaptativos (4→8 cols categorías, 1→2/3 cols campos) [GINO]
-- [x] **Sidebars responsive** - Fullscreen en mobile, tamaños normales en desktop [GINO]
-- [x] **TaskHabitColumn responsive** - Anchos fluidos con max-width [GINO]
-- [x] **TaskHabitSimpleView responsive** - Anchos fluidos, alturas adaptativos [GINO]
-- [x] **Pages responsive** - Márgenes adaptativos en anual-goals, new-goal, edit-goal, onboarding [GINO]
-- [x] **StepHeader responsive** - Texto adaptativo (3xl→6xl) [GINO]
-- [x] **Landing page desktop-only logic removed** - CTA unificado, login visible en mobile [GINO]
-- [x] **Statistics bar responsive** - Layout flex-col en mobile, inline en desktop [GINO]
-
-### 🔧 Refactoring & Performance (Completado)
-
-- [x] **Extraer `goalDataUtils.ts`** - Shared data fetching/formatting (~150 líneas de duplicación eliminadas) [GINO]
-- [x] **Crear `useGoalsData` hook** - Hook reutilizable para fetching/estado de metas [GINO]
-- [x] **Crear `useGoalDeletion` hook** - Hook reutilizable para lógica de eliminación [GINO]
-- [x] **Refactorizar `anual-goals`** - Usa hooks compartidos, ~250 líneas eliminadas [GINO]
-- [x] **Refactorizar `onboarding`** - Usa hooks compartidos, ~200 líneas eliminadas [GINO]
-- [x] **Extraer `EventItem` component** - Componente memoizado fuera de CalendarInfo (performance) [GINO]
-- [x] **Fix SidebarContent** - Retornaba `undefined` en daily-analytics/weekly-stats, ahora retorna `null` [GINO]
-- [x] **Fix Settings component name** - `settings` → `Settings` (convención React) [GINO]
-- [x] **Memoizar category icon lookup** - `useMemo` en GoalCard para búsqueda O(1) [GINO]
-- [x] **Centralizar rutas** - `routes.ts` con ROUTES, PUBLIC_ROUTES, AUTH_ONLY_ROUTES (elimina strings hardcodeados en 15+ archivos) [REFACTOR]
-- [x] **Validación compartida** - `validateEmail()`, `validatePassword()`, `validatePasswordMatch()` en `validation.ts` [REFACTOR]
-- [x] **ErrorMessage reutilizable** - Componente con 3 variantes (field/general/block), reemplaza ~12 inline error displays [REFACTOR]
-- [x] **Colores consolidados** - `GOAL_COLORS`, `DEFAULT_EVENT_COLOR` en `colors.ts`; `orange-hover` en Tailwind config [REFACTOR]
-- [x] **Performance CalendarCard** - `React.memo()` wrapper, `useRef` en useToggleEvent/CalendarInfo para evitar cascade re-renders [REFACTOR]
-- [x] **CalendarGrid memoización** - Envuelto con `React.memo` para reducir re-renders [REFACTOR]
-- [x] **UserAvatar caching** - Creado `UserContext` con `UserProvider`; Navbar usa `useUser()` hook en vez de `getUser()` en cada mount [REFACTOR]
-- [x] **Fix CSS white-pearl** - Valor HSL inválido 189% → 89% [REFACTOR]
-- [x] **Fix sign-out on delete** - Se agrega `signOut()` antes de redirect en settings [REFACTOR]
-- [x] **Eliminar términos y condiciones** - Checkbox y lógica removidos de register [REFACTOR]
-- [x] **Landing page simplificada** - Eliminada lógica redundante de auth client-side (middleware se encarga) [REFACTOR]
-- [x] **"use client" limpio** - Eliminado de not-found.tsx y authenticated layout [REFACTOR]
-- [x] **UserAvatar caching** - Creado `UserContext` con `UserProvider`; Navbar usa `useUser()` hook — lee `profile_picture` y `fullname` de tabla `users` [REFACTOR]
-- [x] **CalendarGrid memoización** - Envuelto con `React.memo` para reducir re-renders de celdas [REFACTOR]
-
-### 🧪 Testing y QA
-
-- [x] **Probar flujo completo** - Registro → Onboarding → Crear meta → Agregar tareas → Calendario → Completar
-- [ ] **Verificar persistencia** - Que todos los datos se guarden y carguen correctamente
-- [x] **Revisar consistencia visual** - Colores, tipografía, spacing (refactoring: colores unificados, ErrorMessage component, empty states)
-- [x] **Performance** - Re-render cascade fix (useRef pattern), CalendarCard memo, callback deps optimizadas
-
----
+> **Nota (resuelta):** La función RPC `get_user_events_current_month` fue optimizada con CTEs para pre-agregar `repeat_days` (elimina subqueries correlacionadas). Se agregaron índices compuestos `task_logs(task_id, date)` y `habit_logs(habit_id, date)` para los JOINs internos, más `tasks(user_id)` y `habits(user_id)` para el filtro `WHERE user_id = auth.uid()`. PostgreSQL **NO** crea índices automáticos en columnas FK — solo en PK/UNIQUE. Ver `supabase_optimization.sql` para el SQL completo. El cliente ahora pasa rangos de ~3 meses (±1 mes) en vez de 3 años (~12x reducción de payload).
 
 ## 📊 Goal Planner Beta 1.0
 

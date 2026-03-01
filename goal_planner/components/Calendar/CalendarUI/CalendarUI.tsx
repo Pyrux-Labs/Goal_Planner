@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useCallback } from "react";
 import CalendarGrid from "../CalendarGrid/CalendarGrid";
 import Top from "../../Layout/Top/Top";
 import { IoMdTime } from "react-icons/io";
@@ -33,17 +33,8 @@ export default function Calendar({
 }: CalendarProps) {
     const [currentDate, setCurrentDate] = useState(new Date());
 
-    const { year, month } = useMemo(() => {
-        return {
-            year: currentDate.getFullYear(),
-            month: currentDate.getMonth(),
-        };
-    }, [currentDate]);
-
-    // Notificar al componente padre cuando cambia el mes
-    useEffect(() => {
-        onMonthChange?.(year, month);
-    }, [year, month, onMonthChange]);
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
 
     const monthName = useMemo(() => {
         return new Date(year, month).toLocaleDateString("en-US", {
@@ -51,6 +42,15 @@ export default function Calendar({
             year: "numeric",
         });
     }, [year, month]);
+
+    // Navigate and notify parent in a single callback — no useEffect needed
+    const navigateMonth = useCallback(
+        (newDate: Date) => {
+            setCurrentDate(newDate);
+            onMonthChange?.(newDate.getFullYear(), newDate.getMonth());
+        },
+        [onMonthChange],
+    );
 
     const calendarDays = useMemo(() => {
         const firstDayOfMonth = new Date(year, month, 1);
@@ -97,17 +97,17 @@ export default function Calendar({
         return days;
     }, [year, month]);
 
-    const handlePrevMonth = () => {
-        setCurrentDate(new Date(year, month - 1));
-    };
+    const handlePrevMonth = useCallback(() => {
+        navigateMonth(new Date(year, month - 1));
+    }, [year, month, navigateMonth]);
 
-    const handleNextMonth = () => {
-        setCurrentDate(new Date(year, month + 1));
-    };
+    const handleNextMonth = useCallback(() => {
+        navigateMonth(new Date(year, month + 1));
+    }, [year, month, navigateMonth]);
 
-    const handleToday = () => {
-        setCurrentDate(new Date());
-    };
+    const handleToday = useCallback(() => {
+        navigateMonth(new Date());
+    }, [navigateMonth]);
 
     const isToday = (date: Date) => isSameDay(date, new Date());
 

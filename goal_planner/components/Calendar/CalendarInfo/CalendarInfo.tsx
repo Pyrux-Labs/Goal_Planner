@@ -58,7 +58,18 @@ const EventItem = memo(function EventItem({
                 />
             )}
 
-            <div className={`flex-1 min-w-0 ${isHabit ? "text-right" : ""}`}>
+            <div
+                className={`flex-1 min-w-0 ${isHabit ? "text-right" : ""} cursor-pointer select-none`}
+                onClick={() => !isUpdating && onToggle(event)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                    if ((e.key === "Enter" || e.key === " ") && !isUpdating) {
+                        e.preventDefault();
+                        onToggle(event);
+                    }
+                }}
+            >
                 <div
                     className={`text-sm truncate ${event.completed ? "line-through text-white-pearl/25" : "text-white-pearl"}`}
                 >

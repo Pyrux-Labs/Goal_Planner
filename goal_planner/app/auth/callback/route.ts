@@ -105,8 +105,19 @@ export async function GET(request: Request) {
         }
     }
 
-    // New users → onboarding, existing users → calendar
+    // New users → onboarding
     if (isNewUser) {
+        return NextResponse.redirect(`${origin}${ROUTES.ONBOARDING}`);
+    }
+
+    // Existing users who never completed onboarding (0 goals) → onboarding
+    const { count } = await supabase
+        .from("goals")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .is("deleted_at", null);
+
+    if (count === 0) {
         return NextResponse.redirect(`${origin}${ROUTES.ONBOARDING}`);
     }
 

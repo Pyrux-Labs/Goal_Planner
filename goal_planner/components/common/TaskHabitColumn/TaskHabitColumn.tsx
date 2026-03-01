@@ -18,7 +18,7 @@ export interface TaskHabitItem {
 interface TaskHabitColumnProps {
     type: "task" | "habit";
     items?: TaskHabitItem[];
-    goalId: number;
+    goalId?: number;
     onAdd?: () => void;
     onDelete: (index: number) => void;
 }

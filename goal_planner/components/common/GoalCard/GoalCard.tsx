@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { useState, useMemo } from "react";
+import { useState, useMemo, memo } from "react";
 import TaskHabitColumn from "../TaskHabitColumn/TaskHabitColumn";
 import DropdownMenu from "../DropdownMenu/DropdownMenu";
 import { categories } from "@/lib/constants/categories";
@@ -24,7 +24,7 @@ interface GoalCardProps {
     onHabitDelete: (index: number) => void;
 }
 
-export default function GoalCard({
+export default memo(function GoalCard({
     title,
     description,
     progress = 0,
@@ -170,4 +170,4 @@ export default function GoalCard({
             </div>
         </div>
     );
-}
+});
