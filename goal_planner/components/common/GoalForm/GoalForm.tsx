@@ -130,7 +130,7 @@ const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
 						taskIds.length > 0
 							? supabase
 									.from("task_logs")
-									.select("task_id, date")
+								.select("task_id, date, start_time, end_time")
 									.in("task_id", taskIds)
 							: Promise.resolve({ data: [] }),
 					]);
@@ -155,15 +155,18 @@ const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
 
 				const formattedTasks: Task[] = (tasksData || []).map((task) => {
 					const repeatDays = taskRepeatDaysMap.get(task.id) || [];
+					const logs = taskLogsMap.get(task.id) || [];
 					let logDate = null;
 					if (!task.start_date && !task.end_date) {
-						const logs = taskLogsMap.get(task.id) || [];
 						logDate = logs.length > 0 ? logs[0].date : null;
 					}
+					// Extract representative time from any log that has it
+					const logWithTime = logs.find((l: any) => l.start_time);
 					return {
 						id: task.id,
 						name: task.name,
-						start_time: null, // Times are now stored in task_logs per occurrence
+						start_time: logWithTime?.start_time ?? null,
+						end_time: logWithTime?.end_time ?? null,
 						start_date: task.start_date,
 						end_date: task.end_date,
 						repeat_days: repeatDays,

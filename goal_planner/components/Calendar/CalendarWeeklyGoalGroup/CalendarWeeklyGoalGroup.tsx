@@ -63,7 +63,7 @@ export default memo(function CalendarWeeklyGoalGroup({
                             >
                                 {event.title}
                             </p>
-                            {(event.start_time || event.time) && (
+                            {event.start_time && (
                                 <span
                                     className={cn(
                                         "text-xs",
@@ -75,7 +75,7 @@ export default memo(function CalendarWeeklyGoalGroup({
                                     {formatTimeRange(
                                         event.start_time,
                                         event.end_time,
-                                    ) || event.time}
+                                    )}
                                 </span>
                             )}
                         </div>

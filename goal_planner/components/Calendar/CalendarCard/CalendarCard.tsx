@@ -92,9 +92,9 @@ const CalendarCard = memo(function CalendarCard({
                             <span>{truncateText(event.title, 6)}</span>
                         </div>
                         <div className="hidden md:block flex-shrink-0 text-right">
-                            {event.time && (
+                            {event.start_time && (
                                 <span className="text-[10px] ml-1">
-                                    {event.time}
+                                    {event.start_time.slice(0, 5)}
                                 </span>
                             )}
                         </div>

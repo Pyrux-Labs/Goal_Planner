@@ -4,6 +4,7 @@ export interface Task {
     id: number;
     name: string;
     start_time: string | null;
+    end_time: string | null;
     start_date: string | null;
     end_date: string | null;
     repeat_days: string[];

@@ -21,6 +21,8 @@ import {
 interface LogEntry {
     completed: boolean;
     date: string;
+    start_time?: string | null;
+    end_time?: string | null;
 }
 
 /** Raw goal row from Supabase */
@@ -194,7 +196,7 @@ export async function fetchAllGoalsData(
         taskIds.length > 0
             ? supabase
                   .from("task_logs")
-                  .select("task_id, completed, date")
+                  .select("task_id, completed, date, start_time, end_time")
                   .in("task_id", taskIds)
             : Promise.resolve({ data: [] }),
         habitIds.length > 0
@@ -239,21 +241,24 @@ export async function fetchAllGoalsData(
 
         const tasks: Task[] = (goalTasks as TaskRow[]).map((task) => {
             const repeatDays = taskRepeatDaysMap.get(task.id) || [];
+            const logs =
+                (
+                    taskLogsMap as Map<
+                        number,
+                        (LogEntry & { task_id: number })[]
+                    >
+                ).get(task.id) || [];
             let logDate: string | null = null;
             if (!task.start_date && !task.end_date) {
-                const logs =
-                    (
-                        taskLogsMap as Map<
-                            number,
-                            (LogEntry & { task_id: number })[]
-                        >
-                    ).get(task.id) || [];
                 logDate = logs.length > 0 ? logs[0].date : null;
             }
+            // Extract representative time from any log that has it
+            const logWithTime = logs.find((l) => l.start_time);
             return {
                 id: task.id,
                 name: task.name,
-                start_time: null,
+                start_time: logWithTime?.start_time ?? null,
+                end_time: logWithTime?.end_time ?? null,
                 start_date: task.start_date,
                 end_date: task.end_date,
                 repeat_days: repeatDays,
@@ -365,8 +370,8 @@ export function formatTaskForDisplay(
         name: task.name,
         start_date: task.start_date,
         end_date: task.end_date,
-        start_time: null,
-        end_time: null,
+        start_time: task.start_time,
+        end_time: task.end_time,
         repeat_days: task.repeat_days,
         is_repeating: task.repeat_days.length > 0,
         edit_date: task.log_date ?? undefined,

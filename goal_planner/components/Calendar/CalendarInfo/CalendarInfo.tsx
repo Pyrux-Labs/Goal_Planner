@@ -75,12 +75,11 @@ const EventItem = memo(function EventItem({
                 >
                     {event.title}
                 </div>
-                {(event.start_time || event.time) && (
+                {event.start_time && (
                     <div
                         className={`text-xs ${event.completed ? "text-white-pearl/25" : "text-white-pearl"}`}
                     >
-                        {formatTimeRange(event.start_time, event.end_time) ||
-                            event.time}
+                        {formatTimeRange(event.start_time, event.end_time)}
                     </div>
                 )}
             </div>

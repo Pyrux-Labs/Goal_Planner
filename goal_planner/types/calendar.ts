@@ -2,20 +2,18 @@ export type CalendarEvent = {
   id: number; // This is the log_id for checkbox updates
   title: string;
   date: string;
-  time?: string;
   color?: string;
   completed: boolean;
   type: "task" | "habit";
-  // Additional fields for editing (populated by RPC function)
-  task_id?: number | null; // The actual task ID
-  habit_id?: number | null; // The actual habit ID
+  task_id?: number | null;
+  habit_id?: number | null;
   goal_id?: number | null;
   start_date?: string | null;
   end_date?: string | null;
   start_time?: string | null;
   end_time?: string | null;
   repeat_days?: string[];
-  log_id?: number; // For task_logs/habit_logs (same as id)
+  log_id?: number; // Same as id, kept for explicit edit-flow clarity
 };
 
 export type CalendarEventsMap = Record<string, CalendarEvent[]>;

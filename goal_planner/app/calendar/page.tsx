@@ -13,7 +13,7 @@ import { createClient } from "@/lib/supabase/client";
 import type { CalendarEventsMap, CalendarEvent } from "@/types/calendar";
 import type { SidebarView, TaskEditData, HabitEditData } from "@/types/sidebar";
 
-const NO_GOAL_COLOR = "#6b7280"; // grey-500 for events with no goal
+
 
 export default function CalendarPage() {
     const [sidebarView, setSidebarView] = useState<SidebarView>({
@@ -138,17 +138,8 @@ export default function CalendarPage() {
         }
     }, [currentYear, currentMonth, loadedRange, fetchEvents]);
 
-    // Normalize colors: grey for events without a goal
-    const normalizedAllEvents = useMemo(
-        () =>
-            allEvents.map((event) =>
-                event.goal_id ? event : { ...event, color: NO_GOAL_COLOR },
-            ),
-        [allEvents],
-    );
-
     const events = useMemo(() => {
-        const filtered = normalizedAllEvents.filter((event) => {
+        const filtered = allEvents.filter((event) => {
             const [year, month] = event.date.split("-").map(Number);
             return year === currentYear && month - 1 === currentMonth;
         });
@@ -159,7 +150,7 @@ export default function CalendarPage() {
             acc[dateKey].push(event);
             return acc;
         }, {});
-    }, [normalizedAllEvents, currentYear, currentMonth]);
+    }, [allEvents, currentYear, currentMonth]);
 
     const handleMonthChange = useCallback((year: number, month: number) => {
         setCurrentYear(year);
@@ -217,7 +208,7 @@ export default function CalendarPage() {
             <Navbar />
             {isWeekView ? (
                 <CalendarWeeklyView
-                    allEvents={normalizedAllEvents}
+                    allEvents={allEvents}
                     goals={goals}
                     onAddTask={handleAddTask}
                     onAddHabit={handleAddHabit}

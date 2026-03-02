@@ -36,6 +36,8 @@ interface UnassignedItem {
     repeat_days: string[];
     start_date: string | null;
     end_date: string | null;
+    start_time: string | null;
+    end_time: string | null;
     type: "task" | "habit";
     is_repeating: boolean;
 }
@@ -108,9 +110,12 @@ export default function AnualGoalsPage() {
             const taskIds = (tasks || []).map((t: { id: number }) => t.id);
             const habitIds = (habits || []).map((h: { id: number }) => h.id);
 
-            // Fetch repeat days separately
-            const [{ data: taskRepeatDays }, { data: habitRepeatDays }] =
-                await Promise.all([
+            // Fetch repeat days and task_logs separately
+            const [
+                { data: taskRepeatDays },
+                { data: habitRepeatDays },
+                { data: taskLogs },
+            ] = await Promise.all([
                     taskIds.length > 0
                         ? supabase
                               .from("task_repeat_days")
@@ -131,6 +136,18 @@ export default function AnualGoalsPage() {
                               data: [] as {
                                   habit_id: number;
                                   day: string;
+                              }[],
+                          }),
+                    taskIds.length > 0
+                        ? supabase
+                              .from("task_logs")
+                              .select("task_id, start_time, end_time")
+                              .in("task_id", taskIds)
+                        : Promise.resolve({
+                              data: [] as {
+                                  task_id: number;
+                                  start_time: string | null;
+                                  end_time: string | null;
                               }[],
                           }),
                 ]);
@@ -154,6 +171,26 @@ export default function AnualGoalsPage() {
                 },
             );
 
+            // Build task time map (pick first non-null start_time per task)
+            const taskTimeMap = new Map<
+                number,
+                { start_time: string | null; end_time: string | null }
+            >();
+            (taskLogs || []).forEach(
+                (l: {
+                    task_id: number;
+                    start_time: string | null;
+                    end_time: string | null;
+                }) => {
+                    if (l.start_time && !taskTimeMap.has(l.task_id)) {
+                        taskTimeMap.set(l.task_id, {
+                            start_time: l.start_time,
+                            end_time: l.end_time,
+                        });
+                    }
+                },
+            );
+
             const items: UnassignedItem[] = [
                 ...(tasks || []).map(
                     (t: {
@@ -163,12 +200,15 @@ export default function AnualGoalsPage() {
                         end_date: string | null;
                     }) => {
                         const repeatDays = taskDaysMap.get(t.id) || [];
+                        const time = taskTimeMap.get(t.id);
                         return {
                             id: t.id,
                             name: t.name,
                             repeat_days: repeatDays,
                             start_date: t.start_date,
                             end_date: t.end_date,
+                            start_time: time?.start_time ?? null,
+                            end_time: time?.end_time ?? null,
                             type: "task" as const,
                             is_repeating: repeatDays.length > 0,
                         };
@@ -188,6 +228,8 @@ export default function AnualGoalsPage() {
                             repeat_days: repeatDays,
                             start_date: h.start_date,
                             end_date: h.end_date,
+                            start_time: null,
+                            end_time: null,
                             type: "habit" as const,
                             is_repeating: true,
                         };
@@ -261,8 +303,8 @@ export default function AnualGoalsPage() {
                         name: item.name,
                         start_date: item.start_date,
                         end_date: item.end_date,
-                        start_time: null,
-                        end_time: null,
+                        start_time: item.start_time,
+                        end_time: item.end_time,
                         repeat_days: item.repeat_days,
                         is_repeating: item.is_repeating,
                     },

@@ -139,11 +139,6 @@ const AddTask = ({
             }
         }
 
-        if (taskType === "one-time" && !selectedDate && !inline) {
-            setDateError("Please select a date");
-            hasErrors = true;
-        }
-
         // Validate dates are not in the past (only for new tasks)
         if (!isEditMode) {
             const todayStr = getTodayDateString();
@@ -207,7 +202,9 @@ const AddTask = ({
                         p_end_time: !isAllDay && endTime ? endTime : null,
                         p_is_one_time: taskType === "one-time",
                         p_one_time_date:
-                            taskType === "one-time" ? selectedDate : null,
+                            taskType === "one-time" && selectedDate
+                                ? selectedDate
+                                : null,
                         p_repeat_days:
                             taskType === "repeating" ? selectedDays : [],
                     },
@@ -318,7 +315,7 @@ const AddTask = ({
                 {taskType === "one-time" && (
                     <div>
                         <InputField
-                            label="Date"
+                            label="Date (Optional)"
                             type="date"
                             value={selectedDate}
                             onChange={(e) => {
