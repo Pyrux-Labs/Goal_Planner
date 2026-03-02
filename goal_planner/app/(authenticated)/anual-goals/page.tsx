@@ -116,41 +116,41 @@ export default function AnualGoalsPage() {
                 { data: habitRepeatDays },
                 { data: taskLogs },
             ] = await Promise.all([
-                    taskIds.length > 0
-                        ? supabase
-                              .from("task_repeat_days")
-                              .select("task_id, day")
-                              .in("task_id", taskIds)
-                        : Promise.resolve({
-                              data: [] as {
-                                  task_id: number;
-                                  day: string;
-                              }[],
-                          }),
-                    habitIds.length > 0
-                        ? supabase
-                              .from("habit_repeat_days")
-                              .select("habit_id, day")
-                              .in("habit_id", habitIds)
-                        : Promise.resolve({
-                              data: [] as {
-                                  habit_id: number;
-                                  day: string;
-                              }[],
-                          }),
-                    taskIds.length > 0
-                        ? supabase
-                              .from("task_logs")
-                              .select("task_id, start_time, end_time")
-                              .in("task_id", taskIds)
-                        : Promise.resolve({
-                              data: [] as {
-                                  task_id: number;
-                                  start_time: string | null;
-                                  end_time: string | null;
-                              }[],
-                          }),
-                ]);
+                taskIds.length > 0
+                    ? supabase
+                          .from("task_repeat_days")
+                          .select("task_id, day")
+                          .in("task_id", taskIds)
+                    : Promise.resolve({
+                          data: [] as {
+                              task_id: number;
+                              day: string;
+                          }[],
+                      }),
+                habitIds.length > 0
+                    ? supabase
+                          .from("habit_repeat_days")
+                          .select("habit_id, day")
+                          .in("habit_id", habitIds)
+                    : Promise.resolve({
+                          data: [] as {
+                              habit_id: number;
+                              day: string;
+                          }[],
+                      }),
+                taskIds.length > 0
+                    ? supabase
+                          .from("task_logs")
+                          .select("task_id, start_time, end_time")
+                          .in("task_id", taskIds)
+                    : Promise.resolve({
+                          data: [] as {
+                              task_id: number;
+                              start_time: string | null;
+                              end_time: string | null;
+                          }[],
+                      }),
+            ]);
 
             // Group repeat days by parent ID
             const taskDaysMap = new Map<number, string[]>();

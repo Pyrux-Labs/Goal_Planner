@@ -13,8 +13,6 @@ import { createClient } from "@/lib/supabase/client";
 import type { CalendarEventsMap, CalendarEvent } from "@/types/calendar";
 import type { SidebarView, TaskEditData, HabitEditData } from "@/types/sidebar";
 
-
-
 export default function CalendarPage() {
     const [sidebarView, setSidebarView] = useState<SidebarView>({
         type: "closed",

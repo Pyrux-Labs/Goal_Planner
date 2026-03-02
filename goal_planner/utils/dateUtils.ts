@@ -33,7 +33,8 @@ export const isSameDay = (a: Date, b: Date): boolean => {
  */
 export const sortEventsByTime = (events: CalendarEvent[]): CalendarEvent[] => {
     return [...events].sort((a, b) => {
-        if (a.start_time && b.start_time) return a.start_time.localeCompare(b.start_time);
+        if (a.start_time && b.start_time)
+            return a.start_time.localeCompare(b.start_time);
         if (a.start_time && !b.start_time) return -1;
         if (!a.start_time && b.start_time) return 1;
         return a.id - b.id;
