@@ -1,333 +1,305 @@
 "use client";
 import { useState, useCallback } from "react";
-import { createClient } from "@/lib/supabase/client";
 import InputField from "@/components/ui/InputField/InputField";
 import ErrorMessage from "@/components/ui/ErrorMessage/ErrorMessage";
 import { useFetchGoals } from "@/hooks/useFetchGoals";
 import {
-    getTodayDateString,
-    validateRepeatDaysInRange,
+	getTodayDateString,
+	validateRepeatDaysInRange,
 } from "@/lib/constants/validation";
 import type { HabitEditData } from "@/types/sidebar";
 import { DAYS } from "@/lib/constants/days";
+import {
+	createHabitWithRepeatDays,
+	updateHabitWithRepeatDays,
+} from "@/lib/services/habitService";
 
 interface AddHabitProps {
-    goalId?: number;
-    onClose: () => void;
-    onCancel: () => void;
-    showGoalSelect?: boolean;
-    inline?: boolean;
-    editData?: HabitEditData;
-    goals?: { id: number; name: string }[];
+	goalId?: number;
+	onClose: () => void;
+	onCancel: () => void;
+	showGoalSelect?: boolean;
+	inline?: boolean;
+	editData?: HabitEditData;
+	goals?: { id: number; name: string }[];
 }
 
 const AddHabit = ({
-    goalId,
-    onClose,
-    onCancel,
-    showGoalSelect = false,
-    inline = false,
-    editData,
-    goals: preloadedGoals,
+	goalId,
+	onClose,
+	onCancel,
+	showGoalSelect = false,
+	inline = false,
+	editData,
+	goals: preloadedGoals,
 }: AddHabitProps) => {
-    const isEditMode = !!editData;
+	const isEditMode = !!editData;
 
-    const { goals } = useFetchGoals({
-        preloadedGoals,
-        enabled: showGoalSelect,
-    });
-    const [selectedGoalId, setSelectedGoalId] = useState<number | null>(
-        editData?.goal_id ?? goalId ?? null,
-    );
-    const [habitName, setHabitName] = useState(editData?.name ?? "");
-    const [selectedDays, setSelectedDays] = useState<string[]>(
-        editData?.repeat_days ?? [],
-    );
-    const [startDate, setStartDate] = useState(editData?.start_date ?? "");
-    const [endDate, setEndDate] = useState(editData?.end_date ?? "");
-    const [isSubmitting, setIsSubmitting] = useState(false);
+	const { goals } = useFetchGoals({
+		preloadedGoals,
+		enabled: showGoalSelect,
+	});
+	const [selectedGoalId, setSelectedGoalId] = useState<number | null>(
+		editData?.goal_id ?? goalId ?? null,
+	);
+	const [habitName, setHabitName] = useState(editData?.name ?? "");
+	const [selectedDays, setSelectedDays] = useState<string[]>(
+		editData?.repeat_days ?? [],
+	);
+	const [startDate, setStartDate] = useState(editData?.start_date ?? "");
+	const [endDate, setEndDate] = useState(editData?.end_date ?? "");
+	const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Error states
-    const [goalError, setGoalError] = useState("");
-    const [habitNameError, setHabitNameError] = useState("");
-    const [repeatDaysError, setRepeatDaysError] = useState("");
-    const [dateRangeError, setDateRangeError] = useState("");
-    const [generalError, setGeneralError] = useState("");
+	// Error states
+	const [goalError, setGoalError] = useState("");
+	const [habitNameError, setHabitNameError] = useState("");
+	const [repeatDaysError, setRepeatDaysError] = useState("");
+	const [dateRangeError, setDateRangeError] = useState("");
+	const [generalError, setGeneralError] = useState("");
 
-    const toggleDay = useCallback((dayId: string) => {
-        setSelectedDays((prev) =>
-            prev.includes(dayId)
-                ? prev.filter((d) => d !== dayId)
-                : [...prev, dayId],
-        );
-    }, []);
+	const toggleDay = useCallback((dayId: string) => {
+		setSelectedDays((prev) =>
+			prev.includes(dayId) ? prev.filter((d) => d !== dayId) : [...prev, dayId],
+		);
+	}, []);
 
-    const handleSubmit = async () => {
-        // Clear all errors
-        setGoalError("");
-        setHabitNameError("");
-        setRepeatDaysError("");
-        setDateRangeError("");
-        setGeneralError("");
+	const handleSubmit = async () => {
+		// Clear all errors
+		setGoalError("");
+		setHabitNameError("");
+		setRepeatDaysError("");
+		setDateRangeError("");
+		setGeneralError("");
 
-        let hasErrors = false;
+		let hasErrors = false;
 
-        if (!habitName.trim()) {
-            setHabitNameError("Habit name is required");
-            hasErrors = true;
-        }
+		if (!habitName.trim()) {
+			setHabitNameError("Habit name is required");
+			hasErrors = true;
+		}
 
-        if (selectedDays.length === 0) {
-            setRepeatDaysError("Please select at least one repeat day");
-            hasErrors = true;
-        }
+		if (selectedDays.length === 0) {
+			setRepeatDaysError("Please select at least one repeat day");
+			hasErrors = true;
+		}
 
-        if (!startDate || !endDate) {
-            setDateRangeError("Please select start and end dates");
-            hasErrors = true;
-        }
+		if (!startDate || !endDate) {
+			setDateRangeError("Please select start and end dates");
+			hasErrors = true;
+		}
 
-        // Validate start date is not in the past (only for new habits)
-        if (!isEditMode && startDate) {
-            const todayStr = getTodayDateString();
-            if (startDate < todayStr) {
-                setDateRangeError("Start date cannot be in the past");
-                hasErrors = true;
-            }
-        }
+		// Validate start date is not in the past (only for new habits)
+		if (!isEditMode && startDate) {
+			const todayStr = getTodayDateString();
+			if (startDate < todayStr) {
+				setDateRangeError("Start date cannot be in the past");
+				hasErrors = true;
+			}
+		}
 
-        // Validate date range
-        if (startDate && endDate && endDate < startDate) {
-            setDateRangeError("End date must be after start date");
-            hasErrors = true;
-        }
+		// Validate date range
+		if (startDate && endDate && endDate < startDate) {
+			setDateRangeError("End date must be after start date");
+			hasErrors = true;
+		}
 
-        if (
-            startDate &&
-            endDate &&
-            selectedDays.length > 0 &&
-            endDate >= startDate
-        ) {
-            const rangeError = validateRepeatDaysInRange(
-                startDate,
-                endDate,
-                selectedDays,
-            );
-            if (rangeError) {
-                setDateRangeError(rangeError);
-                hasErrors = true;
-            }
-        }
+		if (
+			startDate &&
+			endDate &&
+			selectedDays.length > 0 &&
+			endDate >= startDate
+		) {
+			const rangeError = validateRepeatDaysInRange(
+				startDate,
+				endDate,
+				selectedDays,
+			);
+			if (rangeError) {
+				setDateRangeError(rangeError);
+				hasErrors = true;
+			}
+		}
 
-        if (hasErrors) return;
+		if (hasErrors) return;
 
-        setIsSubmitting(true);
+		setIsSubmitting(true);
 
-        try {
-            const supabase = createClient();
+		try {
+			if (isEditMode && editData) {
+				await updateHabitWithRepeatDays({
+					habitId: editData.id,
+					goalId: selectedGoalId,
+					name: habitName,
+					startDate: startDate,
+					endDate: endDate,
+					repeatDays: selectedDays,
+				});
+			} else {
+				await createHabitWithRepeatDays({
+					goalId: selectedGoalId,
+					name: habitName,
+					startDate: startDate,
+					endDate: endDate,
+					repeatDays: selectedDays,
+				});
+			}
 
-            if (isEditMode && editData) {
-                const { error } = await supabase.rpc(
-                    "update_habit_with_repeat_days",
-                    {
-                        p_habit_id: editData.id,
-                        p_goal_id: selectedGoalId,
-                        p_name: habitName,
-                        p_start_date: startDate,
-                        p_end_date: endDate,
-                        p_repeat_days: selectedDays,
-                    },
-                );
+			onClose();
+		} catch (error) {
+			console.error("Error saving habit:", error);
+			setGeneralError("Failed to save habit. Please try again.");
+		} finally {
+			setIsSubmitting(false);
+		}
+	};
 
-                if (error?.message) throw error;
-            } else {
-                const { error } = await supabase.rpc(
-                    "create_habit_with_repeat_days",
-                    {
-                        p_goal_id: selectedGoalId,
-                        p_name: habitName,
-                        p_start_date: startDate,
-                        p_end_date: endDate,
-                        p_repeat_days: selectedDays,
-                    },
-                );
+	return (
+		<div
+			className={
+				inline
+					? "bg-modal-bg rounded-3xl border-2 border-vibrant-orange/30 p-6"
+					: "space-y-4 px-4"
+			}>
+			{inline && (
+				<h2 className="text-white-pearl font-title text-2xl font-semibold mb-4">
+					{isEditMode ? "Edit Habit" : "Add Habit"}
+				</h2>
+			)}
 
-                if (error?.message) throw error;
-            }
+			<div className="space-y-4">
+				{/* Goal Select */}
+				{showGoalSelect && (
+					<div>
+						<label className="block text-white-pearl mb-2 text-sm">
+							Select Goal
+						</label>
+						<select
+							value={selectedGoalId || ""}
+							onChange={(e) => {
+								setSelectedGoalId(
+									e.target.value ? Number(e.target.value) : null,
+								);
+								if (goalError) setGoalError("");
+							}}
+							className="w-full h-12 bg-input-bg border border-input-bg text-white-pearl rounded-2xl px-3 focus:outline-none focus:border-vibrant-orange transition-colors">
+							<option value="">Not Selected</option>
+							{goals.map((goal) => (
+								<option key={goal.id} value={goal.id}>
+									{goal.name}
+								</option>
+							))}
+						</select>
+						{goalError && <ErrorMessage message={goalError} />}
+					</div>
+				)}
 
-            onClose();
-        } catch (error) {
-            console.error("Error saving habit:", error);
-            setGeneralError("Failed to save habit. Please try again.");
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
+				{/* Habit Name */}
+				<div>
+					<InputField
+						label="Habit Name"
+						type="text"
+						placeholder="Enter habit name"
+						value={habitName}
+						onChange={(e) => {
+							setHabitName(e.target.value);
+							if (habitNameError) setHabitNameError("");
+						}}
+						labelClassName="block text-white-pearl mb-2 text-sm"
+					/>
+					{habitNameError && <ErrorMessage message={habitNameError} />}
+				</div>
 
-    return (
-        <div
-            className={
-                inline
-                    ? "bg-modal-bg rounded-3xl border-2 border-vibrant-orange/30 p-6"
-                    : "space-y-4 px-4"
-            }
-        >
-            {inline && (
-                <h2 className="text-white-pearl font-title text-2xl font-semibold mb-4">
-                    {isEditMode ? "Edit Habit" : "Add Habit"}
-                </h2>
-            )}
+				{/* Repeat Days */}
+				<div>
+					<label className="block text-white-pearl mb-2 text-sm">
+						Repeat Days
+					</label>
+					<div className="flex gap-2 justify-between">
+						{DAYS.map((day) => (
+							<button
+								key={day.id}
+								onClick={() => {
+									toggleDay(day.id);
+									if (repeatDaysError) setRepeatDaysError("");
+								}}
+								className={`${
+									inline
+										? "w-10 h-10"
+										: "!w-7 !h-7 min-w-0 min-h-0 aspect-square text-[11px] p-0 leading-none"
+								} rounded-full font-semibold transition flex items-center justify-center shrink-0 ${
+									selectedDays.includes(day.id)
+										? "bg-vibrant-orange text-white-pearl"
+										: "bg-input-bg text-input-text "
+								}`}>
+								{day.label}
+							</button>
+						))}
+					</div>
+					{repeatDaysError && <ErrorMessage message={repeatDaysError} />}
+				</div>
 
-            <div className="space-y-4">
-                {/* Goal Select */}
-                {showGoalSelect && (
-                    <div>
-                        <label className="block text-white-pearl mb-2 text-sm">
-                            Select Goal
-                        </label>
-                        <select
-                            value={selectedGoalId || ""}
-                            onChange={(e) => {
-                                setSelectedGoalId(
-                                    e.target.value
-                                        ? Number(e.target.value)
-                                        : null,
-                                );
-                                if (goalError) setGoalError("");
-                            }}
-                            className="w-full h-12 bg-input-bg border border-input-bg text-white-pearl rounded-2xl px-3 focus:outline-none focus:border-vibrant-orange transition-colors"
-                        >
-                            <option value="">Not Selected</option>
-                            {goals.map((goal) => (
-                                <option key={goal.id} value={goal.id}>
-                                    {goal.name}
-                                </option>
-                            ))}
-                        </select>
-                        {goalError && <ErrorMessage message={goalError} />}
-                    </div>
-                )}
+				{/* Date Range */}
+				<div>
+					<div className={inline ? "grid grid-cols-2 gap-4" : "space-y-4"}>
+						<InputField
+							label="Start Date"
+							type="date"
+							value={startDate}
+							onChange={(e) => {
+								setStartDate(e.target.value);
+								if (dateRangeError) setDateRangeError("");
+							}}
+							labelClassName="block text-white-pearl mb-2 text-sm"
+						/>
+						<InputField
+							label="End Date"
+							type="date"
+							value={endDate}
+							onChange={(e) => {
+								setEndDate(e.target.value);
+								if (dateRangeError) setDateRangeError("");
+							}}
+							labelClassName="block text-white-pearl mb-2 text-sm"
+						/>
+					</div>
+					{dateRangeError && <ErrorMessage message={dateRangeError} />}
+				</div>
 
-                {/* Habit Name */}
-                <div>
-                    <InputField
-                        label="Habit Name"
-                        type="text"
-                        placeholder="Enter habit name"
-                        value={habitName}
-                        onChange={(e) => {
-                            setHabitName(e.target.value);
-                            if (habitNameError) setHabitNameError("");
-                        }}
-                        labelClassName="block text-white-pearl mb-2 text-sm"
-                    />
-                    {habitNameError && (
-                        <ErrorMessage message={habitNameError} />
-                    )}
-                </div>
+				{/* General Error */}
+				{generalError && (
+					<ErrorMessage message={generalError} variant="general" />
+				)}
 
-                {/* Repeat Days */}
-                <div>
-                    <label className="block text-white-pearl mb-2 text-sm">
-                        Repeat Days
-                    </label>
-                    <div className="flex gap-2 justify-between">
-                        {DAYS.map((day) => (
-                            <button
-                                key={day.id}
-                                onClick={() => {
-                                    toggleDay(day.id);
-                                    if (repeatDaysError) setRepeatDaysError("");
-                                }}
-                                className={`${
-                                    inline
-                                        ? "w-10 h-10"
-                                        : "!w-7 !h-7 min-w-0 min-h-0 aspect-square text-[11px] p-0 leading-none"
-                                } rounded-full font-semibold transition flex items-center justify-center shrink-0 ${
-                                    selectedDays.includes(day.id)
-                                        ? "bg-vibrant-orange text-white-pearl"
-                                        : "bg-input-bg text-input-text "
-                                }`}
-                            >
-                                {day.label}
-                            </button>
-                        ))}
-                    </div>
-                    {repeatDaysError && (
-                        <ErrorMessage message={repeatDaysError} />
-                    )}
-                </div>
-
-                {/* Date Range */}
-                <div>
-                    <div
-                        className={
-                            inline ? "grid grid-cols-2 gap-4" : "space-y-4"
-                        }
-                    >
-                        <InputField
-                            label="Start Date"
-                            type="date"
-                            value={startDate}
-                            onChange={(e) => {
-                                setStartDate(e.target.value);
-                                if (dateRangeError) setDateRangeError("");
-                            }}
-                            labelClassName="block text-white-pearl mb-2 text-sm"
-                        />
-                        <InputField
-                            label="End Date"
-                            type="date"
-                            value={endDate}
-                            onChange={(e) => {
-                                setEndDate(e.target.value);
-                                if (dateRangeError) setDateRangeError("");
-                            }}
-                            labelClassName="block text-white-pearl mb-2 text-sm"
-                        />
-                    </div>
-                    {dateRangeError && (
-                        <ErrorMessage message={dateRangeError} />
-                    )}
-                </div>
-
-                {/* General Error */}
-                {generalError && (
-                    <ErrorMessage message={generalError} variant="general" />
-                )}
-
-                {/* Buttons */}
-                <div className="flex gap-3 pt-2">
-                    {inline && (
-                        <button
-                            onClick={onCancel}
-                            className="flex-1 h-10 rounded-xl bg-input-bg text-white-pearl font-medium hover:bg-input-bg/80 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                            disabled={isSubmitting}
-                        >
-                            Cancel
-                        </button>
-                    )}
-                    <button
-                        onClick={handleSubmit}
-                        className={
-                            inline
-                                ? "flex-1 h-10 rounded-xl bg-vibrant-orange text-white-pearl font-medium hover:bg-vibrant-orange/90 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                                : "w-full h-10 rounded-xl bg-vibrant-orange text-white-pearl font-medium hover:bg-vibrant-orange/90 transition disabled:opacity-50 disabled:cursor-not-allowed "
-                        }
-                        disabled={isSubmitting}
-                    >
-                        {isSubmitting
-                            ? isEditMode
-                                ? "Updating..."
-                                : "Adding..."
-                            : isEditMode
-                              ? "Update Habit"
-                              : "Add Habit"}
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
+				{/* Buttons */}
+				<div className="flex gap-3 pt-2">
+					{inline && (
+						<button
+							onClick={onCancel}
+							className="flex-1 h-10 rounded-xl bg-input-bg text-white-pearl font-medium hover:bg-input-bg/80 transition disabled:opacity-50 disabled:cursor-not-allowed"
+							disabled={isSubmitting}>
+							Cancel
+						</button>
+					)}
+					<button
+						onClick={handleSubmit}
+						className={
+							inline
+								? "flex-1 h-10 rounded-xl bg-vibrant-orange text-white-pearl font-medium hover:bg-vibrant-orange/90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+								: "w-full h-10 rounded-xl bg-vibrant-orange text-white-pearl font-medium hover:bg-vibrant-orange/90 transition disabled:opacity-50 disabled:cursor-not-allowed "
+						}
+						disabled={isSubmitting}>
+						{isSubmitting
+							? isEditMode
+								? "Updating..."
+								: "Adding..."
+							: isEditMode
+								? "Update Habit"
+								: "Add Habit"}
+					</button>
+				</div>
+			</div>
+		</div>
+	);
 };
 
 export default AddHabit;
