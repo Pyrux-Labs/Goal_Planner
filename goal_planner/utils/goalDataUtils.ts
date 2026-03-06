@@ -5,7 +5,7 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Task, Habit } from "@/types/goal";
+import type { Task, Habit, GoalRow, GoalWithDetails, FormattedTask, FormattedHabit, FormattedGoal } from "@/types/goal";
 import type { TaskEditData, HabitEditData } from "@/types/sidebar";
 import {
     formatRepeatDays,
@@ -23,19 +23,6 @@ interface LogEntry {
     date: string;
     start_time?: string | null;
     end_time?: string | null;
-}
-
-/** Raw goal row from Supabase */
-interface GoalRow {
-    id: number;
-    name: string;
-    description: string | null;
-    category: string;
-    status?: string;
-    color?: string;
-    target_date: string;
-    start_date?: string;
-    created_at?: string;
 }
 
 /** Raw task row from Supabase */
@@ -59,50 +46,6 @@ interface HabitRow {
 /** Repeat day row */
 interface RepeatDayRow {
     [key: string]: number | string;
-}
-
-/** Extended Goal with computed fields for UI display */
-export interface GoalWithDetails {
-    id: number;
-    name: string;
-    description: string | null;
-    category: string;
-    status?: string;
-    color?: string;
-    target_date: string;
-    start_date?: string;
-    created_at?: string;
-    tasks: Task[];
-    habits: Habit[];
-    progress: number;
-    totalLogs: number;
-    taskLogsMap: Map<number, LogEntry[]>;
-    habitLogsMap: Map<number, LogEntry[]>;
-}
-
-/** Formatted task for UI rendering */
-export interface FormattedTask {
-    title: string;
-    days?: string;
-    time?: string;
-    completed?: boolean;
-    editData: TaskEditData;
-}
-
-/** Formatted habit for UI rendering */
-export interface FormattedHabit {
-    title: string;
-    days?: string;
-    completed?: boolean;
-    editData: HabitEditData;
-}
-
-/** Formatted goal ready for rendering */
-export interface FormattedGoal extends GoalWithDetails {
-    formattedTasks: FormattedTask[];
-    formattedHabits: FormattedHabit[];
-    categoryName: string;
-    formattedDate: string;
 }
 
 // ===== LOOKUP MAP BUILDER =====

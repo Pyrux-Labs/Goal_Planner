@@ -13,11 +13,11 @@ import { ROUTES } from "@/lib/constants/routes";
 import {
 	getCurrentUserId,
 	fetchUnassignedItems,
-	type UnassignedItem,
 } from "@/lib/services/goalService";
+import type { UnassignedItem } from "@/types/goal";
 import { formatRepeatDays } from "@/utils/formatUtils";
 import TaskHabitColumn from "@/components/common/TaskHabitColumn/TaskHabitColumn";
-import type { TaskHabitItem } from "@/components/common/TaskHabitColumn/TaskHabitColumn";
+import type { TaskHabitItem } from "@/types/task";
 import {
 	deleteTaskCompletely,
 	deleteHabitCompletely,

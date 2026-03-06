@@ -1,10 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
-
-export interface UpdateTaskLogData {
-    date: string;
-    start_time: string | null;
-    end_time: string | null;
-}
+import type { UpdateTaskLogData } from "@/types/log";
 
 /** Update a task log entry */
 export async function updateTaskLog(

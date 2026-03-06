@@ -5,6 +5,15 @@
 import type { CalendarEvent } from "@/types/calendar";
 
 /**
+ * Gets today's date in YYYY-MM-DD format using local timezone.
+ * Avoids UTC-based toISOString() which can cause off-by-one date errors.
+ */
+export function getTodayDateString(): string {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+}
+
+/**
  * Converts a Date object to a YYYY-MM-DD string key using local timezone.
  * This is the standard format used for CalendarEventsMap keys.
  * Note: Uses local date components to avoid UTC offset issues with toISOString().

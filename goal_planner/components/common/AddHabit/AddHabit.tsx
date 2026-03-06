@@ -3,12 +3,13 @@ import { useState, useCallback } from "react";
 import InputField from "@/components/ui/InputField/InputField";
 import ErrorMessage from "@/components/ui/ErrorMessage/ErrorMessage";
 import { useFetchGoals } from "@/hooks/useFetchGoals";
-import {
-	getTodayDateString,
-	validateRepeatDaysInRange,
-} from "@/lib/constants/validation";
 import type { HabitEditData } from "@/types/sidebar";
-import { DAYS } from "@/lib/constants/days";
+import RepeatDaysSelector from "@/components/common/RepeatDaysSelector/RepeatDaysSelector";
+import DateRangeInput from "@/components/common/DateRangeInput/DateRangeInput";
+import {
+	validateHabitForm,
+	hasErrors as hasHabitErrors,
+} from "@/lib/validations/habitValidation";
 import {
 	createHabitWithRepeatDays,
 	updateHabitWithRepeatDays,
@@ -71,56 +72,20 @@ const AddHabit = ({
 		setDateRangeError("");
 		setGeneralError("");
 
-		let hasErrors = false;
+		const errors = validateHabitForm({
+			habitName,
+			selectedDays,
+			startDate,
+			endDate,
+			isEditMode,
+		});
 
-		if (!habitName.trim()) {
-			setHabitNameError("Habit name is required");
-			hasErrors = true;
+		if (hasHabitErrors(errors)) {
+			if (errors.habitName) setHabitNameError(errors.habitName);
+			if (errors.repeatDays) setRepeatDaysError(errors.repeatDays);
+			if (errors.dateRange) setDateRangeError(errors.dateRange);
+			return;
 		}
-
-		if (selectedDays.length === 0) {
-			setRepeatDaysError("Please select at least one repeat day");
-			hasErrors = true;
-		}
-
-		if (!startDate || !endDate) {
-			setDateRangeError("Please select start and end dates");
-			hasErrors = true;
-		}
-
-		// Validate start date is not in the past (only for new habits)
-		if (!isEditMode && startDate) {
-			const todayStr = getTodayDateString();
-			if (startDate < todayStr) {
-				setDateRangeError("Start date cannot be in the past");
-				hasErrors = true;
-			}
-		}
-
-		// Validate date range
-		if (startDate && endDate && endDate < startDate) {
-			setDateRangeError("End date must be after start date");
-			hasErrors = true;
-		}
-
-		if (
-			startDate &&
-			endDate &&
-			selectedDays.length > 0 &&
-			endDate >= startDate
-		) {
-			const rangeError = validateRepeatDaysInRange(
-				startDate,
-				endDate,
-				selectedDays,
-			);
-			if (rangeError) {
-				setDateRangeError(rangeError);
-				hasErrors = true;
-			}
-		}
-
-		if (hasErrors) return;
 
 		setIsSubmitting(true);
 
@@ -210,60 +175,31 @@ const AddHabit = ({
 				</div>
 
 				{/* Repeat Days */}
-				<div>
-					<label className="block text-white-pearl mb-2 text-sm">
-						Repeat Days
-					</label>
-					<div className="flex gap-2 justify-between">
-						{DAYS.map((day) => (
-							<button
-								key={day.id}
-								onClick={() => {
-									toggleDay(day.id);
-									if (repeatDaysError) setRepeatDaysError("");
-								}}
-								className={`${
-									inline
-										? "w-10 h-10"
-										: "!w-7 !h-7 min-w-0 min-h-0 aspect-square text-[11px] p-0 leading-none"
-								} rounded-full font-semibold transition flex items-center justify-center shrink-0 ${
-									selectedDays.includes(day.id)
-										? "bg-vibrant-orange text-white-pearl"
-										: "bg-input-bg text-input-text "
-								}`}>
-								{day.label}
-							</button>
-						))}
-					</div>
-					{repeatDaysError && <ErrorMessage message={repeatDaysError} />}
-				</div>
+				<RepeatDaysSelector
+					selectedDays={selectedDays}
+					onToggle={(dayId) => {
+						toggleDay(dayId);
+						if (repeatDaysError) setRepeatDaysError("");
+					}}
+					error={repeatDaysError}
+					inline={inline}
+				/>
 
 				{/* Date Range */}
-				<div>
-					<div className={inline ? "grid grid-cols-2 gap-4" : "space-y-4"}>
-						<InputField
-							label="Start Date"
-							type="date"
-							value={startDate}
-							onChange={(e) => {
-								setStartDate(e.target.value);
-								if (dateRangeError) setDateRangeError("");
-							}}
-							labelClassName="block text-white-pearl mb-2 text-sm"
-						/>
-						<InputField
-							label="End Date"
-							type="date"
-							value={endDate}
-							onChange={(e) => {
-								setEndDate(e.target.value);
-								if (dateRangeError) setDateRangeError("");
-							}}
-							labelClassName="block text-white-pearl mb-2 text-sm"
-						/>
-					</div>
-					{dateRangeError && <ErrorMessage message={dateRangeError} />}
-				</div>
+				<DateRangeInput
+					startDate={startDate}
+					endDate={endDate}
+					onStartDateChange={(val) => {
+						setStartDate(val);
+						if (dateRangeError) setDateRangeError("");
+					}}
+					onEndDateChange={(val) => {
+						setEndDate(val);
+						if (dateRangeError) setDateRangeError("");
+					}}
+					error={dateRangeError}
+					inline={inline}
+				/>
 
 				{/* General Error */}
 				{generalError && (

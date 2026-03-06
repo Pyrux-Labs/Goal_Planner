@@ -9,9 +9,8 @@ import {
     fetchAllGoalsData,
     calculateYearProgress,
     formatGoalForDisplay,
-    type GoalWithDetails,
-    type FormattedGoal,
 } from "@/utils/goalDataUtils";
+import type { GoalWithDetails, FormattedGoal } from "@/types/goal";
 
 interface UseGoalsDataReturn {
     goals: GoalWithDetails[];

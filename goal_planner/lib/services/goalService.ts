@@ -1,26 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
-import type { Task, Habit } from "@/types/goal";
-
-export interface GoalData {
-    name: string;
-    description: string | null;
-    category: string;
-    color: string;
-    start_date: string;
-    target_date: string;
-}
-
-export interface GoalRow {
-    id: number;
-    name: string;
-    description: string | null;
-    category: string;
-    color: string;
-    start_date: string;
-    target_date: string;
-    status?: string;
-    created_at?: string;
-}
+import type { Task, Habit, GoalData, GoalRow, UnassignedItem } from "@/types/goal";
 
 /** Fetch a single goal by ID */
 export async function fetchGoalById(id: number): Promise<GoalRow> {
@@ -216,18 +195,6 @@ export async function getCurrentUserId(): Promise<string> {
     } = await supabase.auth.getUser();
     if (!user) throw new Error("Please login to continue");
     return user.id;
-}
-
-export interface UnassignedItem {
-    id: number;
-    name: string;
-    repeat_days: string[];
-    start_date: string | null;
-    end_date: string | null;
-    start_time: string | null;
-    end_time: string | null;
-    type: "task" | "habit";
-    is_repeating: boolean;
 }
 
 /** Fetch tasks and habits not assigned to any goal */

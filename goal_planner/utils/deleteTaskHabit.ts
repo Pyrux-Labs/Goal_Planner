@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
-import { getTodayDateString } from "@/lib/constants/validation";
+import { getTodayDateString } from "@/utils/dateUtils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 // ===== TYPE DEFINITIONS =====

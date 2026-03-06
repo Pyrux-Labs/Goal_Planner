@@ -1,21 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
-
-export interface CreateHabitParams {
-    goalId: number | null;
-    name: string;
-    startDate: string;
-    endDate: string;
-    repeatDays: string[];
-}
-
-export interface UpdateHabitParams {
-    habitId: number;
-    goalId: number | null;
-    name: string;
-    startDate: string;
-    endDate: string;
-    repeatDays: string[];
-}
+import type { CreateHabitParams, UpdateHabitParams } from "@/types/habit";
 
 /** Create a habit with repeat days via RPC */
 export async function createHabitWithRepeatDays(

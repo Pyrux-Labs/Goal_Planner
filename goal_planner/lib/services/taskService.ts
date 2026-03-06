@@ -1,27 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
-
-export interface CreateTaskParams {
-    goalId: number | null;
-    name: string;
-    startDate: string | null;
-    endDate: string | null;
-    startTime: string | null;
-    endTime: string | null;
-    isOneTime: boolean;
-    oneTimeDate: string | null;
-    repeatDays: string[];
-}
-
-export interface UpdateTaskParams {
-    taskId: number;
-    goalId: number | null;
-    name: string;
-    startDate: string | null;
-    endDate: string | null;
-    startTime: string | null;
-    endTime: string | null;
-    repeatDays: string[];
-}
+import type { CreateTaskParams, UpdateTaskParams } from "@/types/task";
 
 /** Create a task with repeat days via RPC */
 export async function createTaskWithRepeatDays(

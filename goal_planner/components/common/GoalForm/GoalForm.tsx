@@ -6,22 +6,21 @@ import {
 	useEffect,
 	useRef,
 } from "react";
-import Image from "next/image";
 import ErrorMessage from "@/components/ui/ErrorMessage/ErrorMessage";
 import TaskHabitColumn from "../TaskHabitColumn/TaskHabitColumn";
 import InputField from "../../ui/InputField/InputField";
-import {
-	categories,
-	colors,
-	CATEGORY_MAP,
-	REVERSE_CATEGORY_MAP,
-} from "@/lib/constants/categories";
+import CategorySelector from "./CategorySelector";
+import ColorPicker from "./ColorPicker";
+import { CATEGORY_MAP, REVERSE_CATEGORY_MAP } from "@/lib/constants/categories";
 import { COLOR_MAP, REVERSE_COLOR_MAP } from "@/lib/constants/colors";
-import { getTodayDateString } from "@/lib/constants/validation";
 import {
 	formatTaskForDisplay,
 	formatHabitForDisplay,
 } from "@/utils/goalDataUtils";
+import {
+	validateGoalForm,
+	hasErrors as hasGoalErrors,
+} from "@/lib/validations/goalValidation";
 import {
 	fetchGoalById,
 	createGoal,
@@ -114,45 +113,22 @@ const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
 				setDateRangeError("");
 				setGeneralError("");
 
-				let hasErrors = false;
+				const errors = validateGoalForm({
+					goalName,
+					selectedCategory,
+					startDate,
+					targetDate,
+					isEditMode,
+				});
 
-				// Validation
-				if (!goalName.trim()) {
-					setGoalNameError("Please enter a goal name");
-					hasErrors = true;
+				if (hasGoalErrors(errors)) {
+					if (errors.goalName) setGoalNameError(errors.goalName);
+					if (errors.category) setCategoryError(errors.category);
+					if (errors.startDate) setStartDateError(errors.startDate);
+					if (errors.targetDate) setTargetDateError(errors.targetDate);
+					if (errors.dateRange) setDateRangeError(errors.dateRange);
+					return null;
 				}
-
-				if (!selectedCategory) {
-					setCategoryError("Please select a category");
-					hasErrors = true;
-				}
-
-				if (!startDate) {
-					setStartDateError("Please select a start date");
-					hasErrors = true;
-				}
-
-				if (!targetDate) {
-					setTargetDateError("Please select a target date");
-					hasErrors = true;
-				}
-
-				// Validate start date is not in the past (only for new goals)
-				if (!isEditMode && startDate) {
-					const todayStr = getTodayDateString();
-					if (startDate < todayStr) {
-						setStartDateError("Start date cannot be in the past");
-						hasErrors = true;
-					}
-				}
-
-				// Validate date range
-				if (startDate && targetDate && targetDate <= startDate) {
-					setDateRangeError("Target date must be after start date");
-					hasErrors = true;
-				}
-
-				if (hasErrors) return null;
 
 				setIsSaving(true);
 
@@ -217,50 +193,15 @@ const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
 			<div className="py-4 px-2 md:px-4">
 				<div className="bg-modal-bg p-4 md:p-8 border border-input-bg rounded-3xl shadow-[0px_0px_10px_2px_rgba(217,78,6,0.8)] mb-8">
 					{/* Category Selection */}
-					<div className="mb-8">
-						<label className="block text-white-pearl mb-4">
-							SELECT CATEGORY
-						</label>
-						<div className="grid grid-cols-4 md:grid-cols-8 gap-2 md:gap-0 justify-items-center">
-							{categories.map((category) => (
-								<button
-									key={category.name}
-									onClick={() => {
-										setSelectedCategory(category.name);
-										if (categoryError) setCategoryError("");
-									}}
-									disabled={formDisabled}
-									className={`relative h-16 w-16 md:h-24 md:w-24 flex items-center justify-center rounded-2xl md:rounded-3xl transition-all ${
-										selectedCategory === category.name
-											? "bg-vibrant-orange shadow-[0px_0px_10px_2px_rgba(217,78,6,0.8)]"
-											: "bg-input-bg hover:shadow-[0px_0px_10px_2px_rgba(217,78,6,0.8)]"
-									} ${formDisabled ? "opacity-50 cursor-not-allowed" : ""}`}>
-									<div className="absolute top-[38%] -translate-y-1/2">
-										<Image
-											src={category.icon}
-											alt={category.name}
-											width={36}
-											height={36}
-											className={`w-5 h-5 md:w-9 md:h-9 object-contain transition-colors ${
-												selectedCategory === category.name
-													? "filter brightness-0 invert"
-													: ""
-											}`}
-										/>
-									</div>
-									<span className="absolute bottom-1 md:bottom-3 text-[10px] md:text-xs text-white-pearl">
-										{category.name}
-									</span>
-								</button>
-							))}
-						</div>
-						{categoryError && (
-							<ErrorMessage
-								message={categoryError}
-								className="text-xs text-carmin flex items-center gap-1 mt-2"
-							/>
-						)}
-					</div>
+					<CategorySelector
+						selected={selectedCategory}
+						onSelect={(name) => {
+							setSelectedCategory(name);
+							if (categoryError) setCategoryError("");
+						}}
+						error={categoryError}
+						disabled={formDisabled}
+					/>
 					{/* Goal Name and Description */}
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-9 mb-8">
 						<div>
@@ -315,28 +256,11 @@ const GoalForm = forwardRef<GoalFormRef, GoalFormProps>(
 							{targetDateError && <ErrorMessage message={targetDateError} />}
 							{dateRangeError && <ErrorMessage message={dateRangeError} />}
 						</div>
-						<div>
-							<label className="block text-white-pearl mb-4">COLOR TAG</label>
-							<div className="flex items-center gap-2 w-full h-12">
-								{colors.map((color) => (
-									<button
-										key={color}
-										onClick={() => setSelectedColor(color)}
-										disabled={formDisabled}
-										className={`w-6 h-6 rounded-full transition-all ${
-											selectedColor === color ? "scale-110" : "hover:scale-110"
-										} ${formDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
-										style={{
-											backgroundColor: color,
-											boxShadow:
-												selectedColor === color
-													? `0 0 10px 2px ${color}80`
-													: "none",
-										}}
-									/>
-								))}
-							</div>
-						</div>
+						<ColorPicker
+							selected={selectedColor}
+							onSelect={setSelectedColor}
+							disabled={formDisabled}
+						/>
 					</div>
 
 					{/* General Error */}

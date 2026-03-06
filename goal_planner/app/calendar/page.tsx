@@ -1,6 +1,6 @@
 "use client";
 import { ChevronRight } from "lucide-react";
-import { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import { useState, useCallback, useEffect } from "react";
 import CalendarUI from "@/components/Calendar/CalendarUI/CalendarUI";
 import CalendarWeeklyView from "@/components/Calendar/CalendarWeeklyView/CalendarWeeklyView";
 import Navbar from "@/components/Layout/Navbar/Navbar";
@@ -9,18 +9,25 @@ import Button from "@/components/ui/Button/Button";
 import SidebarContent, {
 	getSidebarTitle,
 } from "@/components/common/SidebarContent/SidebarContent";
-import { fetchCalendarEvents } from "@/lib/services/eventService";
-import {
-	getCurrentUserId,
-	fetchUserGoalsList,
-} from "@/lib/services/goalService";
-import type { CalendarEventsMap, CalendarEvent } from "@/types/calendar";
-import type { SidebarView, TaskEditData, HabitEditData } from "@/types/sidebar";
+import { useCalendarEvents } from "@/hooks/useCalendarEvents";
+import { useSidebarState } from "@/hooks/useSidebarState";
 
 export default function CalendarPage() {
-	const [sidebarView, setSidebarView] = useState<SidebarView>({
-		type: "closed",
-	});
+	const { allEvents, events, goals, isLoading, handleMonthChange, refresh } =
+		useCalendarEvents();
+
+	const {
+		sidebarView,
+		isModalOpen,
+		handleDateSelect,
+		openAnalytics,
+		handleAddHabit,
+		handleAddTask,
+		closeModal,
+		handleEditTask,
+		handleEditHabit,
+	} = useSidebarState();
+
 	const [isWeekView, setIsWeekView] = useState(false);
 	const [hasMounted, setHasMounted] = useState(false);
 
@@ -33,151 +40,15 @@ export default function CalendarPage() {
 			}
 		}
 	}, [hasMounted]);
-	const [allEvents, setAllEvents] = useState<CalendarEvent[]>([]);
-	const [goals, setGoals] = useState<{ id: number; name: string }[]>([]);
-	const [loadedRange, setLoadedRange] = useState<{
-		startYear: number;
-		startMonth: number;
-		endYear: number;
-		endMonth: number;
-	} | null>(null);
-	const [currentYear, setCurrentYear] = useState<number>(
-		new Date().getFullYear(),
-	);
-	const [currentMonth, setCurrentMonth] = useState<number>(
-		new Date().getMonth(),
-	);
-	const [isLoading, setIsLoading] = useState<boolean>(true);
-
-	// prevent concurrent fetches
-	const isFetchingRef = useRef(false);
-
-	// Fetch ±1 month around center (3 months total, ~90 days vs ~1095 with 3 years)
-	const fetchEvents = useCallback(
-		async (centerYear: number, centerMonth: number, showLoading = true) => {
-			if (isFetchingRef.current) return;
-			isFetchingRef.current = true;
-			if (showLoading) setIsLoading(true);
-
-			const startDate = new Date(centerYear, centerMonth - 1, 1);
-			const endDate = new Date(centerYear, centerMonth + 2, 0);
-
-			const p_start = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, "0")}-01`;
-			const p_end = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, "0")}-${String(endDate.getDate()).padStart(2, "0")}`;
-
-			try {
-				const eventsData = await fetchCalendarEvents(p_start, p_end);
-				setAllEvents(eventsData);
-				setLoadedRange({
-					startYear: startDate.getFullYear(),
-					startMonth: startDate.getMonth(),
-					endYear: endDate.getFullYear(),
-					endMonth: endDate.getMonth(),
-				});
-			} catch (err) {
-				console.error("Unexpected error in fetchEvents:", err);
-			} finally {
-				isFetchingRef.current = false;
-				setIsLoading(false);
-			}
-		},
-		[],
-	);
-
-	// Fetch goals once on mount
-	const fetchGoals = useCallback(async () => {
-		try {
-			const userId = await getCurrentUserId();
-			const data = await fetchUserGoalsList(userId);
-			setGoals(data);
-		} catch {
-			// User not logged in, goals will remain empty
-		}
-	}, []);
-
-	// Initial fetch on mount
-	useEffect(() => {
-		const now = new Date();
-		fetchEvents(now.getFullYear(), now.getMonth());
-		fetchGoals();
-	}, [fetchEvents, fetchGoals]);
-
-	// Re-fetch when month navigates outside loaded range
-	useEffect(() => {
-		if (loadedRange) {
-			const current = currentYear * 12 + currentMonth;
-			const start = loadedRange.startYear * 12 + loadedRange.startMonth;
-			const end = loadedRange.endYear * 12 + loadedRange.endMonth;
-			if (current < start || current > end) {
-				fetchEvents(currentYear, currentMonth);
-			}
-		}
-	}, [currentYear, currentMonth, loadedRange, fetchEvents]);
-
-	const events = useMemo(() => {
-		const filtered = allEvents.filter((event) => {
-			const [year, month] = event.date.split("-").map(Number);
-			return year === currentYear && month - 1 === currentMonth;
-		});
-
-		return filtered.reduce((acc: CalendarEventsMap, event) => {
-			const dateKey = event.date;
-			if (!acc[dateKey]) acc[dateKey] = [];
-			acc[dateKey].push(event);
-			return acc;
-		}, {});
-	}, [allEvents, currentYear, currentMonth]);
-
-	const handleMonthChange = useCallback((year: number, month: number) => {
-		setCurrentYear(year);
-		setCurrentMonth(month);
-	}, []);
-
-	const handleDateSelect = useCallback((date: Date) => {
-		setSidebarView({ type: "day-info", date });
-	}, []);
-
-	const openAnalytics = useCallback(() => {
-		setSidebarView({ type: "daily-analytics" });
-	}, []);
-
-	const openWeeklyStats = useCallback(() => {
-		setSidebarView({ type: "weekly-stats" });
-	}, []);
-
-	const handleAddHabit = useCallback(() => {
-		setSidebarView({ type: "add-habit" });
-	}, []);
-
-	const handleAddTask = useCallback(() => {
-		setSidebarView({ type: "add-task" });
-	}, []);
-
-	const closeModal = useCallback(() => {
-		setSidebarView({ type: "closed" });
-	}, []);
-
-	const handleEditTask = useCallback((data: TaskEditData) => {
-		setSidebarView({ type: "edit-task", data });
-	}, []);
-
-	const handleEditHabit = useCallback((data: HabitEditData) => {
-		setSidebarView({ type: "edit-habit", data });
-	}, []);
 
 	const handleSuccess = useCallback(() => {
-		fetchEvents(currentYear, currentMonth, false);
+		refresh();
 		closeModal();
-	}, [currentYear, currentMonth, fetchEvents, closeModal]);
-	//Implement refresh data functionality
-	const handleRefresh = useCallback(() => {
-		fetchEvents(currentYear, currentMonth, false);
-	}, [currentYear, currentMonth, fetchEvents]);
+	}, [refresh, closeModal]);
 
 	const handleToggleWeek = useCallback(() => {
 		setIsWeekView((prev) => !prev);
 	}, []);
-	const isModalOpen = sidebarView.type !== "closed";
 
 	return (
 		<div className="min-h-screen bg-deep-bg flex">
@@ -188,7 +59,7 @@ export default function CalendarPage() {
 					goals={goals}
 					onAddTask={handleAddTask}
 					onAddHabit={handleAddHabit}
-					onRefresh={handleRefresh}
+					onRefresh={refresh}
 					onToggleWeek={handleToggleWeek}
 					isModalOpen={isModalOpen}
 				/>
@@ -216,7 +87,7 @@ export default function CalendarPage() {
 						events={events}
 						goals={goals}
 						onSuccess={handleSuccess}
-						onRefresh={handleRefresh}
+						onRefresh={refresh}
 						onEditTask={handleEditTask}
 						onEditHabit={handleEditHabit}
 					/>

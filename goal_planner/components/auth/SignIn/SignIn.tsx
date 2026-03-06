@@ -11,7 +11,7 @@ import {
 	signInWithGoogle,
 	checkUserHasGoals,
 } from "@/lib/services/authService";
-import { validateEmail } from "@/lib/constants/validation";
+import { validateEmail } from "@/lib/validations/authValidation";
 import { ROUTES } from "@/lib/constants/routes";
 
 interface SignInProps {
