@@ -8,7 +8,12 @@ import Modal from "@/components/ui/Modal/Modal";
 import InputField from "@/components/ui/InputField/InputField";
 import Button from "@/components/ui/Button/Button";
 import ErrorMessage from "@/components/ui/ErrorMessage/ErrorMessage";
-import { createClient } from "@/lib/supabase/client";
+import {
+	exchangeCodeForSession,
+	setSession,
+	getSession,
+	updatePassword,
+} from "@/lib/services/authService";
 import {
 	validatePassword,
 	validatePasswordMatch,
@@ -34,32 +39,28 @@ function ChangePasswordContent() {
 		const type = searchParams.get("type");
 
 		const setupSession = async () => {
-			const supabase = createClient();
 			if (code) {
-				const { error } = await supabase.auth.exchangeCodeForSession(code);
-				if (error) {
+				try {
+					await exchangeCodeForSession(code);
+					setSessionReady(true);
+				} catch {
 					setGeneralError(
 						"Reset link has expired or is invalid. Please request a new one.",
 					);
-				} else {
-					setSessionReady(true);
 				}
 			} else if (access_token && type === "recovery") {
 				const refresh_token = searchParams.get("refresh_token") || "";
-				const { error } = await supabase.auth.setSession({
-					access_token,
-					refresh_token,
-				});
-				if (error) {
+				try {
+					await setSession(access_token, refresh_token);
+					setSessionReady(true);
+				} catch {
 					setGeneralError(
 						"Reset link has expired or is invalid. Please request a new one.",
 					);
-				} else {
-					setSessionReady(true);
 				}
 			} else {
-				const { data } = await supabase.auth.getSession();
-				if (data.session) {
+				const session = await getSession();
+				if (session) {
 					setSessionReady(true);
 				} else {
 					setGeneralError(
@@ -98,28 +99,21 @@ function ChangePasswordContent() {
 		setIsLoading(true);
 
 		try {
-			const supabase = createClient();
-			const { error } = await supabase.auth.updateUser({
-				password: newPassword,
-			});
-
-			if (error) {
-				if (error.message?.includes("Password")) {
-					setNewPasswordError(
-						"Password is too weak. Please use a stronger password.",
-					);
-				} else {
-					setGeneralError(
-						error.message || "Failed to change password. Please try again.",
-					);
-				}
-				return;
-			}
+			await updatePassword(newPassword);
 
 			// Show success message
 			setSuccess(true);
-		} catch (err) {
-			setGeneralError("Failed to change password. Please try again.");
+		} catch (error) {
+			const message = error instanceof Error ? error.message : "";
+			if (message.includes("Password")) {
+				setNewPasswordError(
+					"Password is too weak. Please use a stronger password.",
+				);
+			} else {
+				setGeneralError(
+					message || "Failed to change password. Please try again.",
+				);
+			}
 		} finally {
 			setIsLoading(false);
 		}

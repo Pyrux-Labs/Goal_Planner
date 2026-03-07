@@ -7,7 +7,7 @@ import Modal from "@/components/ui/Modal/Modal";
 import InputField from "@/components/ui/InputField/InputField";
 import Button from "@/components/ui/Button/Button";
 import ErrorMessage from "@/components/ui/ErrorMessage/ErrorMessage";
-import { createClient } from "@/lib/supabase/client";
+import { resetPasswordForEmail } from "@/lib/services/authService";
 import { validateEmail } from "@/lib/validations/authValidation";
 import { ROUTES } from "@/lib/constants/routes";
 
@@ -34,22 +34,19 @@ export default function ForgotPassword() {
 		setIsLoading(true);
 
 		try {
-			const supabase = createClient();
-			const { error } = await supabase.auth.resetPasswordForEmail(email, {
-				redirectTo: `${window.location.origin}${ROUTES.CHANGE_PASSWORD}`,
-			});
-
-			if (error) {
-				setError(
-					error.message || "Failed to send reset link. Please try again.",
-				);
-				return;
-			}
+			await resetPasswordForEmail(
+				email,
+				`${window.location.origin}${ROUTES.CHANGE_PASSWORD}`,
+			);
 
 			// Show success message
 			setSuccess(true);
 		} catch (err) {
-			setError("Failed to send reset link. Please try again.");
+			setError(
+				err instanceof Error
+					? err.message
+					: "Failed to send reset link. Please try again.",
+			);
 		} finally {
 			setIsLoading(false);
 		}

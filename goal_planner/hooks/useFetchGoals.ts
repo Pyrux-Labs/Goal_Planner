@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { fetchUserGoalsList, getCurrentUserId } from "@/lib/services/goalService";
 
 interface Goal {
 	id: number;
@@ -25,21 +25,9 @@ export function useFetchGoals({
 	const [goals, setGoals] = useState<Goal[]>(preloadedGoals || []);
 
 	const fetchGoals = useCallback(async () => {
-		const supabase = createClient();
-		const {
-			data: { user },
-		} = await supabase.auth.getUser();
-
-		if (!user) return;
-
-		const { data } = await supabase
-			.from("goals")
-			.select("id, name")
-			.eq("user_id", user.id)
-			.is("deleted_at", null)
-			.order("name");
-
-		if (data) setGoals(data);
+		const userId = await getCurrentUserId();
+		const data = await fetchUserGoalsList(userId);
+		setGoals(data);
 	}, []);
 
 	useEffect(() => {

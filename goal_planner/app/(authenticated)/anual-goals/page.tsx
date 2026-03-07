@@ -18,10 +18,8 @@ import type { UnassignedItem } from "@/types/goal";
 import { formatRepeatDays } from "@/utils/formatUtils";
 import TaskHabitColumn from "@/components/common/TaskHabitColumn/TaskHabitColumn";
 import type { TaskHabitItem } from "@/types/task";
-import {
-	deleteTaskCompletely,
-	deleteHabitCompletely,
-} from "@/utils/deleteTaskHabit";
+import { deleteTaskCompletely } from "@/lib/services/taskService";
+import { deleteHabitCompletely } from "@/lib/services/habitService";
 import { useToast } from "@/components/ui/Toast/ToastContext";
 
 // ===== FILTER OPTIONS =====

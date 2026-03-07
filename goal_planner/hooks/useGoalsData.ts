@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { getUser } from "@/lib/services/authService";
 import {
     fetchAllGoalsData,
     calculateYearProgress,
@@ -29,16 +29,13 @@ export function useGoalsData(): UseGoalsDataReturn {
 
     const fetchGoalsData = useCallback(async () => {
         try {
-            const supabase = createClient();
-            const {
-                data: { user },
-            } = await supabase.auth.getUser();
+            const user = await getUser();
             if (!user) {
                 setLoading(false);
                 return;
             }
 
-            const goalsWithDetails = await fetchAllGoalsData(supabase, user.id);
+            const goalsWithDetails = await fetchAllGoalsData(user.id);
             setGoals(goalsWithDetails);
             setOverallProgress(calculateYearProgress(goalsWithDetails));
         } catch (error) {

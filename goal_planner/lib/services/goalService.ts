@@ -1,6 +1,11 @@
 import { createClient } from "@/lib/supabase/client";
 import type { Task, Habit, GoalData, GoalRow, UnassignedItem } from "@/types/goal";
 
+export interface DeleteResult {
+    success: boolean;
+    error?: string;
+}
+
 /** Fetch a single goal by ID */
 export async function fetchGoalById(id: number): Promise<GoalRow> {
     const supabase = createClient();
@@ -311,4 +316,159 @@ export async function fetchUnassignedItems(
             },
         ),
     ];
+}
+
+/** Delete a goal and all its related data (tasks, habits, logs, repeat days) */
+export async function deleteGoalWithRelatedData(
+    goalId: number,
+): Promise<DeleteResult> {
+    try {
+        const supabase = createClient();
+
+        const { data: tasks } = await supabase
+            .from("tasks")
+            .select("id")
+            .eq("goal_id", goalId);
+        const taskIds = tasks?.map((t: { id: number }) => t.id) || [];
+
+        const { data: habits } = await supabase
+            .from("habits")
+            .select("id")
+            .eq("goal_id", goalId);
+        const habitIds = habits?.map((h: { id: number }) => h.id) || [];
+
+        if (taskIds.length > 0) {
+            const { error } = await supabase
+                .from("task_logs")
+                .delete()
+                .in("task_id", taskIds);
+            if (error) throw error;
+            const { error: e2 } = await supabase
+                .from("task_repeat_days")
+                .delete()
+                .in("task_id", taskIds);
+            if (e2) throw e2;
+        }
+
+        if (habitIds.length > 0) {
+            const { error } = await supabase
+                .from("habit_logs")
+                .delete()
+                .in("habit_id", habitIds);
+            if (error) throw error;
+            const { error: e2 } = await supabase
+                .from("habit_repeat_days")
+                .delete()
+                .in("habit_id", habitIds);
+            if (e2) throw e2;
+        }
+
+        if (taskIds.length > 0) {
+            const { error } = await supabase
+                .from("tasks")
+                .delete()
+                .in("id", taskIds);
+            if (error) throw error;
+        }
+
+        if (habitIds.length > 0) {
+            const { error } = await supabase
+                .from("habits")
+                .delete()
+                .in("id", habitIds);
+            if (error) throw error;
+        }
+
+        const { error } = await supabase
+            .from("goals")
+            .delete()
+            .eq("id", goalId);
+        if (error) throw error;
+
+        return { success: true };
+    } catch (error: unknown) {
+        console.error("Error deleting goal with related data:", error);
+        return {
+            success: false,
+            error:
+                error instanceof Error
+                    ? error.message
+                    : "An unknown error occurred",
+        };
+    }
+}
+
+/** Bulk delete all tasks for a user (settings page) */
+export async function bulkDeleteUserTasks(userId: string): Promise<void> {
+    const supabase = createClient();
+
+    const { data: tasks } = await supabase
+        .from("tasks")
+        .select("id")
+        .eq("user_id", userId);
+    const taskIds = (tasks || []).map((t: { id: number }) => t.id);
+
+    if (taskIds.length > 0) {
+        const { error } = await supabase
+            .from("task_repeat_days")
+            .delete()
+            .in("task_id", taskIds);
+        if (error) throw error;
+    }
+
+    const { error: logsErr } = await supabase
+        .from("task_logs")
+        .delete()
+        .eq("user_id", userId);
+    if (logsErr) throw logsErr;
+
+    const { error: tasksErr } = await supabase
+        .from("tasks")
+        .delete()
+        .eq("user_id", userId);
+    if (tasksErr) throw tasksErr;
+}
+
+/** Bulk delete all habits for a user (settings page) */
+export async function bulkDeleteUserHabits(userId: string): Promise<void> {
+    const supabase = createClient();
+
+    const { data: habits } = await supabase
+        .from("habits")
+        .select("id")
+        .eq("user_id", userId);
+    const habitIds = (habits || []).map((h: { id: number }) => h.id);
+
+    if (habitIds.length > 0) {
+        const { error } = await supabase
+            .from("habit_repeat_days")
+            .delete()
+            .in("habit_id", habitIds);
+        if (error) throw error;
+    }
+
+    const { error: logsErr } = await supabase
+        .from("habit_logs")
+        .delete()
+        .eq("user_id", userId);
+    if (logsErr) throw logsErr;
+
+    const { error: habitsErr } = await supabase
+        .from("habits")
+        .delete()
+        .eq("user_id", userId);
+    if (habitsErr) throw habitsErr;
+}
+
+/** Bulk delete all goals (and all tasks+habits) for a user */
+export async function bulkDeleteUserGoals(userId: string): Promise<void> {
+    await bulkDeleteUserTasks(userId);
+    await bulkDeleteUserHabits(userId);
+
+    const supabase = createClient();
+    const { error } = await supabase
+        .from("goals")
+        .delete()
+        .eq("user_id", userId);
+    if (error) throw error;
 }

@@ -4,7 +4,7 @@
  * Uses optimized batch queries with O(1) lookup maps.
  */
 
-import type { SupabaseClient } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/client";
 import type { Task, Habit, GoalRow, GoalWithDetails, FormattedTask, FormattedHabit, FormattedGoal } from "@/types/goal";
 import type { TaskEditData, HabitEditData } from "@/types/sidebar";
 import {
@@ -86,9 +86,9 @@ function buildStringLookupMap(
  * Builds lookup maps for O(1) access and calculates progress per goal.
  */
 export async function fetchAllGoalsData(
-    supabase: SupabaseClient,
     userId: string,
 ): Promise<GoalWithDetails[]> {
+    const supabase = createClient();
     const { data: goalsData, error: goalsError } = await supabase
         .from("goals")
         .select("*")

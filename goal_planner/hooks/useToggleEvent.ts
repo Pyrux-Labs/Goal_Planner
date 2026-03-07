@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { toggleEventCompletion } from "@/lib/services/eventService";
 import type { CalendarEvent } from "@/types/calendar";
 
 export function useToggleEvent(onRefresh?: () => void) {
@@ -14,23 +14,11 @@ export function useToggleEvent(onRefresh?: () => void) {
             updatingIdsRef.current.add(event.id);
             setUpdatingIds(new Set(updatingIdsRef.current));
 
-            const supabase = createClient();
-            const table = event.type === "task" ? "task_logs" : "habit_logs";
-
-            const { error } = await supabase
-                .from(table)
-                .update({
-                    completed: !event.completed,
-                    completed_at: !event.completed
-                        ? new Date().toISOString()
-                        : null,
-                })
-                .eq("id", event.id);
-
-            if (error) {
-                console.error("Error updating:", error);
-            } else {
+            try {
+                await toggleEventCompletion(event);
                 onRefresh?.();
+            } catch (error) {
+                console.error("Error updating:", error);
             }
 
             updatingIdsRef.current.delete(event.id);

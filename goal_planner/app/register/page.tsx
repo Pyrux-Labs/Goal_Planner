@@ -6,7 +6,11 @@ import Button from "@/components/ui/Button/Button";
 import InputField from "@/components/ui/InputField/InputField";
 import ErrorMessage from "@/components/ui/ErrorMessage/ErrorMessage";
 import { FcGoogle } from "react-icons/fc";
-import { createClient } from "@/lib/supabase/client";
+import {
+	signUp,
+	signUpWithGoogle,
+	upsertUserRow,
+} from "@/lib/services/authService";
 import {
 	validateEmail,
 	validatePassword,
@@ -67,36 +71,16 @@ export default function Register() {
 		setIsLoading(true);
 
 		try {
-			const supabase = createClient();
-
-			const { data, error } = await supabase.auth.signUp({
+			const data = await signUp(
 				email,
 				password,
-				options: {
-					data: {
-						full_name: fullName,
-					},
-					emailRedirectTo: `${window.location.origin}${ROUTES.VERIFY}`,
-				},
-			});
-
-			if (error) {
-				setGeneralError(error.message);
-				return;
-			}
+				fullName,
+				`${window.location.origin}${ROUTES.VERIFY}`,
+			);
 
 			// If auto-confirmed (session exists), create user row and go to onboarding
 			if (data.session && data.user) {
-				await supabase.from("users").upsert(
-					{
-						id: data.user.id,
-						fullname: fullName,
-						email: email,
-						profile_picture:
-							"https://jbfzvoxddrydtawekviz.supabase.co/storage/v1/object/public/profile_pictures/default.jpg",
-					},
-					{ onConflict: "id", ignoreDuplicates: true },
-				);
+				await upsertUserRow(data.user.id, fullName, email);
 				// Full page navigation to avoid middleware race condition
 				window.location.href = ROUTES.ONBOARDING;
 				return;
@@ -106,7 +90,11 @@ export default function Register() {
 				router.push(ROUTES.VERIFY);
 			}
 		} catch (error) {
-			setGeneralError("An unexpected error occurred. Please try again.");
+			setGeneralError(
+				error instanceof Error
+					? error.message
+					: "An unexpected error occurred. Please try again.",
+			);
 		} finally {
 			setIsLoading(false);
 		}
@@ -118,21 +106,16 @@ export default function Register() {
 		setIsGoogleLoading(true);
 
 		try {
-			const supabase = createClient();
-			const { error } = await supabase.auth.signInWithOAuth({
-				provider: "google",
-				options: {
-					redirectTo: `${typeof window !== "undefined" ? window.location.origin : process.env.NEXT_PUBLIC_APP_URL}${ROUTES.AUTH_CALLBACK}`,
-				},
-			});
-
-			if (error) {
-				setGeneralError(error.message || "Failed to sign up with Google.");
-				setIsGoogleLoading(false);
-			}
+			await signUpWithGoogle(
+				`${typeof window !== "undefined" ? window.location.origin : process.env.NEXT_PUBLIC_APP_URL}${ROUTES.AUTH_CALLBACK}`,
+			);
 			// if no error, user will be redirected to Google
 		} catch (err) {
-			setGeneralError("An unexpected error occurred with Google sign up.");
+			setGeneralError(
+				err instanceof Error
+					? err.message
+					: "An unexpected error occurred with Google sign up.",
+			);
 			setIsGoogleLoading(false);
 		}
 	};
