@@ -55,8 +55,7 @@ ON habit_logs (date);
 ### 🎓 Onboarding
 
 - [x] Flujo de onboarding en 3 pasos (Welcome → Goal Config → Summary)
-- [ ] **Skip onboarding** - Opción para usuarios que ya saben usar la app
-- [ ] **Volver a crear metas desde summary** - Botón "Add Another Goal" en paso 3
+- [x] **Volver a crear metas desde summary** - Botón "Add Another Goal" en paso 3
 
 ### 📈 Estadísticas y Analytics
 
@@ -73,10 +72,10 @@ ON habit_logs (date);
 
 ### 🚀 Despliegue
 
-- [ ] **Hosting** - Vercel o similar
-- [ ] **Dominio** - goalplanner.com.ar
-- [ ] **Variables de entorno** - Configurar para producción
-- [ ] **CI/CD** - Automatizar builds y despliegues
+- [x] **Hosting** - Vercel o similar
+- [x] **Dominio** - goalplanner.com.ar
+- [x] **Variables de entorno** - Configurar para producción
+- [x] **CI/CD** - Automatizar builds y despliegues
 
 ---
 

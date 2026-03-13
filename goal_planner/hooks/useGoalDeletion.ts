@@ -4,11 +4,9 @@
  */
 
 import { useState, useCallback } from "react";
-import { deleteGoalWithRelatedData } from "@/utils/deleteGoal";
-import {
-    deleteTaskWithFutureLogs,
-    deleteHabitWithFutureLogs,
-} from "@/utils/deleteTaskHabit";
+import { deleteGoalWithRelatedData } from "@/lib/services/goalService";
+import { deleteTaskWithFutureLogs } from "@/lib/services/taskService";
+import { deleteHabitWithFutureLogs } from "@/lib/services/habitService";
 import { useToast } from "@/components/ui/Toast/ToastContext";
 
 interface UseGoalDeletionReturn {
