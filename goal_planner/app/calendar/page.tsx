@@ -13,8 +13,16 @@ import { useCalendarEvents } from "@/hooks/useCalendarEvents";
 import { useSidebarState } from "@/hooks/useSidebarState";
 
 export default function CalendarPage() {
-	const { allEvents, events, goals, isLoading, handleMonthChange, refresh } =
-		useCalendarEvents();
+	const {
+		allEvents,
+		events,
+		goals,
+		isLoading,
+		currentYear,
+		currentMonth,
+		handleMonthChange,
+		refresh,
+	} = useCalendarEvents();
 
 	const {
 		sidebarView,
@@ -62,6 +70,7 @@ export default function CalendarPage() {
 					onRefresh={refresh}
 					onToggleWeek={handleToggleWeek}
 					isModalOpen={isModalOpen}
+					onMonthChange={handleMonthChange}
 				/>
 			) : (
 				<CalendarUI
@@ -81,7 +90,9 @@ export default function CalendarPage() {
 			)}
 
 			{isModalOpen && (
-				<SidebarModal title={getSidebarTitle(sidebarView)} onClose={closeModal}>
+				<SidebarModal
+					title={getSidebarTitle(sidebarView, isWeekView)}
+					onClose={closeModal}>
 					<SidebarContent
 						view={sidebarView}
 						events={events}
@@ -90,6 +101,9 @@ export default function CalendarPage() {
 						onRefresh={refresh}
 						onEditTask={handleEditTask}
 						onEditHabit={handleEditHabit}
+						isWeekView={isWeekView}
+						currentYear={currentYear}
+						currentMonth={currentMonth}
 					/>
 				</SidebarModal>
 			)}

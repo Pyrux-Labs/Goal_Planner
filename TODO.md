@@ -59,10 +59,10 @@ ON habit_logs (date);
 
 ### 📈 Estadísticas y Analytics
 
-- [ ] **Página de estadísticas** - Actualmente es un stub (solo muestra Navbar + Top)
-- [ ] **Daily analytics en sidebar** - Vista diaria con métricas (case "daily-analytics" retorna vacío)
-- [ ] **Weekly stats en sidebar** - Resumen semanal (case "weekly-stats" retorna vacío)
-- [ ] **Racha de hábitos** - Contador de días consecutivos
+- [x] **Página de estadísticas** - Actualmente es un stub (solo muestra Navbar + Top)
+- [x] **Daily analytics en sidebar** - Vista diaria con métricas (case "daily-analytics" retorna vacío)
+- [x] **Weekly stats en sidebar** - Resumen semanal (case "weekly-stats" retorna vacío)
+- [x] **Racha de hábitos** - Contador de días consecutivos
 
 ### 👤 Perfil y Navegación
 
@@ -101,7 +101,7 @@ ON habit_logs (date);
 
 ### 🌐 Lanzamiento
 
-- [ ] **SSL / HTTPS**
+- [x] **SSL / HTTPS**
 - [ ] **SEO** - Meta tags, sitemap, robots.txt, Open Graph
 - [ ] **Analytics** - Google Analytics o Plausible
 - [ ] **Error monitoring** - Sentry para errores en producción

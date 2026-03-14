@@ -1,0 +1,44 @@
+## Sesión 2026-03-13
+
+### Completado
+
+**Tarea 1 — Página de Estadísticas** ✅
+**Tarea 2 — Analytics en Sidebar** ✅
+**Tarea 4 — Racha en stats** ✅
+**Tarea 5 — Bug vista semanal** ✅
+
+**Tarea 6 — Refactor: componentes compartidos + inglés** ✅
+- Creado `hooks/useAnalyticsData.ts`: hook único que reemplaza useStatsData.
+  Acepta period ("weekly" | "monthly" | "all") + referenceYear/Month opcional (para sidebar).
+  Devuelve: tasksCompleted/Pending, habitsCompleted/Pending, goalsProgress, dailyActivity (tasks+habits por día), streak, periodRange, periodLabel.
+- Creado `components/analytics/CompletionDonut.tsx`: donut SVG con stroke-dasharray. compact={true} → 96px, compact={false} → 140px.
+- Creado `components/analytics/StreakCard.tsx`: racha con Flame/Trophy de lucide. Dos modos visuales.
+- Creado `components/analytics/GoalProgress.tsx`: lista de barras de progreso por meta. compact corta a 4 items.
+- Creado `components/analytics/ProductiveDays.tsx`: gráfico de barras apiladas (tareas naranja, hábitos verde) por día. Con mensaje "No activity recorded yet" si no hay datos.
+- Eliminado `hooks/useStatsData.ts` (reemplazado).
+- Reescrito `app/(authenticated)/stats/page.tsx`: usa useAnalyticsData + componentes compartidos. Todo texto en inglés.
+- Reescrito `CalendarAnalytics.tsx`: usa useAnalyticsData + componentes compartidos. Eliminado el prop allEvents (ya no necesario).
+- Actualizado `SidebarContent.tsx`: eliminado prop allEvents. El sidebar analytics ahora hace su propio fetch vía useAnalyticsData.
+
+**Tarea 7 — Donut charts de completitud** ✅
+- Implementado como CompletionDonut en components/analytics/. Usado en /stats (compact=false) y sidebar (compact=true).
+- /stats: dos donuts grandes side by side dentro de un card con título "Completion · [periodo]".
+- Sidebar: dos donuts compactos dentro de un card propio.
+
+**Tarea 8 — Gráfico adicional en /stats** ✅
+- Implementado ProductiveDays: barras apiladas diarias (tareas naranja + hábitos verde).
+- Título: "Daily activity · [periodLabel]".
+- Mensaje si no hay datos: "No activity recorded yet for this period".
+- Solo en /stats (no en sidebar). Ubicado entre StreakCard y GoalProgress.
+
+**Tarea 9 — Corrección de queries en useAnalyticsData** ✅
+- Eliminada variable muerta `base` en `getPeriodRange` rama "weekly".
+- Removido `.lte("date", today)` duplicado en la query base de period logs.
+- Ahora el upper-bound se aplica una sola vez, de forma explícita:
+  - Si hay rango (weekly/monthly): `lte(min(range.end, today))` — excluye días futuros del mes/semana.
+  - Si es "all": `lte(today)` — todos los logs hasta hoy.
+- Los conteos `tasksCompleted`, `tasksPending`, `habitsCompleted`, `habitsPending` son 100% basados
+  en entradas de `task_logs` / `habit_logs` filtradas por el rango de fechas del período.
+
+### Pendiente
+- (Todas las tareas de Beta 1.0 completadas)

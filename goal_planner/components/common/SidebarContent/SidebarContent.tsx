@@ -1,4 +1,5 @@
 import CalendarInfo from "@/components/Calendar/CalendarInfo/CalendarInfo";
+import CalendarAnalytics from "@/components/Calendar/CalendarAnalytics/CalendarAnalytics";
 import type { SidebarView, TaskEditData, HabitEditData } from "@/types/sidebar";
 import type { CalendarEventsMap } from "@/types/calendar";
 import { getDateKey } from "@/utils/dateUtils";
@@ -13,10 +14,13 @@ interface SidebarContentProps {
     view: SidebarView;
     events: CalendarEventsMap;
     goals?: { id: number; name: string }[];
-    onSuccess?: () => void; // To close the modal after creating
-    onRefresh?: () => void; // To refresh the data
+    onSuccess?: () => void;
+    onRefresh?: () => void;
     onEditTask?: (data: TaskEditData) => void;
     onEditHabit?: (data: HabitEditData) => void;
+    isWeekView?: boolean;
+    currentYear?: number;
+    currentMonth?: number;
 }
 
 export default function SidebarContent({
@@ -27,9 +31,13 @@ export default function SidebarContent({
     onRefresh,
     onEditTask,
     onEditHabit,
+    isWeekView = false,
+    currentYear,
+    currentMonth,
 }: SidebarContentProps) {
+    const now = new Date();
     switch (view.type) {
-        case "day-info":
+        case "day-info": {
             const dateKey = getDateKey(view.date);
             const dayEvents = events[dateKey] || [];
             return (
@@ -41,19 +49,22 @@ export default function SidebarContent({
                     onEditHabit={onEditHabit}
                 />
             );
+        }
 
         case "daily-analytics":
-            return null;
-
         case "weekly-stats":
-            return null;
+            return (
+                <CalendarAnalytics
+                    isWeekView={isWeekView}
+                    currentYear={currentYear ?? now.getFullYear()}
+                    currentMonth={currentMonth ?? now.getMonth()}
+                />
+            );
 
         case "add-task":
             return (
                 <AddTask
-                    onClose={() => {
-                        onSuccess?.();
-                    }}
+                    onClose={() => { onSuccess?.(); }}
                     onCancel={() => {}}
                     showGoalSelect
                     goals={goals}
@@ -63,9 +74,7 @@ export default function SidebarContent({
         case "add-habit":
             return (
                 <AddHabit
-                    onClose={() => {
-                        onSuccess?.();
-                    }}
+                    onClose={() => { onSuccess?.(); }}
                     onCancel={() => {}}
                     showGoalSelect
                     goals={goals}
@@ -81,18 +90,14 @@ export default function SidebarContent({
                         startTime={view.data.start_time}
                         endTime={view.data.end_time}
                         taskName={view.data.name}
-                        onClose={() => {
-                            onSuccess?.();
-                        }}
+                        onClose={() => { onSuccess?.(); }}
                     />
                 );
             }
             return (
                 <AddTask
                     editData={view.data}
-                    onClose={() => {
-                        onSuccess?.();
-                    }}
+                    onClose={() => { onSuccess?.(); }}
                     onCancel={() => {}}
                     goals={goals}
                 />
@@ -105,18 +110,14 @@ export default function SidebarContent({
                         logId={view.data.log_id}
                         date={view.data.edit_date}
                         habitName={view.data.name}
-                        onClose={() => {
-                            onSuccess?.();
-                        }}
+                        onClose={() => { onSuccess?.(); }}
                     />
                 );
             }
             return (
                 <AddHabit
                     editData={view.data}
-                    onClose={() => {
-                        onSuccess?.();
-                    }}
+                    onClose={() => { onSuccess?.(); }}
                     onCancel={() => {}}
                     goals={goals}
                 />
@@ -127,15 +128,14 @@ export default function SidebarContent({
     }
 }
 
-// Helper for the titles
-export function getSidebarTitle(view: SidebarView): string {
+// Título del sidebar según la vista activa
+export function getSidebarTitle(view: SidebarView, isWeekView = false): string {
     switch (view.type) {
         case "day-info":
             return view.date.toLocaleDateString();
         case "daily-analytics":
-            return "Daily Analytics";
         case "weekly-stats":
-            return "Weekly Statistics";
+            return isWeekView ? "Week" : "Month";
         case "add-task":
             return "New Task";
         case "add-habit":

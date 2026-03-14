@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import type { CalendarEvent } from "@/types/calendar";
 import { getDateKey, buildSortedEventsMap } from "@/utils/dateUtils";
@@ -16,6 +16,7 @@ interface CalendarWeeklyViewProps {
     onAddHabit?: () => void;
     allEvents?: CalendarEvent[];
     goals?: { id: number; name: string }[];
+    onMonthChange?: (year: number, month: number) => void;
 }
 
 export default function CalendarWeeklyView({
@@ -26,6 +27,7 @@ export default function CalendarWeeklyView({
     onAddHabit,
     allEvents = [],
     goals = [],
+    onMonthChange,
 }: CalendarWeeklyViewProps) {
     // currentDate = first visible day; today is 2nd column (index 1)
     const [currentDate, setCurrentDate] = useState(() => {
@@ -83,11 +85,37 @@ export default function CalendarWeeklyView({
         setMobileDay(next);
     }, [mobileDay]);
 
-    // Month title based on today's date (not first visible day)
-    const monthTitle = new Date().toLocaleDateString("en-US", {
-        month: "long",
-        year: "numeric",
-    });
+    // Día de referencia para el título: segundo día visible (posición de "hoy" en el layout inicial)
+    const refDay = visibleDesktopDays[1] ?? currentDate;
+
+    const monthTitle = useMemo(
+        () => refDay.toLocaleDateString("en-US", { month: "long", year: "numeric" }),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [refDay.getFullYear(), refDay.getMonth()],
+    );
+
+    // Notificar al padre cuando el mes del día de referencia cambia
+    const prevMonthKeyRef = useRef<number | null>(null);
+    useEffect(() => {
+        const key = refDay.getFullYear() * 12 + refDay.getMonth();
+        if (prevMonthKeyRef.current !== null && prevMonthKeyRef.current !== key) {
+            onMonthChange?.(refDay.getFullYear(), refDay.getMonth());
+        }
+        prevMonthKeyRef.current = key;
+    // refDay es un objeto nuevo en cada render; usamos sus valores primitivos como deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [refDay.getFullYear(), refDay.getMonth(), onMonthChange]);
+
+    // Notificar al padre cuando mobileDay cruza un mes (móvil)
+    const prevMobileMonthKeyRef = useRef<number | null>(null);
+    useEffect(() => {
+        const key = mobileDay.getFullYear() * 12 + mobileDay.getMonth();
+        if (prevMobileMonthKeyRef.current !== null && prevMobileMonthKeyRef.current !== key) {
+            onMonthChange?.(mobileDay.getFullYear(), mobileDay.getMonth());
+        }
+        prevMobileMonthKeyRef.current = key;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [mobileDay.getFullYear(), mobileDay.getMonth(), onMonthChange]);
 
     // Mobile: single day data
     const mobileDateKey = getDateKey(mobileDay);
