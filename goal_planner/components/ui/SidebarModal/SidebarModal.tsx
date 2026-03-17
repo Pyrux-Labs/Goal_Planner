@@ -12,7 +12,7 @@ export default function SidebarModal({
     onClose,
 }: SidebarModalProps) {
     return (
-        <div className="fixed inset-0 md:inset-auto md:right-0 md:top-0 md:h-full md:w-64 lg:w-64 xl:w-72 2xl:w-80 z-50 border-l border-input-bg bg-deep-bg flex flex-col">
+        <div className="fixed inset-0 md:inset-auto md:right-0 md:top-0 md:h-full md:w-64 lg:w-64 xl:w-72 2xl:w-80 z-50 border-l border-input-bg bg-deep-bg flex flex-col gp-sidebar-enter">
             {/* Header */}
             <div className="flex items-center justify-between p-6 pl-0  flex-shrink-0">
                 <div

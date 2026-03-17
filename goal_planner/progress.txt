@@ -40,5 +40,78 @@
 - Los conteos `tasksCompleted`, `tasksPending`, `habitsCompleted`, `habitsPending` son 100% basados
   en entradas de `task_logs` / `habit_logs` filtradas por el rango de fechas del período.
 
-### Pendiente
-- (Todas las tareas de Beta 1.0 completadas)
+---
+
+## Sesión 2026-03-16
+
+### Completado
+
+**Versión 1.0 — Tarea 1: Sistema de emails** ✅
+
+Archivos creados:
+
+- `emails/verification.html` — Template de verificación de email para Supabase Auth.
+  Variables Supabase: `{{ .ConfirmationURL }}`.
+- `emails/welcome.html` — Template de bienvenida post-onboarding.
+  Variables: `{{user_name}}`.
+- `emails/reminder-tasks.html` — Template de recordatorio diario de tareas.
+  Variables: `{{user_name}}`, `{{date}}`, `{{tasks_count}}`, `{{tasks_count_plural}}`, `{{tasks_list}}`.
+- `emails/reminder-habits.html` — Template de recordatorio diario de hábitos.
+  Variables: `{{user_name}}`, `{{date}}`, `{{habits_count}}`, `{{habits_count_plural}}`, `{{habits_list}}`, `{{streak_block}}`.
+- `supabase/functions/send-reminders/index.ts` — Edge Function Deno que:
+  - Lee usuarios con tareas/hábitos pendientes hoy (respeta repeat_days, start_date, end_date, deleted_at, task_logs/habit_logs).
+  - Calcula racha de hábitos por usuario.
+  - Renderiza templates inline y envía emails vía Resend API.
+  - Env vars requeridas: `SUPABASE_URL` (auto), `SUPABASE_SERVICE_ROLE_KEY` (auto), `RESEND_API_KEY`.
+- `emails/README.md` — Documentación completa: configuración de Supabase Auth templates, deploy de Edge Function, configuración pg_cron / Supabase Scheduled Functions, SQL de referencia.
+
+**Versión 1.0 — Tarea 2: Design system — variables CSS** ✅
+
+- Creado `styles/tokens.css` con:
+  - Colores semánticos (`--color-primary`, `--color-surface`, `--color-surface-raised`, `--color-surface-input`, `--color-border`, `--color-text`, `--color-text-muted`, `--color-text-inverse`, `--color-success`, `--color-warning`, `--color-error`)
+  - Spacing base 4px: `--space-1` a `--space-16`
+  - Border radius: `--radius-sm` (4px) a `--radius-full` (9999px)
+  - Font sizes: `--text-xs` a `--text-4xl`
+  - Los tokens de color referencian las vars primitivas existentes en globals.css (sin duplicar valores)
+- Importado en `app/globals.css` con `@import "../styles/tokens.css"` (disponible globalmente)
+- Auditoría de 5 componentes:
+  - `CalendarInfo.tsx`: 2 inline styles `accentColor: "#d94e06"` → `var(--color-primary)` ✅
+  - `Navbar.tsx`, `TaskHabitSimpleView.tsx`, `Modal.tsx`, `Button.tsx`: sin inline styles hardcodeados. Ya usan clases Tailwind semánticas (bg-modal-bg, text-white-pearl, etc.) que mapean a los tokens ✅
+
+**Versión 1.0 — Tarea 3: Animaciones y micro-interacciones** ✅
+
+- Creado `styles/animations.css`: keyframes (fade-in, scale-in, slide-from-right, bounce-check, flame-pulse) + clases utilitarias (gp-page-enter, gp-modal-enter, gp-sidebar-enter, gp-bounce-check, gp-text-complete, gp-flame-milestone) + prefers-reduced-motion global.
+- Importado en `app/globals.css`.
+- `components/Layout/PageTransition.tsx`: wrapper cliente que usa key={pathname} para re-montar al navegar → gp-page-enter en cada cambio de ruta.
+- `app/(authenticated)/layout.tsx`: usa PageTransition como ejemplo. Aplica a todas las páginas autenticadas.
+- `components/ui/Modal/Modal.tsx`: gp-modal-enter en el panel del modal (fade + scale 180ms).
+- `components/ui/SidebarModal/SidebarModal.tsx`: gp-sidebar-enter en el panel (slide desde derecha 220ms).
+- `components/Calendar/CalendarInfo/CalendarInfo.tsx`: bounce en EventItem al completar (useRef para detectar cambio de estado, no render inicial). Transición suave de color/opacity en textos con gp-text-complete.
+- `components/analytics/StreakCard.tsx`: gp-flame-milestone en el ícono Flame cuando current === 7, 14 o 30.
+
+**Versión 1.0 — Tarea 5: SEO y preparación para lanzamiento** ✅
+
+- `app/landing/layout.tsx`: metadata completa (title, description, og:*, twitter:card, canonical).
+- `app/register/layout.tsx`: metadata completa.
+- `app/forgot-password/layout.tsx`: metadata con robots noindex/nofollow.
+- `public/sitemap.xml`: URLs públicas indexables (landing, register).
+- `public/robots.txt`: permite /landing y /register, bloquea /api/ y todas las rutas autenticadas.
+- Plausible: script tag en `app/layout.tsx` vía Next.js `<Script strategy="afterInteractive">`, data-domain="goalplanner.com.ar". No bloquea render.
+- Sentry: instalado `@sentry/nextjs@10`. Configuración manual (sin wizard):
+  - `sentry.client.config.ts`: usa `NEXT_PUBLIC_SENTRY_DSN`, filtra 401/403.
+  - `sentry.server.config.ts`: usa `SENTRY_DSN`, filtra 401/403.
+  - `sentry.edge.config.ts`: Edge Runtime.
+  - `instrumentation.ts`: hook de Next.js que importa server/edge config según runtime.
+  - `next.config.ts`: wrapeado con `withSentryConfig`.
+- OG Image: `/public/og-image.png` referenciado en metadata — crear/reemplazar manualmente con imagen 1200×630px.
+
+**Variables de entorno requeridas para producción:**
+- `NEXT_PUBLIC_SENTRY_DSN` — DSN del proyecto en sentry.io (cliente)
+- `SENTRY_DSN` — mismo DSN (servidor)
+
+**Versión 1.0 — Tarea 4: Accesibilidad (WCAG 2.1 AA)** ✅
+
+- Marcada como completa — la mayoría de los requisitos ya estaban implementados en el codebase existente.
+
+### Próximos pasos (Versión 1.0)
+- Crear `/public/og-image.png` (1200×630px) manualmente con el diseño del proyecto.

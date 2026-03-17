@@ -1,0 +1,18 @@
+User-agent: *
+Allow: /landing
+Allow: /register
+
+Disallow: /api/
+Disallow: /calendar
+Disallow: /stats
+Disallow: /profile
+Disallow: /settings
+Disallow: /anual-goals
+Disallow: /new-goal
+Disallow: /edit-goal
+Disallow: /onboarding
+Disallow: /verify
+Disallow: /change-password
+Disallow: /forgot-password
+
+Sitemap: https://goalplanner.com.ar/sitemap.xml

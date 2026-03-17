@@ -55,7 +55,7 @@ const Modal = ({
     // Adjust title size for dialog mode
     const titleSize = isDialogMode && !children ? "text-2xl" : "text-4xl";
 
-    const modalClassName = `${maxWidthClasses[maxWidth]} bg-modal-bg rounded-3xl border-[3px] border-vibrant-orange shadow-lg shadow-vibrant-orange/50 ${padding} ${className}`;
+    const modalClassName = `${maxWidthClasses[maxWidth]} bg-modal-bg rounded-3xl border-[3px] border-vibrant-orange shadow-lg shadow-vibrant-orange/50 gp-modal-enter ${padding} ${className}`;
 
     const modalContent = (
         <div className={isDialogMode ? "relative z-10" : ""}>

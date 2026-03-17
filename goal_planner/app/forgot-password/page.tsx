@@ -7,9 +7,9 @@ import Modal from "@/components/ui/Modal/Modal";
 import InputField from "@/components/ui/InputField/InputField";
 import Button from "@/components/ui/Button/Button";
 import ErrorMessage from "@/components/ui/ErrorMessage/ErrorMessage";
-import { resetPasswordForEmail } from "@/lib/services/authService";
 import { validateEmail } from "@/lib/validations/authValidation";
 import { ROUTES } from "@/lib/constants/routes";
+import { authClient } from "@/lib/supabase/auth-client";
 
 export default function ForgotPassword() {
 	const [email, setEmail] = useState("");
@@ -34,10 +34,10 @@ export default function ForgotPassword() {
 		setIsLoading(true);
 
 		try {
-			await resetPasswordForEmail(
-				email,
-				`${window.location.origin}${ROUTES.CHANGE_PASSWORD}`,
-			);
+			const { error: resetError } = await authClient.auth.resetPasswordForEmail(email, {
+				redirectTo: `${window.location.origin}${ROUTES.CHANGE_PASSWORD}`,
+			});
+			if (resetError) throw resetError;
 
 			// Show success message
 			setSuccess(true);
