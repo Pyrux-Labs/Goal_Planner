@@ -83,28 +83,27 @@ ON habit_logs (date);
 
 ### 📧 Sistema de Emails
 
-- [ ] **Templates de email** - Diseñar emails profesionales para verificación
-- [ ] **Email de bienvenida** - Al completar registro
-- [ ] **Recordatorios** - Para tareas y hábitos importantes
+- [x] **Templates de email** - Diseñar emails profesionales para verificación
+- [x] **Email de bienvenida** - Al completar registro
+- [x] **Recordatorios** - Para tareas y hábitos importantes
 
 ### 🔐 Autenticación Avanzada
 
 - [x] **OAuth con Google** - Auth callback route creada, PKCE exchange, avatar download, routing inteligente (nuevo → onboarding, existente → calendar)
-- [ ] **2FA** - Seguridad adicional (opcional)
+- [] **2FA** - Seguridad adicional (opcional)
 
 ### ✨ Pulido Final
 
-- [ ] **Sistema de diseño** - Variables CSS para tamaños, spacing, radii
-- [ ] **Animaciones** - Transiciones suaves y micro-interacciones
-- [ ] **Accesibilidad** - ARIA labels, keyboard navigation, focus management
+- [x] **Sistema de diseño** - Variables CSS para tamaños, spacing, radii
+- [x] **Animaciones** - Transiciones suaves y micro-interacciones
+- [x] **Accesibilidad** - ARIA labels, keyboard navigation, focus management
 - [ ] **Internacionalización** - Soporte para español e inglés (actualmente tiene mezcla de ambos en comentarios)
 
 ### 🌐 Lanzamiento
 
 - [x] **SSL / HTTPS**
-- [ ] **SEO** - Meta tags, sitemap, robots.txt, Open Graph
-- [ ] **Analytics** - Google Analytics o Plausible
-- [ ] **Error monitoring** - Sentry para errores en producción
+- [x] **SEO** - Meta tags, sitemap, robots.txt, Open Graph
+- [x] **Analytics** - Google Analytics o Plausible
 
 ---
 
