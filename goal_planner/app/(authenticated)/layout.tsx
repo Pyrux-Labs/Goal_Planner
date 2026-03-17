@@ -1,4 +1,5 @@
 import Navbar from "@/components/Layout/Navbar/Navbar";
+import PageTransition from "@/components/Layout/PageTransition";
 
 /**
  * Shared layout for all authenticated pages.
@@ -14,7 +15,7 @@ export default function AuthenticatedLayout({
         <div className="min-h-screen bg-deep-bg">
             <Navbar />
             <div className="ml-0 md:ml-14 lg:ml-14 xl:ml-16 2xl:ml-20 mr-4 md:mr-7 p-4 md:p-6 pb-20 md:pb-6">
-                {children}
+                <PageTransition>{children}</PageTransition>
             </div>
         </div>
     );

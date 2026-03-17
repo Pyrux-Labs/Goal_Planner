@@ -131,6 +131,65 @@
     }
 }
 
+/* ============================================================
+ * Animaciones globales
+ * Duraciones: interacciones ≤ 300ms, transiciones de página ≤ 500ms
+ * ============================================================ */
+
+@keyframes gp-fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+@keyframes gp-scale-in {
+    from { opacity: 0; transform: scale(0.97); }
+    to   { opacity: 1; transform: scale(1);    }
+}
+
+@keyframes gp-slide-from-right {
+    from { opacity: 0; transform: translateX(32px); }
+    to   { opacity: 1; transform: translateX(0);    }
+}
+
+/* Pulso del fuego al alcanzar hito de racha */
+@keyframes gp-flame-pulse {
+    0%,  100% { transform: scale(1)    rotate(0deg);  }
+    25%        { transform: scale(1.18) rotate(-6deg); }
+    75%        { transform: scale(1.12) rotate(6deg);  }
+}
+
+/* Transición de página — fade suave al montar */
+.gp-page-enter {
+    animation: gp-fade-in 280ms ease-out both;
+}
+
+/* Modal — fade + ligero scale al aparecer */
+.gp-modal-enter {
+    animation: gp-scale-in 180ms ease-out both;
+}
+
+/* Sidebar / panel lateral — slide desde la derecha */
+.gp-sidebar-enter {
+    animation: gp-slide-from-right 220ms ease-out both;
+}
+
+/* Hito de racha — pulso del ícono de fuego */
+.gp-flame-milestone {
+    animation: gp-flame-pulse 550ms ease-in-out 2;
+    display: inline-block;
+}
+
+/* Reducción de movimiento — desactiva todo globalmente */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
 /* Loading animations */
 @keyframes loadingShimmer {
     0% {

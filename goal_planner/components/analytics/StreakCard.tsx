@@ -17,11 +17,13 @@ export default function StreakCard({
 	best,
 	compact,
 }: StreakCardProps) {
+	const isMilestone = current === 7 || current === 14 || current === 30;
+
 	const inner = (
 		<div className="flex items-center justify-between">
 			<div className="flex items-center gap-2">
 				<Flame
-					className="text-vibrant-orange flex-shrink-0"
+					className={`text-vibrant-orange flex-shrink-0 ${isMilestone ? "gp-flame-milestone" : ""}`}
 					size={compact ? 36 : 52}
 				/>
 				<div>
