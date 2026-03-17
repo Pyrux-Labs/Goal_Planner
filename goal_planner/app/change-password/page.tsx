@@ -8,12 +8,7 @@ import Modal from "@/components/ui/Modal/Modal";
 import InputField from "@/components/ui/InputField/InputField";
 import Button from "@/components/ui/Button/Button";
 import ErrorMessage from "@/components/ui/ErrorMessage/ErrorMessage";
-import {
-	exchangeCodeForSession,
-	setSession,
-	getSession,
-	updatePassword,
-} from "@/lib/services/authService";
+import { authClient } from "@/lib/supabase/auth-client";
 import {
 	validatePassword,
 	validatePasswordMatch,
@@ -34,43 +29,27 @@ function ChangePasswordContent() {
 	const [sessionReady, setSessionReady] = useState(false);
 
 	useEffect(() => {
-		const code = searchParams.get("code");
-		const access_token = searchParams.get("access_token");
-		const type = searchParams.get("type");
+		// Supabase redirige con ?error=... cuando el link falla (ej: expirado)
+		const errorParam = searchParams.get("error");
+		if (errorParam) {
+			const description = searchParams.get("error_description");
+			setGeneralError(
+				description
+					? decodeURIComponent(description.replace(/\+/g, " "))
+					: "Reset link is invalid or has expired. Please request a new one.",
+			);
+			return;
+		}
 
-		const setupSession = async () => {
-			if (code) {
-				try {
-					await exchangeCodeForSession(code);
-					setSessionReady(true);
-				} catch {
-					setGeneralError(
-						"Reset link has expired or is invalid. Please request a new one.",
-					);
-				}
-			} else if (access_token && type === "recovery") {
-				const refresh_token = searchParams.get("refresh_token") || "";
-				try {
-					await setSession(access_token, refresh_token);
-					setSessionReady(true);
-				} catch {
-					setGeneralError(
-						"Reset link has expired or is invalid. Please request a new one.",
-					);
-				}
-			} else {
-				const session = await getSession();
-				if (session) {
-					setSessionReady(true);
-				} else {
-					setGeneralError(
-						"No active session. Please use the reset link from your email.",
-					);
-				}
+		// Igual que la doc oficial: mismo cliente para onAuthStateChange y updateUser
+		const { data: { subscription } } = authClient.auth.onAuthStateChange((event) => {
+			if (event === "PASSWORD_RECOVERY") {
+				setSessionReady(true);
 			}
-		};
-		setupSession();
-	}, [searchParams]);
+		});
+
+		return () => subscription.unsubscribe();
+	}, []);
 
 	// Handle form submission
 	const handleSubmit = async () => {
@@ -99,13 +78,17 @@ function ChangePasswordContent() {
 		setIsLoading(true);
 
 		try {
-			await updatePassword(newPassword);
+			// Mismo cliente que recibió PASSWORD_RECOVERY, igual que la doc oficial
+			const { error } = await authClient.auth.updateUser({
+				password: newPassword,
+			});
+			if (error) throw error;
 
 			// Show success message
 			setSuccess(true);
 		} catch (error) {
 			const message = error instanceof Error ? error.message : "";
-			if (message.includes("Password")) {
+			if (message.toLowerCase().includes("password")) {
 				setNewPasswordError(
 					"Password is too weak. Please use a stronger password.",
 				);

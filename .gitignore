@@ -36,3 +36,9 @@ next-env.d.ts
 # Calendar TODO
 
 #calendar-todo.md
+.claude/
+/emails/
+/supabase/
+CLAUDE.md
+PENDIENTES.md
+response.md
