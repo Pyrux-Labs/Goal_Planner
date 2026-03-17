@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { GoogleAnalytics } from "@next/third-parties/google";
 import "./globals.css";
 import { ToastProvider } from "@/components/ui/Toast/ToastContext";
 import { UserProvider } from "@/contexts/UserContext";
@@ -21,7 +22,6 @@ export default function RootLayout({
 }>) {
     return (
         <html lang="en" suppressHydrationWarning>
-            <head></head>
             <body
                 className="bg-[hsl(var(--deep-bg))] overflow-x-hidden"
                 suppressHydrationWarning
@@ -30,6 +30,9 @@ export default function RootLayout({
                     <UserProvider>{children}</UserProvider>
                 </ToastProvider>
             </body>
+            {process.env.NEXT_PUBLIC_GA_ID && (
+                <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />
+            )}
         </html>
     );
 }
