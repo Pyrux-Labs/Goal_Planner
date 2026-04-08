@@ -1,0 +1,171 @@
+import { useState, useMemo, useCallback } from "react";
+import CalendarGrid from "@/components/calendar/calendar-grid";
+import Top from "@/components/layout/top";
+import { Clock, Sparkles } from "lucide-react";
+import type { CalendarEventsMap } from "@/types/calendar";
+import { getDateKey, isSameDay } from "@/lib/date-utils";
+
+export interface CalendarProps {
+    events?: CalendarEventsMap;
+    onDateSelect?: (date: Date) => void;
+    selectedDate?: Date;
+    onAddHabit?: () => void;
+    onAddTask?: () => void;
+    isModalOpen?: boolean;
+    onMonthChange?: (year: number, month: number) => void;
+    onToggleWeek?: () => void;
+    isWeekView?: boolean;
+    isLoading?: boolean;
+}
+
+export default function Calendar({
+    events = {},
+    onDateSelect,
+    selectedDate,
+    onAddHabit,
+    onAddTask,
+    isModalOpen = true,
+    onMonthChange,
+    onToggleWeek,
+    isWeekView = false,
+    isLoading = false,
+}: CalendarProps) {
+    const [currentDate, setCurrentDate] = useState(new Date());
+
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+
+    const monthName = useMemo(() => {
+        const d = new Date(year, month);
+        const monthOnly = d.toLocaleDateString("en-US", { month: "long" });
+        const monthYear = d.toLocaleDateString("en-US", {
+            month: "long",
+            year: "numeric",
+        });
+        return (
+            <>
+                <span className="md:hidden">{monthOnly}</span>
+                <span className="hidden md:inline">{monthYear}</span>
+            </>
+        );
+    }, [year, month]);
+
+    // Navigate and notify parent in a single callback — no useEffect needed
+    const navigateMonth = useCallback(
+        (newDate: Date) => {
+            setCurrentDate(newDate);
+            onMonthChange?.(newDate.getFullYear(), newDate.getMonth());
+        },
+        [onMonthChange],
+    );
+
+    const calendarDays = useMemo(() => {
+        const firstDayOfMonth = new Date(year, month, 1);
+        const lastDayOfMonth = new Date(year, month + 1, 0);
+        const firstDayOfWeek = firstDayOfMonth.getDay();
+        const daysInMonth = lastDayOfMonth.getDate();
+
+        const days: Array<{
+            date: number;
+            isCurrentMonth: boolean;
+            fullDate: Date;
+        }> = [];
+
+        // Previous month days
+        const prevMonthLastDay = new Date(year, month, 0).getDate();
+        for (let i = firstDayOfWeek - 1; i >= 0; i--) {
+            days.push({
+                date: prevMonthLastDay - i,
+                isCurrentMonth: false,
+                fullDate: new Date(year, month - 1, prevMonthLastDay - i),
+            });
+        }
+
+        // Current month days
+        for (let i = 1; i <= daysInMonth; i++) {
+            days.push({
+                date: i,
+                isCurrentMonth: true,
+                fullDate: new Date(year, month, i),
+            });
+        }
+
+        // Next month days to fill the grid
+        const CALENDAR_GRID_CELLS = 42; // 6 rows × 7 days
+        const remainingDays = CALENDAR_GRID_CELLS - days.length;
+        for (let i = 1; i <= remainingDays; i++) {
+            days.push({
+                date: i,
+                isCurrentMonth: false,
+                fullDate: new Date(year, month + 1, i),
+            });
+        }
+
+        return days;
+    }, [year, month]);
+
+    const handlePrevMonth = useCallback(() => {
+        navigateMonth(new Date(year, month - 1));
+    }, [year, month, navigateMonth]);
+
+    const handleNextMonth = useCallback(() => {
+        navigateMonth(new Date(year, month + 1));
+    }, [year, month, navigateMonth]);
+
+    const handleToday = useCallback(() => {
+        navigateMonth(new Date());
+    }, [navigateMonth]);
+
+    const isToday = (date: Date) => isSameDay(date, new Date());
+
+    const isSelected = (date: Date) => {
+        if (!selectedDate) return false;
+        return isSameDay(date, selectedDate);
+    };
+
+    return (
+        <div
+            className={`flex-1 ml-0 md:ml-14 lg:ml-14 xl:ml-16 2xl:ml-20 p-2 md:p-6 pb-20 md:pb-6 transition-all duration-300 ${isModalOpen ? "xl:mr-72 2xl:mr-80" : "xl:mr-12 2xl:mr-12"}`}
+        >
+            <div
+                className={`w-full mx-auto max-w-[56.25rem] origin-top transition-all duration-300 ${isModalOpen ? "xl:max-w-[59.875rem] 2xl:max-w-[59.875rem]" : "xl:max-w-[75rem] 2xl:max-w-[85rem]"}`}
+            >
+                {/* Header */}
+                <Top
+                    title={monthName}
+                    showNavigation
+                    buttons={[
+                        {
+                            text: "New Habit",
+                            onClick: onAddHabit || (() => {}),
+                            icon: <Sparkles className="w-4 h-4" />,
+                        },
+                        {
+                            text: "New Task",
+                            onClick: onAddTask || (() => {}),
+                            icon: <Clock className="w-4 h-4" />,
+                        },
+                    ]}
+                    onPrevMonth={handlePrevMonth}
+                    onNextMonth={handleNextMonth}
+                    onToday={handleToday}
+                    onToggleWeek={onToggleWeek}
+                    isWeekView={isWeekView}
+                />
+
+                {/* Calendar Grid */}
+                <CalendarGrid
+                    calendarDays={calendarDays}
+                    events={events}
+                    onDateSelect={onDateSelect}
+                    selectedDate={selectedDate}
+                    isToday={isToday}
+                    isSelected={isSelected}
+                    getDateKey={getDateKey}
+                    isModalOpen={isModalOpen}
+                    isLoading={isLoading}
+                />
+            </div>
+        </div>
+    );
+}
